@@ -1,4 +1,4 @@
-package com.example.zero_trust_tasks
+package dev.sagron.zerotrusttasks
 
 import io.flutter.embedding.android.FlutterActivity
 

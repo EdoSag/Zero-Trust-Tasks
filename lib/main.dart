@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:zero_trust_tasks/globals/app_state.dart';
 import 'package:zero_trust_tasks/pages/home_page.dart';
+import 'package:zero_trust_tasks/globals/task_manager.dart';
+import 'package:zero_trust_tasks/globals/themes.dart';
+import 'package:zero_trust_tasks/components/auth_wrapper.dart';
 
 @NowaGenerated()
 late final SharedPreferences sharedPrefs;
@@ -16,21 +19,25 @@ main() async {
   runApp(const MyApp());
 }
 
-@NowaGenerated({'visibleInNowa': false})
+@NowaGenerated()
 class MyApp extends StatelessWidget {
-  @NowaGenerated()
+  @NowaGenerated({'loader': 'auto-constructor'})
   const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<AppState>(
-      create: (context) => AppState(),
-      builder: (context, child) => MaterialApp(
-        theme: AppState.of(context).theme,
-        initialRoute: 'HomePage',
-        routes: {
-          'HomePage': (context) => const HomePage(),
-        },
+    return ChangeNotifierProvider<TaskManager>(
+      create: (context) => TaskManager(),
+      child: ChangeNotifierProvider<AppState>(
+        create: (context) => AppState(),
+        builder: (context, child) => MaterialApp(
+          title: 'Zero-Trust Tasks',
+          theme: lightTheme,
+          darkTheme: darkTheme,
+          themeMode: ThemeMode.dark,
+          debugShowCheckedModeBanner: false,
+          home: const AuthWrapper(),
+        ),
       ),
     );
   }

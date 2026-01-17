@@ -7,6 +7,11 @@ import 'package:zero_trust_tasks/pages/home_page.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/themes.dart';
 import 'package:zero_trust_tasks/components/auth_wrapper.dart';
+import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/pages/login_screen.dart';
+import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/pages/setup_screen.dart';
+import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
 @NowaGenerated()
 late final SharedPreferences sharedPrefs;
@@ -37,6 +42,13 @@ class MyApp extends StatelessWidget {
           themeMode: ThemeMode.dark,
           debugShowCheckedModeBanner: false,
           home: const AuthWrapper(),
+          routes: {
+            'AddTaskScreen': (context) => const AddTaskScreen(),
+            'LoginScreen': (context) => const LoginScreen(),
+            'MainScreen': (context) => const MainScreen(),
+            'SetupScreen': (context) => const SetupScreen(),
+            'TasksListPage': (context) => const TasksListPage(),
+          },
         ),
       ),
     );

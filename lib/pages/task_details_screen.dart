@@ -3,11 +3,13 @@ import 'package:zero_trust_tasks/models/task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
+import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:intl/intl.dart';
 
-@NowaGenerated()
+@NowaGenerated({'auto-width': 362, 'auto-height': 815})
 class TaskDetailsScreen extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const TaskDetailsScreen({super.key, required this.task});
+  const TaskDetailsScreen({required this.task, super.key});
 
   final Task task;
 
@@ -161,7 +163,7 @@ class TaskDetailsScreen extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
-                          dateFormat.format(task.dueDate),
+                          dateFormat.format(task.dueDate!),
                           style: TextStyle(
                             color: task.isOverdue ? Colors.red : null,
                             fontWeight: task.isOverdue ? FontWeight.bold : null,

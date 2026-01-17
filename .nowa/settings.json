@@ -1,0 +1,11 @@
+{
+    "version": "3.3.6",
+    "app": {
+        "name": "zero_trust_tasks",
+        "package_name": "com.example.zerotrusttasks"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}

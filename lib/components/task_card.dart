@@ -4,6 +4,7 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:zero_trust_tasks/task_priority_extension.dart';
 
 @NowaGenerated()
 class TaskCard extends StatelessWidget {

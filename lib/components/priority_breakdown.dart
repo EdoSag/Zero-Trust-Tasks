@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:zero_trust_tasks/task_priority_extension.dart';
 
 @NowaGenerated()
 class PriorityBreakdown extends StatelessWidget {

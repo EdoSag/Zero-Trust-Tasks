@@ -163,7 +163,7 @@ class TaskDetailsScreen extends StatelessWidget {
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
-                          dateFormat.format(task.dueDate!),
+                          dateFormat.format(task.dueDate),
                           style: TextStyle(
                             color: task.isOverdue ? Colors.red : null,
                             fontWeight: task.isOverdue ? FontWeight.bold : null,

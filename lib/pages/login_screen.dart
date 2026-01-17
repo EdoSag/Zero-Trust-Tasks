@@ -31,40 +31,6 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  Future<void> _unlock() async {
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final salt = prefs.getString('salt');
-      final verificationData = prefs.getString('verification_data');
-      if (salt == null || verificationData == null) {
-        throw Exception('Security data not found');
-      }
-      final isValid = await EncryptionService.verifyPassword(
-        _passwordController.text,
-        salt!,
-        verificationData!,
-      );
-      if (!isValid) {
-        throw Exception('Invalid password');
-      }
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const MainScreen()),
-        );
-      }
-    } catch (e) {
-      setState(() {
-        _error = 'Unlock failed: Invalid password';
-        _isLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -210,5 +176,44 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _unlock() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final salt = prefs.getString('salt');
+      final verificationData = prefs.getString('verification_data');
+      if (salt == null || verificationData == null) {
+        throw Exception('Security data not found');
+      }
+      final isValid = await EncryptionService.verifyPassword(
+        _passwordController.text,
+        salt!,
+        verificationData!,
+      );
+      if (!isValid) {
+        throw Exception('Invalid password');
+      }
+      final key = await EncryptionService.deriveKey(
+        _passwordController.text,
+        salt!,
+      );
+      EncryptionService.setSessionKey(key);
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const MainScreen()),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _error = 'Unlock failed: Invalid password';
+        _isLoading = false;
+      });
+    }
   }
 }

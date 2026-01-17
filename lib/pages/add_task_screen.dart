@@ -4,6 +4,7 @@ import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/task_priority_extension.dart';
 
 @NowaGenerated()
 class AddTaskScreen extends StatefulWidget {

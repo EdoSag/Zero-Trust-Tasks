@@ -1,76 +1,263 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Manrope:wght@400;500;600&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+:root {
+    --background: 0 0% 2%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 4%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 262 83% 66%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 7%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 7%;
+    --muted-foreground: 240 4% 46%;
+    --accent: 262 83% 66%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 15%;
+    --input: 0 0% 15%;
+    --ring: 262 83% 66%;
+    --radius: 0.5rem;
+    
+    /* Custom colors */
+    --obsidian-bg: #050505;
+    --obsidian-paper: #0A0A0A;
+    --obsidian-subtle: #121212;
+    --violet-main: #8B5CF6;
+    --violet-hover: #7C3AED;
+    --violet-glow: rgba(139, 92, 246, 0.5);
+    --success: #10B981;
+    --warning: #F59E0B;
+    --critical: #EF4444;
+    --encryption-active: #00FF94;
+    --text-primary: #FAFAFA;
+    --text-secondary: #A1A1AA;
+    --text-muted: #52525B;
+    --border-default: #27272A;
+    --border-active: #8B5CF6;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    background-color: var(--obsidian-bg);
+}
+
 body {
     margin: 0;
-    font-family:
-        -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-        "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-        sans-serif;
+    font-family: 'Manrope', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-color: var(--obsidian-bg);
+    color: var(--text-primary);
+    min-height: 100vh;
 }
 
-code {
-    font-family:
-        source-code-pro, Menlo, Monaco, Consolas, "Courier New", monospace;
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: -0.02em;
 }
 
-@layer base {
-    :root {
-        --background: 0 0% 100%;
-        --foreground: 0 0% 3.9%;
-        --card: 0 0% 100%;
-        --card-foreground: 0 0% 3.9%;
-        --popover: 0 0% 100%;
-        --popover-foreground: 0 0% 3.9%;
-        --primary: 0 0% 9%;
-        --primary-foreground: 0 0% 98%;
-        --secondary: 0 0% 96.1%;
-        --secondary-foreground: 0 0% 9%;
-        --muted: 0 0% 96.1%;
-        --muted-foreground: 0 0% 45.1%;
-        --accent: 0 0% 96.1%;
-        --accent-foreground: 0 0% 9%;
-        --destructive: 0 84.2% 60.2%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 89.8%;
-        --input: 0 0% 89.8%;
-        --ring: 0 0% 3.9%;
-        --chart-1: 12 76% 61%;
-        --chart-2: 173 58% 39%;
-        --chart-3: 197 37% 24%;
-        --chart-4: 43 74% 66%;
-        --chart-5: 27 87% 67%;
-        --radius: 0.5rem;
+.font-mono {
+    font-family: 'JetBrains Mono', monospace;
+}
+
+.font-sans {
+    font-family: 'Manrope', sans-serif;
+}
+
+/* Noise texture overlay */
+.noise-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    opacity: 0.02;
+    z-index: 9999;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--obsidian-bg);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-default);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+}
+
+/* Encryption indicator pulse */
+@keyframes encryption-pulse {
+    0%, 100% {
+        opacity: 1;
+        box-shadow: 0 0 4px var(--encryption-active);
     }
-    .dark {
-        --background: 0 0% 3.9%;
-        --foreground: 0 0% 98%;
-        --card: 0 0% 3.9%;
-        --card-foreground: 0 0% 98%;
-        --popover: 0 0% 3.9%;
-        --popover-foreground: 0 0% 98%;
-        --primary: 0 0% 98%;
-        --primary-foreground: 0 0% 9%;
-        --secondary: 0 0% 14.9%;
-        --secondary-foreground: 0 0% 98%;
-        --muted: 0 0% 14.9%;
-        --muted-foreground: 0 0% 63.9%;
-        --accent: 0 0% 14.9%;
-        --accent-foreground: 0 0% 98%;
-        --destructive: 0 62.8% 30.6%;
-        --destructive-foreground: 0 0% 98%;
-        --border: 0 0% 14.9%;
-        --input: 0 0% 14.9%;
-        --ring: 0 0% 83.1%;
-        --chart-1: 220 70% 50%;
-        --chart-2: 160 60% 45%;
-        --chart-3: 30 80% 55%;
-        --chart-4: 280 65% 60%;
-        --chart-5: 340 75% 55%;
+    50% {
+        opacity: 0.7;
+        box-shadow: 0 0 12px var(--encryption-active);
     }
+}
+
+.encryption-indicator {
+    animation: encryption-pulse 2s ease-in-out infinite;
+}
+
+/* Tracing beam animation */
+@keyframes trace-beam {
+    0% {
+        background-position: -200% 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}
+
+.tracing-beam {
+    background: linear-gradient(90deg, transparent, var(--violet-main), transparent);
+    background-size: 200% 100%;
+    animation: trace-beam 3s linear infinite;
+}
+
+/* Button glow effect */
+.btn-glow {
+    box-shadow: 0 0 15px rgba(139, 92, 246, 0.3);
+}
+
+.btn-glow:hover {
+    box-shadow: 0 0 25px rgba(139, 92, 246, 0.5);
+}
+
+/* Glass morphism */
+.glass {
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Priority colors */
+.priority-low {
+    color: var(--text-secondary);
+    border-color: var(--text-secondary);
+}
+
+.priority-medium {
+    color: var(--warning);
+    border-color: var(--warning);
+}
+
+.priority-high {
+    color: #F97316;
+    border-color: #F97316;
+}
+
+.priority-critical {
+    color: var(--critical);
+    border-color: var(--critical);
+}
+
+/* Task card hover effect */
+.task-card {
+    transition: all 0.3s ease;
+}
+
+.task-card:hover {
+    border-color: rgba(139, 92, 246, 0.5);
+    transform: translateY(-2px);
+}
+
+/* Focus states */
+*:focus-visible {
+    outline: 2px solid var(--violet-main);
+    outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+    background-color: var(--violet-main);
+    color: white;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes lock-animation {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(0.95);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.lock-animate {
+    animation: lock-animation 0.3s ease-out;
+}
+
+/* Calendar dark theme fix */
+.rdp {
+    --rdp-cell-size: 40px;
+    --rdp-accent-color: var(--violet-main);
+    --rdp-background-color: var(--obsidian-paper);
+}
+
+/* Toast dark theme */
+[data-sonner-toaster] {
+    --normal-bg: var(--obsidian-paper) !important;
+    --normal-border: var(--border-default) !important;
+    --normal-text: var(--text-primary) !important;
+}
+
+/* Input placeholder */
+input::placeholder,
+textarea::placeholder {
+    color: var(--text-muted);
+    opacity: 0.5;
+}
+
+/* Disable mobile tap highlight */
+* {
+    -webkit-tap-highlight-color: transparent;
 }
 
 @layer base {
@@ -85,31 +272,5 @@ code {
 @layer base {
     [data-debug-wrapper="true"] {
         display: contents !important;
-    }
-
-    [data-debug-wrapper="true"] > * {
-        margin-left: inherit;
-        margin-right: inherit;
-        margin-top: inherit;
-        margin-bottom: inherit;
-        padding-left: inherit;
-        padding-right: inherit;
-        padding-top: inherit;
-        padding-bottom: inherit;
-        column-gap: inherit;
-        row-gap: inherit;
-        gap: inherit;
-        border-left-width: inherit;
-        border-right-width: inherit;
-        border-top-width: inherit;
-        border-bottom-width: inherit;
-        border-left-style: inherit;
-        border-right-style: inherit;
-        border-top-style: inherit;
-        border-bottom-style: inherit;
-        border-left-color: inherit;
-        border-right-color: inherit;
-        border-top-color: inherit;
-        border-bottom-color: inherit;
     }
 }

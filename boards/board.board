@@ -1,0 +1,64 @@
+{
+    "canvases": [
+        {
+            "x": 452,
+            "y": 119,
+            "w": 393,
+            "h": 808,
+            "widget": "const LoginScreen()",
+            "deps": [
+                "lib/pages/login_screen.dart"
+            ]
+        },
+        {
+            "x": 10,
+            "y": 119,
+            "w": 393,
+            "h": 808,
+            "widget": "const MainScreen()",
+            "deps": [
+                "lib/pages/main_screen.dart"
+            ]
+        },
+        {
+            "x": 887,
+            "y": 119,
+            "w": 393,
+            "h": 808,
+            "widget": "const SetupScreen()",
+            "deps": [
+                "lib/pages/setup_screen.dart"
+            ]
+        },
+        {
+            "x": -439,
+            "y": 119,
+            "w": 393,
+            "h": 808,
+            "widget": "const TasksListPage()",
+            "deps": [
+                "lib/pages/tasks_list_page.dart"
+            ]
+        },
+        {
+            "x": -439,
+            "y": -819,
+            "w": 393,
+            "h": 808,
+            "widget": "const TaskDetailsScreen()",
+            "deps": [
+                "lib/pages/task_details_screen.dart"
+            ]
+        },
+        {
+            "x": -439,
+            "y": 1072,
+            "w": 393,
+            "h": 808,
+            "widget": "const AddTaskScreen()",
+            "deps": [
+                "lib/pages/add_task_screen.dart"
+            ]
+        }
+    ]
+}

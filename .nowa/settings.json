@@ -1,0 +1,11 @@
+{
+    "version": "3.3.6",
+    "app": {
+        "name": "zero_trust_tasks",
+        "bundleId": "dev.sagron.zerotrusttasks"
+    },
+    "main": {},
+    "experimental": {
+        "load_packages": true
+    }
+}

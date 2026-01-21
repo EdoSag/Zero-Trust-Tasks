@@ -19,6 +19,8 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
+  final _secureStorage = FlutterSecureStorage();
+
   bool _isLoading = false;
 
   bool _obscurePassword = true;
@@ -26,30 +28,24 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _error;
 
   @override
-  void dispose() {
-    _passwordController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24.0),
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 400),
+            constraints: const BoxConstraints(maxWidth: 400.0),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Icon(
                   Icons.lock,
-                  size: 80,
+                  size: 80.0,
                   color: Theme.of(context).colorScheme.primary,
                 ),
-                const SizedBox(height: 24),
+                const SizedBox(height: 24.0),
                 Text(
                   'Zero-Trust Tasks',
                   style: Theme.of(context).textTheme.headlineLarge?.copyWith(
@@ -58,7 +54,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 8.0),
                 Text(
                   'Enter your master password',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -68,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 40),
+                const SizedBox(height: 40.0),
                 TextField(
                   controller: _passwordController,
                   obscureText: _obscurePassword,
@@ -90,17 +86,17 @@ class _LoginScreenState extends State<LoginScreen> {
                       },
                     ),
                     border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
                 ),
                 if (_error != null) ...[
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 16.0),
                   Container(
-                    padding: const EdgeInsets.all(12),
+                    padding: const EdgeInsets.all(12.0),
                     decoration: BoxDecoration(
                       color: Colors.red.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(8),
+                      borderRadius: BorderRadius.circular(8.0),
                       border: Border.all(
                         color: Colors.red.withValues(alpha: 0.3),
                       ),
@@ -108,7 +104,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Row(
                       children: [
                         const Icon(Icons.error_outline, color: Colors.red),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 12.0),
                         Expanded(
                           child: Text(
                             _error!,
@@ -119,37 +115,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ],
-                const SizedBox(height: 24),
+                const SizedBox(height: 24.0),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _unlock,
                   style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 16.0),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(12.0),
                     ),
                   ),
                   child: _isLoading
                       ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          height: 20.0,
+                          width: 20.0,
+                          child: CircularProgressIndicator(strokeWidth: 2.0),
                         )
                       : const Text(
                           'Unlock',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 16.0,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 16.0),
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  padding: const EdgeInsets.all(12.0),
                   decoration: BoxDecoration(
                     color: Theme.of(
                       context,
                     ).colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(8.0),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -157,9 +153,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       Icon(
                         Icons.verified_user,
                         color: Theme.of(context).colorScheme.primary,
-                        size: 20,
+                        size: 20.0,
                       ),
-                      const SizedBox(width: 8),
+                      const SizedBox(width: 8.0),
                       Text(
                         'Encryption Status: Active',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -178,40 +174,47 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   Future<void> _unlock() async {
     setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final salt = prefs.getString('salt');
-      final verificationData = prefs.getString('verification_data');
+      final salt = await _secureStorage.read(key: 'salt');
+      final verificationData = await _secureStorage.read(
+        key: 'verification_data',
+      );
       if (salt == null || verificationData == null) {
-        throw Exception('Security data not found');
+        throw Exception('Security data not found. Please re-setup the app.');
       }
       final isValid = await EncryptionService.verifyPassword(
         _passwordController.text,
-        salt!,
-        verificationData!,
+        salt,
+        verificationData,
       );
       if (!isValid) {
-        throw Exception('Invalid password');
+        throw Exception('Invalid password or corrupted data');
       }
-      final key = await EncryptionService.deriveKey(
-        _passwordController.text,
-        salt!,
-      );
-      EncryptionService.setSessionKey(key);
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
+    } on SecretBoxAuthenticationError catch (error) {
+      setState(() {
+        _error = 'Invalid password or corrupted data';
+        _isLoading = false;
+      });
     } catch (e) {
       setState(() {
-        _error = 'Unlock failed: Invalid password';
+        _error = 'Unlock failed: ${e.toString()}';
         _isLoading = false;
       });
     }

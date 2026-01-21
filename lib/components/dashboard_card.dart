@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
+@NowaGenerated({'auto-width': 393, 'auto-height': 808})
 class DashboardCard extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
   const DashboardCard({
-    super.key,
     required this.title,
     required this.value,
     required this.icon,
     required this.color,
     required this.onTap,
+    super.key,
   });
 
   final String title;

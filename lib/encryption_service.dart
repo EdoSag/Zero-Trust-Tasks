@@ -3,98 +3,107 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:crypto/crypto.dart';
+import 'package:pointycastle/pointycastle.dart';
 
 @NowaGenerated()
 class EncryptionService {
   EncryptionService._();
 
-  static String? _sessionKeyHex;
+  static SecretKey? _sessionKey;
 
   static final _random = Random.secure();
 
+  static final _aesGcm = AesGcm.with256bits();
+
   static bool get isUnlocked {
-    return _sessionKeyHex != null;
+    return _sessionKey != null;
   }
 
-  static Future<String> deriveKey(String masterPassword, String salt) async {
-    final saltBytes = base64.decode(salt);
+  /// Derives a secure key from password using PBKDF2-HMAC-SHA256
+  /// with 100,000 iterations for resistance against brute-force attacks
+  static Future<SecretKey> deriveKey(
+    String masterPassword,
+    String saltBase64,
+  ) async {
+    final saltBytes = base64.decode(saltBase64);
     final passwordBytes = utf8.encode(masterPassword);
-    var combined = <int>[];
-    combined.addAll(passwordBytes);
-    combined.addAll(saltBytes);
-    var result = Uint8List.fromList(combined);
-    for (var i = 0; i < 100000; i++) {
-      var hash = 0;
-      for (var byte in result) {
-        hash = ((hash << 5) - hash + byte) & 0xFFFFFFFF;
-      }
-      final hashBytes = <int>[];
-      for (var j = 0; j < 32; j++) {
-        hashBytes.add((hash >> (j * 8)) & 0xFF);
-      }
-      result = Uint8List.fromList(hashBytes);
-    }
-    return base64.encode(result);
+    final pbkdf2 = Pbkdf2(
+      macAlgorithm: Hmac.sha256(),
+      iterations: 100000,
+      bits: 256,
+    );
+    final derivedKey = await pbkdf2.deriveKey(
+      secretKey: SecretKey(passwordBytes),
+      nonce: saltBytes,
+    );
+    return derivedKey;
   }
 
+  /// Generates a cryptographically secure random salt (32 bytes)
   static String generateSalt() {
     final saltBytes = List<int>.generate(32, (_) => _random.nextInt(256));
     return base64.encode(saltBytes);
   }
 
-  static void setSessionKey(String key) {
-    _sessionKeyHex = key;
+  /// Sets the session key in memory (never persisted to disk)
+  static void setSessionKey(SecretKey key) {
+    _sessionKey = key;
   }
 
+  /// Clears the session key from memory
   static void clearSessionKey() {
-    _sessionKeyHex = null;
+    _sessionKey = null;
   }
 
-  static String encryptData(String plaintext) {
-    if (_sessionKeyHex == null) {
+  /// Encrypts data using AES-256-GCM with authentication
+  /// Returns base64-encoded JSON containing nonce, ciphertext, and MAC
+  static Future<String> encryptData(String plaintext) async {
+    if (_sessionKey == null) {
       throw Exception(
         'Session not unlocked. Please unlock with master password.',
       );
     }
-    final keyBytes = base64.decode(_sessionKeyHex!);
-    final iv = List<int>.generate(16, (_) => _random.nextInt(256));
     final plaintextBytes = utf8.encode(plaintext);
-    final ciphertext = <int>[];
-    for (var i = 0; i < plaintextBytes.length; i++) {
-      final keyIndex = i % keyBytes.length;
-      final ivIndex = i % iv.length;
-      ciphertext.add(plaintextBytes[i] ^ keyBytes[keyIndex] ^ iv[ivIndex]);
-    }
+    final secretBox = await _aesGcm.encrypt(
+      plaintextBytes,
+      secretKey: _sessionKey,
+    );
     final result = {
-      'iv': base64.encode(iv),
-      'ciphertext': base64.encode(ciphertext),
-      'length': plaintextBytes.length,
+      'nonce': base64.encode(secretBox.nonce),
+      'ciphertext': base64.encode(secretBox.cipherText),
+      'mac': base64.encode(secretBox.mac.bytes),
     };
     return base64.encode(utf8.encode(jsonEncode(result)));
   }
 
-  static String decryptData(String encryptedData) {
-    if (_sessionKeyHex == null) {
+  /// Decrypts data using AES-256-GCM with authentication verification
+  /// Throws SecretBoxAuthenticationError if MAC is invalid (data tampered or wrong password)
+  static Future<String> decryptData(String encryptedData) async {
+    if (_sessionKey == null) {
       throw Exception(
         'Session not unlocked. Please unlock with master password.',
       );
     }
-    final decoded =
-        jsonDecode(utf8.decode(base64.decode(encryptedData)))
-            as Map<String, dynamic>;
-    final keyBytes = base64.decode(_sessionKeyHex!);
-    final iv = base64.decode(decoded['iv'] as String);
-    final ciphertext = base64.decode(decoded['ciphertext'] as String);
-    final length = decoded['length'] as int;
-    final plaintext = <int>[];
-    for (var i = 0; i < length; i++) {
-      final keyIndex = i % keyBytes.length;
-      final ivIndex = i % iv.length;
-      plaintext.add(ciphertext[i] ^ keyBytes[keyIndex] ^ iv[ivIndex]);
+    try {
+      final decoded =
+          jsonDecode(utf8.decode(base64.decode(encryptedData)))
+              as Map<String, dynamic>;
+      final nonce = base64.decode(decoded['nonce'] as String);
+      final ciphertext = base64.decode(decoded['ciphertext'] as String);
+      final mac = base64.decode(decoded['mac'] as String);
+      final secretBox = SecretBox(ciphertext, nonce: nonce, mac: Mac(mac));
+      final plaintextBytes = await _aesGcm.decrypt(
+        secretBox,
+        secretKey: _sessionKey,
+      );
+      return utf8.decode(plaintextBytes);
+    } on SecretBoxAuthenticationError catch (error) {
+      throw Exception('Invalid password or corrupted data');
     }
-    return utf8.decode(plaintext);
   }
 
+  /// Verifies the master password by attempting to decrypt verification data
   static Future<bool> verifyPassword(
     String masterPassword,
     String storedSalt,
@@ -103,15 +112,19 @@ class EncryptionService {
     try {
       final key = await deriveKey(masterPassword, storedSalt);
       setSessionKey(key);
-      final decrypted = decryptData(verificationData);
+      final decrypted = await decryptData(verificationData);
       return decrypted == 'VERIFIED';
+    } on SecretBoxAuthenticationError catch (error) {
+      clearSessionKey();
+      return false;
     } catch (e) {
       clearSessionKey();
       return false;
     }
   }
 
-  static String createVerificationData() {
-    return encryptData('VERIFIED');
+  /// Creates encrypted verification data for password validation
+  static Future<String> createVerificationData() async {
+    return await encryptData('VERIFIED');
   }
 }

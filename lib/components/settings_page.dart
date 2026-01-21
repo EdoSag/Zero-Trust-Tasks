@@ -11,7 +11,7 @@ class SettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(16.0),
       children: [
         Text(
           'Settings',
@@ -19,7 +19,7 @@ class SettingsPage extends StatelessWidget {
             context,
           ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 24.0),
         Card(
           child: Column(
             children: [
@@ -29,24 +29,24 @@ class SettingsPage extends StatelessWidget {
                 subtitle: const Text('AES-256 encryption active'),
                 trailing: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+                    horizontal: 12.0,
+                    vertical: 6.0,
                   ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(12.0),
                   ),
                   child: const Text(
                     'ACTIVE',
                     style: TextStyle(
                       color: Colors.green,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: 12.0,
                     ),
                   ),
                 ),
               ),
-              const Divider(height: 1),
+              const Divider(height: 1.0),
               ListTile(
                 leading: const Icon(Icons.logout),
                 title: const Text('Lock App'),
@@ -65,17 +65,17 @@ class SettingsPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
+        const SizedBox(height: 24.0),
         Text(
           'About',
           style: Theme.of(
             context,
           ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 16.0),
         Card(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+            padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -85,7 +85,7 @@ class SettingsPage extends StatelessWidget {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 8.0),
                 Text(
                   'Version 1.0.0',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -94,14 +94,14 @@ class SettingsPage extends StatelessWidget {
                     ).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 16.0),
                 Text(
                   'Security Features:',
                   style: Theme.of(
                     context,
                   ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 8.0),
                 _buildFeatureItem(context, 'AES-256-GCM encryption'),
                 _buildFeatureItem(
                   context,
@@ -120,15 +120,15 @@ class SettingsPage extends StatelessWidget {
 
   Widget _buildFeatureItem(BuildContext context, String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.only(bottom: 4.0),
       child: Row(
         children: [
           Icon(
             Icons.check_circle,
-            size: 16,
+            size: 16.0,
             color: Theme.of(context).colorScheme.primary,
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 8.0),
           Expanded(
             child: Text(text, style: Theme.of(context).textTheme.bodySmall),
           ),

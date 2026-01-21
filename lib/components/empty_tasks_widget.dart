@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:zero_trust_tasks/components/dashboard_card.dart';
 
 @NowaGenerated()
 class EmptyTasksWidget extends StatelessWidget {

@@ -79,7 +79,9 @@ class TaskManager extends ChangeNotifier {
       final prefs = await SharedPreferences.getInstance();
       final encryptedData = prefs.getString('encrypted_tasks');
       if (encryptedData != null && encryptedData!.isNotEmpty) {
-        final decryptedJson = EncryptionService.decryptData(encryptedData);
+        final decryptedJson = await EncryptionService.decryptData(
+          encryptedData,
+        );
         final List<dynamic> tasksJson =
             jsonDecode(decryptedJson) as List<dynamic>;
         _tasks = tasksJson
@@ -88,6 +90,9 @@ class TaskManager extends ChangeNotifier {
       } else {
         _tasks = [];
       }
+    } on SecretBoxAuthenticationError catch (error) {
+      _error = 'Invalid password or corrupted data';
+      _tasks = [];
     } catch (e) {
       _error = 'Failed to load tasks: ${e.toString()}';
       _tasks = [];
@@ -104,7 +109,7 @@ class TaskManager extends ChangeNotifier {
     try {
       final tasksJson = _tasks.map((task) => task.toJson()).toList();
       final jsonString = jsonEncode(tasksJson);
-      final encryptedData = EncryptionService.encryptData(jsonString);
+      final encryptedData = await EncryptionService.encryptData(jsonString);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('encrypted_tasks', encryptedData);
     } catch (e) {
@@ -200,13 +205,13 @@ class TaskManager extends ChangeNotifier {
     return categories;
   }
 
-  String getEncryptedBackupData() {
+  Future<String> getEncryptedBackupData() async {
     if (!EncryptionService.isUnlocked) {
       throw Exception('Session locked. Cannot create backup.');
     }
     final tasksJson = _tasks.map((task) => task.toJson()).toList();
     final jsonString = jsonEncode(tasksJson);
-    return EncryptionService.encryptData(jsonString);
+    return await EncryptionService.encryptData(jsonString);
   }
 
   Future<void> restoreFromBackup(String encryptedData) async {
@@ -214,7 +219,7 @@ class TaskManager extends ChangeNotifier {
       throw Exception('Session locked. Cannot restore backup.');
     }
     try {
-      final decryptedJson = EncryptionService.decryptData(encryptedData);
+      final decryptedJson = await EncryptionService.decryptData(encryptedData);
       final List<dynamic> tasksJson =
           jsonDecode(decryptedJson) as List<dynamic>;
       _tasks = tasksJson
@@ -222,6 +227,10 @@ class TaskManager extends ChangeNotifier {
           .toList();
       notifyListeners();
       await saveTasks();
+    } on SecretBoxAuthenticationError catch (error) {
+      _error = 'Invalid password or corrupted backup data';
+      notifyListeners();
+      rethrow;
     } catch (e) {
       _error = 'Failed to restore backup: ${e.toString()}';
       notifyListeners();

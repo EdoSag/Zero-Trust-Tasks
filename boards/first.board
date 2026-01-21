@@ -1,0 +1,84 @@
+{
+    "canvases": [
+        {
+            "x": 560,
+            "y": 252,
+            "w": 393,
+            "h": 808,
+            "widget": "const MyApp()",
+            "deps": [
+                "lib/main.dart"
+            ]
+        },
+        {
+            "x": 49,
+            "y": 252,
+            "w": 393,
+            "h": 808,
+            "widget": "const TaskCard()",
+            "deps": [
+                "lib/components/task_card.dart"
+            ]
+        },
+        {
+            "x": 49,
+            "y": 1125,
+            "w": 393,
+            "h": 808,
+            "widget": "const SettingsPage()",
+            "deps": [
+                "lib/components/settings_page.dart"
+            ]
+        },
+        {
+            "x": 560,
+            "y": 1125,
+            "w": 393,
+            "h": 808,
+            "widget": "const PriorityBreakdown()",
+            "deps": [
+                "lib/components/priority_breakdown.dart"
+            ]
+        },
+        {
+            "x": 1122,
+            "y": 1125,
+            "w": 393,
+            "h": 808,
+            "widget": "const EmptyTasksWidget()",
+            "deps": [
+                "lib/components/empty_tasks_widget.dart"
+            ]
+        },
+        {
+            "x": 1122,
+            "y": 252,
+            "w": 393,
+            "h": 808,
+            "widget": "const DashboardPage()",
+            "deps": [
+                "lib/components/dashboard_page.dart"
+            ]
+        },
+        {
+            "x": 1894,
+            "y": 1125,
+            "w": 393,
+            "h": 808,
+            "widget": "const DashboardCard()",
+            "deps": [
+                "lib/components/dashboard_card.dart"
+            ]
+        },
+        {
+            "x": 1649,
+            "y": 352,
+            "w": 393,
+            "h": 808,
+            "widget": "const AuthWrapper()",
+            "deps": [
+                "lib/components/auth_wrapper.dart"
+            ]
+        }
+    ]
+}

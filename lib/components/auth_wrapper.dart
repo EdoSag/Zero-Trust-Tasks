@@ -17,23 +17,9 @@ class AuthWrapper extends StatefulWidget {
 
 @NowaGenerated()
 class _AuthWrapperState extends State<AuthWrapper> {
+  final _secureStorage = FlutterSecureStorage();
+
   bool? _isSetup;
-
-  @override
-  void initState() {
-    super.initState();
-    _checkSetupStatus();
-  }
-
-  Future<void> _checkSetupStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final isSetup = prefs.getBool('is_setup') ?? false;
-    if (mounted) {
-      setState(() {
-        _isSetup = isSetup;
-      });
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,6 +30,22 @@ class _AuthWrapperState extends State<AuthWrapper> {
       return const LoginScreen();
     } else {
       return const SetupScreen();
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSetupStatus();
+  }
+
+  Future<void> _checkSetupStatus() async {
+    final salt = await _secureStorage.read(key: 'salt');
+    final isSetupValue = await _secureStorage.read(key: 'is_setup');
+    if (mounted) {
+      setState(() {
+        _isSetup = (salt != null && isSetupValue == 'true');
+      });
     }
   }
 }

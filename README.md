@@ -53,7 +53,7 @@ Unlike standard encryption, **AES-GCM** (Galois/Counter Mode) provides both encr
    ```bash
    flutter run
    
-   ## 📂 Project Structure
+## 📂 Project Structure
 
 ```plaintext
 lib/

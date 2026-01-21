@@ -62,7 +62,7 @@ lib/
 ├── models/                # Data structures (Task, SubTask)
 ├── pages/                 # App screens (Login, Setup, Main, Details)
 └── encryption_service.dart # The cryptographic heart of the app
-
+```
 ## 🛠️ Built With
 
 * **Flutter** - UI Framework

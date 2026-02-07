@@ -3,6 +3,7 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/encryption_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/security_storage_service.dart';
 
 @NowaGenerated()
 class SetupScreen extends StatefulWidget {
@@ -53,8 +54,10 @@ class _SetupScreenState extends State<SetupScreen> {
       EncryptionService.setSessionKey(key);
       final verificationData = EncryptionService.createVerificationData();
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('salt', salt);
-      await prefs.setString('verification_data', verificationData);
+      await SecurityStorageService.saveSetupSecrets(
+        salt: salt,
+        verificationData: verificationData,
+      );
       await prefs.setBool('is_setup', true);
       if (mounted) {
         Navigator.pushReplacement(

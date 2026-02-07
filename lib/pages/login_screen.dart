@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_trust_tasks/encryption_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/security_storage_service.dart';
 
 @NowaGenerated()
 class LoginScreen extends StatefulWidget {
@@ -20,10 +20,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _passwordController = TextEditingController();
 
   bool _isLoading = false;
-
   bool _obscurePassword = true;
-
   String? _error;
+  int _failedAttempts = 0;
+  DateTime? _lockedUntil;
 
   @override
   void dispose() {
@@ -33,6 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final lockRemaining = _lockedUntil?.difference(DateTime.now());
+    final isTemporarilyLocked = lockRemaining != null && lockRemaining.inSeconds > 0;
+
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surface,
       body: Center(
@@ -62,9 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text(
                   'Enter your master password',
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.7),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                   ),
                   textAlign: TextAlign.center,
                 ),
@@ -79,9 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     prefixIcon: const Icon(Icons.password),
                     suffixIcon: IconButton(
                       icon: Icon(
-                        _obscurePassword
-                            ? Icons.visibility
-                            : Icons.visibility_off,
+                        _obscurePassword ? Icons.visibility : Icons.visibility_off,
                       ),
                       onPressed: () {
                         setState(() {
@@ -121,7 +120,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ],
                 const SizedBox(height: 24),
                 ElevatedButton(
-                  onPressed: _isLoading ? null : _unlock,
+                  onPressed: (_isLoading || isTemporarilyLocked) ? null : _unlock,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     shape: RoundedRectangleBorder(
@@ -134,9 +133,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text(
-                          'Unlock',
-                          style: TextStyle(
+                      : Text(
+                          isTemporarilyLocked
+                              ? 'Locked (${lockRemaining!.inSeconds}s)'
+                              : 'Unlock',
+                          style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
@@ -146,9 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.primary.withValues(alpha: 0.1),
+                    color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -179,41 +178,54 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _unlock() async {
+    if (_lockedUntil != null && _lockedUntil!.isAfter(DateTime.now())) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _error = null;
     });
+
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final salt = prefs.getString('salt');
-      final verificationData = prefs.getString('verification_data');
+      final salt = await SecurityStorageService.getSalt();
+      final verificationData = await SecurityStorageService.getVerificationData();
       if (salt == null || verificationData == null) {
         throw Exception('Security data not found');
       }
+
       final isValid = await EncryptionService.verifyPassword(
         _passwordController.text,
-        salt!,
-        verificationData!,
+        salt,
+        verificationData,
       );
       if (!isValid) {
         throw Exception('Invalid password');
       }
-      final key = await EncryptionService.deriveKey(
-        _passwordController.text,
-        salt!,
-      );
-      EncryptionService.setSessionKey(key);
+
+      _failedAttempts = 0;
+      _lockedUntil = null;
+
       if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const MainScreen()),
         );
       }
-    } catch (e) {
+    } catch (_) {
+      _failedAttempts += 1;
+      final backoffSeconds = (_failedAttempts * 2).clamp(2, 30);
+      _lockedUntil = DateTime.now().add(Duration(seconds: backoffSeconds));
+
       setState(() {
-        _error = 'Unlock failed: Invalid password';
+        _error = 'Unlock failed. Try again in $backoffSeconds seconds.';
         _isLoading = false;
       });
+      return;
     }
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 }

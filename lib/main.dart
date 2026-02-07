@@ -3,7 +3,6 @@ import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import 'package:zero_trust_tasks/globals/app_state.dart';
-import 'package:zero_trust_tasks/pages/home_page.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/themes.dart';
 import 'package:zero_trust_tasks/components/auth_wrapper.dart';

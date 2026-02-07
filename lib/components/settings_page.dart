@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:provider/provider.dart';
 import 'package:zero_trust_tasks/encryption_service.dart';
+import 'package:zero_trust_tasks/globals/task_manager.dart';
+import 'package:zero_trust_tasks/google_drive_service.dart';
 import 'package:zero_trust_tasks/pages/login_screen.dart';
 
 @NowaGenerated()
@@ -15,36 +18,30 @@ class SettingsPage extends StatelessWidget {
       children: [
         Text(
           'Settings',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 24),
         Card(
           child: Column(
             children: [
+              const ListTile(
+                leading: Icon(Icons.lock),
+                title: Text('Security'),
+                subtitle: Text('AES-256-GCM + PBKDF2 active'),
+              ),
+              const Divider(height: 1),
               ListTile(
-                leading: const Icon(Icons.lock),
-                title: const Text('Security'),
-                subtitle: const Text('AES-256 encryption active'),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Text(
-                    'ACTIVE',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12,
-                    ),
-                  ),
-                ),
+                leading: const Icon(Icons.cloud_upload),
+                title: const Text('Sync backup to Google Drive'),
+                subtitle: const Text('Stores encrypted blob in appDataFolder'),
+                onTap: () => _syncToCloud(context),
+              ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.cloud_download),
+                title: const Text('Restore backup from Google Drive'),
+                subtitle: const Text('Downloads latest encrypted backup'),
+                onTap: () => _restoreFromCloud(context),
               ),
               const Divider(height: 1),
               ListTile(
@@ -55,9 +52,7 @@ class SettingsPage extends StatelessWidget {
                   EncryptionService.clearSessionKey();
                   Navigator.pushAndRemoveUntil(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const LoginScreen(),
-                    ),
+                    MaterialPageRoute(builder: (context) => const LoginScreen()),
                     (route) => false,
                   );
                 },
@@ -68,9 +63,7 @@ class SettingsPage extends StatelessWidget {
         const SizedBox(height: 24),
         Text(
           'About',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+          style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 16),
         Card(
@@ -81,34 +74,25 @@ class SettingsPage extends StatelessWidget {
               children: [
                 Text(
                   'Zero-Trust Task Manager',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'Version 1.0.0',
+                  'Version 1.1.0',
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(
-                      context,
-                    ).colorScheme.onSurface.withValues(alpha: 0.6),
+                    color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6),
                   ),
                 ),
                 const SizedBox(height: 16),
                 Text(
                   'Security Features:',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 8),
-                _buildFeatureItem(context, 'AES-256-GCM encryption'),
-                _buildFeatureItem(
-                  context,
-                  'PBKDF2 key derivation (100,000 iterations)',
-                ),
-                _buildFeatureItem(context, 'Zero-knowledge architecture'),
-                _buildFeatureItem(context, 'Client-side encryption'),
+                _buildFeatureItem(context, 'AES-256-GCM authenticated encryption'),
+                _buildFeatureItem(context, 'PBKDF2-HMAC-SHA256 key derivation'),
+                _buildFeatureItem(context, 'Secure enclave/keystore secret storage'),
+                _buildFeatureItem(context, 'Client-side encrypted cloud backups'),
                 _buildFeatureItem(context, 'No password storage'),
               ],
             ),
@@ -116,6 +100,34 @@ class SettingsPage extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Future<void> _syncToCloud(BuildContext context) async {
+    try {
+      final encrypted = context.read<TaskManager>().getEncryptedBackupData();
+      await GoogleDriveService.uploadEncryptedBackup(encrypted);
+      _showSnack(context, 'Encrypted backup synced to Google Drive.');
+    } catch (e) {
+      _showSnack(context, 'Sync failed: $e');
+    }
+  }
+
+  Future<void> _restoreFromCloud(BuildContext context) async {
+    try {
+      final encrypted = await GoogleDriveService.downloadEncryptedBackup();
+      if (encrypted == null || encrypted.isEmpty) {
+        _showSnack(context, 'No backup found in Google Drive app data.');
+        return;
+      }
+      await context.read<TaskManager>().restoreFromBackup(encrypted);
+      _showSnack(context, 'Backup restored from Google Drive.');
+    } catch (e) {
+      _showSnack(context, 'Restore failed: $e');
+    }
+  }
+
+  void _showSnack(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Widget _buildFeatureItem(BuildContext context, String text) {

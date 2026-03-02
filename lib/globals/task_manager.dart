@@ -233,4 +233,12 @@ class TaskManager extends ChangeNotifier {
       rethrow;
     }
   }
+
+  Future<void> clearAllTasks() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('encrypted_tasks');
+    _tasks = [];
+    _error = null;
+    notifyListeners();
+  }
 }

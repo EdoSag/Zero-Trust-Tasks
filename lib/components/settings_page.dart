@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:zero_trust_tasks/backup_file_helper.dart';
 import 'package:zero_trust_tasks/core/repositories/local_security_repository.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
 import 'package:zero_trust_tasks/core/services/vault_auth_service.dart';
-import 'package:zero_trust_tasks/encryption_service.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/pages/onboarding_screen.dart';
 
@@ -19,6 +17,8 @@ class SettingsPage extends StatefulWidget {
   }
 }
 
+enum _DeleteDataScope { cloud, local, all }
+
 @NowaGenerated()
 class _SettingsPageState extends State<SettingsPage> {
   bool _isLoading = false;
@@ -29,419 +29,333 @@ class _SettingsPageState extends State<SettingsPage> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = SupabaseService.instance.currentUser?.id ?? 'No active user';
+    final theme = Theme.of(context);
+    final user = SupabaseService.instance.currentUser;
+    final email = (user?.email != null && user!.email!.isNotEmpty)
+        ? user.email!
+        : 'No active user';
 
     return ListView(
-      padding: const EdgeInsets.all(16.0),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         Text(
-          'Settings',
-          style: Theme.of(
-            context,
-          ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 24.0),
-        Text(
-          'Backup & Sync',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16.0),
-        Card(
-          child: Column(
-            children: [
-              if (_isLoading) const LinearProgressIndicator(),
-              ListTile(
-                leading: const Icon(Icons.file_download),
-                title: const Text('Export to File'),
-                subtitle: const Text('Save encrypted backup to device'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleExportToFile,
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: const Icon(Icons.file_upload),
-                title: const Text('Import from File'),
-                subtitle: const Text('Restore from local backup'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleImportFromFile,
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: Icon(
-                  Icons.cloud_upload,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Sync to Google Drive'),
-                subtitle: const Text('Backup to your private Google Drive'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleExportToCloud,
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: Icon(
-                  Icons.cloud_download,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Restore from Google Drive'),
-                subtitle: const Text('Download backup from Google Drive'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleImportFromCloud,
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: Icon(
-                  Icons.cloud_sync,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Sync to Supabase Tasks'),
-                subtitle:
-                    const Text('Upsert encrypted JSON blob in encrypted_tasks'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleSyncToSupabaseVault,
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: Icon(
-                  Icons.cloud_done,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                title: const Text('Restore from Supabase Tasks'),
-                subtitle:
-                    const Text('Pull encrypted JSON blob and restore locally'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _isLoading ? null : _handleRestoreFromSupabaseVault,
-              ),
-            ],
+          'Profile',
+          style: theme.textTheme.headlineMedium?.copyWith(
+            fontWeight: FontWeight.w700,
           ),
+        ),
+        const SizedBox(height: 20),
+        _buildAccountCard(theme, email),
+        const SizedBox(height: 20),
+        if (_isLoading) ...[
+          const LinearProgressIndicator(),
+          const SizedBox(height: 12),
+        ],
+        _buildPrimaryButton(
+          context: context,
+          icon: Icons.cloud_upload_outlined,
+          label: 'Sync To Cloud',
+          onPressed: _isLoading ? null : _handleSyncToSupabaseVault,
+        ),
+        const SizedBox(height: 14),
+        _buildSecondaryButton(
+          context: context,
+          icon: Icons.cloud_download_outlined,
+          label: 'Pull From Cloud',
+          onPressed: _isLoading ? null : _handleRestoreFromSupabaseVault,
+        ),
+        const SizedBox(height: 14),
+        _buildOutlinedButton(
+          context: context,
+          icon: Icons.delete_outline,
+          label: 'Delete Data',
+          onPressed: _isLoading ? null : _showDeleteDataDialog,
+        ),
+        const SizedBox(height: 18),
+        _buildDangerButton(
+          context: context,
+          icon: Icons.logout,
+          label: 'Sign Out',
+          onPressed: _isLoading ? null : _handleSignOut,
         ),
         if (_message != null) ...[
-          const SizedBox(height: 16.0),
-          Card(
-            color: _message!.contains('WARNING') || _message!.contains('failed')
-                ? Colors.red.withValues(alpha: 0.1)
-                : Colors.green.withValues(alpha: 0.1),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Text(
-                _message!,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: _message!.contains('WARNING') ||
-                              _message!.contains('failed')
-                          ? Colors.red
-                          : Colors.green,
-                    ),
-              ),
-            ),
-          ),
+          const SizedBox(height: 16),
+          _buildMessageCard(context),
         ],
-        const SizedBox(height: 24.0),
-        Text(
-          'Account',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16.0),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.person_outline),
-                title: const Text('Signed-in User ID'),
-                subtitle: Text(userId),
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Sign Out'),
-                subtitle: const Text(
-                  'Sign out from Supabase and return to onboarding',
-                ),
-                onTap: _isLoading ? null : _handleSignOut,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24.0),
-        Text(
-          'Security',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16.0),
-        Card(
-          child: Column(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.lock),
-                title: const Text('Security'),
-                subtitle: const Text('AES-256 encryption active'),
-                trailing: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12.0,
-                    vertical: 6.0,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(12.0),
-                  ),
-                  child: const Text(
-                    'ACTIVE',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 12.0,
-                    ),
-                  ),
-                ),
-              ),
-              const Divider(height: 1.0),
-              ListTile(
-                leading: const Icon(Icons.key_off),
-                title: const Text('Clear Session Key'),
-                subtitle: const Text('Clear in-memory key without sign out'),
-                onTap: _isLoading ? null : _clearSessionKey,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24.0),
-        Text(
-          'About',
-          style: Theme.of(
-            context,
-          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 16.0),
-        Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Zero-Trust Task Manager',
-                  style: Theme.of(
-                    context,
-                  )
-                      .textTheme
-                      .titleMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8.0),
-                Text(
-                  'Version 1.0.0',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.6),
-                      ),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Security Features:',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8.0),
-                _buildFeatureItem(context, 'AES-256-GCM encryption'),
-                _buildFeatureItem(
-                  context,
-                  'PBKDF2 key derivation (600,000 iterations)',
-                ),
-                _buildFeatureItem(context, 'Zero-knowledge architecture'),
-                _buildFeatureItem(context, 'Client-side encryption'),
-                _buildFeatureItem(context, 'No password storage'),
-                _buildFeatureItem(context, 'End-to-end encrypted backups'),
-              ],
-            ),
-          ),
-        ),
       ],
     );
   }
 
-  Widget _buildFeatureItem(BuildContext context, String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 4.0),
+  Widget _buildAccountCard(ThemeData theme, String email) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          Icon(
-            Icons.check_circle,
-            size: 16.0,
-            color: Theme.of(context).colorScheme.primary,
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary.withValues(alpha: 0.15),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.person_outline,
+              color: theme.colorScheme.primary,
+              size: 30,
+            ),
           ),
-          const SizedBox(width: 8.0),
+          const SizedBox(width: 16),
           Expanded(
-            child: Text(text, style: Theme.of(context).textTheme.bodySmall),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Account',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  email,
+                  style: theme.textTheme.bodyLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  void _clearSessionKey() {
-    EncryptionService.clearSessionKey();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Session key cleared from memory')),
+  Widget _buildMessageCard(BuildContext context) {
+    final isError = _message!.contains('failed') ||
+        _message!.contains('Error') ||
+        _message!.contains('No ');
+    final color = isError ? Colors.red : Colors.green;
+    return Card(
+      color: color.withValues(alpha: 0.1),
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Text(
+          _message!,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
+        ),
+      ),
     );
   }
 
-  Future<void> _handleExportToFile() async {
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-    try {
-      final taskManager = TaskManager.of(context);
-      await BackupFileHelper.exportToFile(taskManager);
-      if (mounted) {
-        setState(() {
-          _message = 'Tasks exported successfully!';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tasks exported successfully to device storage'),
-            backgroundColor: Colors.green,
+  Widget _buildPrimaryButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final primary = Theme.of(context).colorScheme.primary;
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22),
+        label: Text(
+          label,
+          style:
+              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: primary,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _message = 'Export failed: ${e.toString()}';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Export failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleImportFromFile() async {
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-    try {
-      final taskManager = TaskManager.of(context);
-      await BackupFileHelper.importFromFile(taskManager);
-      if (mounted) {
-        setState(() {
-          _message = 'Tasks imported successfully!';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tasks imported successfully from file'),
-            backgroundColor: Colors.green,
+  Widget _buildSecondaryButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22),
+        label: Text(
+          label,
+          style:
+              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.22),
+          foregroundColor: theme.colorScheme.onSurface,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _message = e.toString();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Import failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleExportToCloud() async {
-    setState(() {
-      _isLoading = true;
-      _message = null;
-    });
-    try {
-      final taskManager = TaskManager.of(context);
-      await BackupFileHelper.exportToCloud(taskManager);
-      if (mounted) {
-        setState(() {
-          _message = 'Tasks synced to Google Drive!';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tasks synced to Google Drive successfully'),
-            backgroundColor: Colors.green,
+  Widget _buildOutlinedButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    final theme = Theme.of(context);
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: OutlinedButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22),
+        label: Text(
+          label,
+          style:
+              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
+        ),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: theme.colorScheme.primary,
+          side: BorderSide(color: theme.colorScheme.outline, width: 1.4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
           ),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _message = 'Cloud sync failed: ${e.toString()}';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Cloud sync failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+        ),
+      ),
+    );
   }
 
-  Future<void> _handleImportFromCloud() async {
+  Widget _buildDangerButton({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback? onPressed,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 58,
+      child: FilledButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 22),
+        label: Text(
+          label,
+          style:
+              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
+        ),
+        style: FilledButton.styleFrom(
+          backgroundColor: Colors.red.shade700,
+          foregroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(999),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _showDeleteDataDialog() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete data'),
+          content: const Text(
+            'Choose what to delete: cloud data, local data, or all data.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _deleteData(_DeleteDataScope.cloud);
+              },
+              child: const Text('Cloud data'),
+            ),
+            TextButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _deleteData(_DeleteDataScope.local);
+              },
+              child: const Text('Local data'),
+            ),
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(dialogContext).pop();
+                await _deleteData(_DeleteDataScope.all);
+              },
+              child: const Text('All data'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _deleteData(_DeleteDataScope scope) async {
     setState(() {
       _isLoading = true;
       _message = null;
     });
+
     try {
       final taskManager = TaskManager.of(context);
-      await BackupFileHelper.importFromCloud(taskManager);
-      if (mounted) {
-        setState(() {
-          _message = 'Tasks restored from Google Drive!';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Tasks restored from Google Drive successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+
+      if (scope == _DeleteDataScope.cloud || scope == _DeleteDataScope.all) {
+        await SupabaseService.instance.deleteEncryptedTasksDataForCurrentUser();
       }
+
+      if (scope == _DeleteDataScope.local || scope == _DeleteDataScope.all) {
+        await taskManager.clearAllTasks();
+        await _localSecurityRepository.clearCloudVaultBlob();
+      }
+
+      if (!mounted) {
+        return;
+      }
+
+      final status = switch (scope) {
+        _DeleteDataScope.cloud => 'Cloud data deleted.',
+        _DeleteDataScope.local => 'Local data deleted.',
+        _DeleteDataScope.all => 'Cloud and local data deleted.',
+      };
+
+      setState(() {
+        _message = status;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(status), backgroundColor: Colors.green),
+      );
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _message = e.toString();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Cloud restore failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+      if (!mounted) {
+        return;
       }
+      setState(() {
+        _message = 'Delete failed: $e';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+            content: Text('Delete failed: $e'), backgroundColor: Colors.red),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -464,11 +378,11 @@ class _SettingsPageState extends State<SettingsPage> {
       );
       if (mounted) {
         setState(() {
-          _message = 'Encrypted tasks synced to Supabase.';
+          _message = 'Cloud sync completed.';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Encrypted tasks synced to Supabase'),
+            content: Text('Cloud sync completed'),
             backgroundColor: Colors.green,
           ),
         );
@@ -476,11 +390,11 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _message = 'Supabase sync failed: $e';
+          _message = 'Cloud sync failed: $e';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Supabase sync failed: $e'),
+            content: Text('Cloud sync failed: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -511,11 +425,11 @@ class _SettingsPageState extends State<SettingsPage> {
 
       if (mounted) {
         setState(() {
-          _message = 'Encrypted tasks restored from Supabase.';
+          _message = 'Cloud pull completed.';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Encrypted tasks restored from Supabase'),
+            content: Text('Cloud pull completed'),
             backgroundColor: Colors.green,
           ),
         );
@@ -523,11 +437,11 @@ class _SettingsPageState extends State<SettingsPage> {
     } catch (e) {
       if (mounted) {
         setState(() {
-          _message = 'Supabase restore failed: $e';
+          _message = 'Cloud pull failed: $e';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Supabase restore failed: $e'),
+            content: Text('Cloud pull failed: $e'),
             backgroundColor: Colors.red,
           ),
         );

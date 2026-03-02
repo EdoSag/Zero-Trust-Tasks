@@ -106,6 +106,10 @@ class LocalSecurityRepository {
     return _secureStorage.read(key: SecurityConstants.secureCloudVaultBlob);
   }
 
+  Future<void> clearCloudVaultBlob() async {
+    await _secureStorage.delete(key: SecurityConstants.secureCloudVaultBlob);
+  }
+
   Future<void> clearVaultInitialization() async {
     await _secureStorage.delete(key: SecurityConstants.secureEncryptedDbKey);
     await _secureStorage.delete(key: SecurityConstants.secureVerificationData);

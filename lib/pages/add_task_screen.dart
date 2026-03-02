@@ -41,11 +41,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     if (widget.taskToEdit != null) {
       final task = widget.taskToEdit;
       _titleController.text = task!.title;
-      _descriptionController.text = task?.description ?? '';
-      _categoryController.text = task?.category ?? '';
-      _selectedPriority = task!.priority;
-      _dueDate = task?.dueDate;
-      _subTasks.addAll(task!.subTasks);
+      _descriptionController.text = task.description ?? '';
+      _categoryController.text = task.category ?? '';
+      _selectedPriority = task.priority;
+      _dueDate = task.dueDate;
+      _subTasks.addAll(task.subTasks);
     }
   }
 
@@ -160,7 +160,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 prefixIcon: Icon(Icons.title),
               ),
               validator: (value) {
-                if (value == null || value!.trim().isEmpty) {
+                if (value == null || value.trim().isEmpty) {
                   return 'Title is required';
                 }
                 return null;
@@ -187,7 +187,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<TaskPriority>(
-              value: _selectedPriority,
+              initialValue: _selectedPriority,
               decoration: const InputDecoration(
                 labelText: 'Priority',
                 border: OutlineInputBorder(),
@@ -217,7 +217,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               onChanged: (value) {
                 if (value != null) {
                   setState(() {
-                    _selectedPriority = value!;
+                    _selectedPriority = value;
                   });
                 }
               },

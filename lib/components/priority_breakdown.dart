@@ -40,7 +40,7 @@ class PriorityBreakdown extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '${count}',
+                    '$count',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                       color: priority.getColor(context),

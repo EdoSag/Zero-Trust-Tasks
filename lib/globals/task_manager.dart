@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/encryption_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:provider/provider.dart';
 
 @NowaGenerated()
@@ -51,18 +51,14 @@ class TaskManager extends ChangeNotifier {
 
   Map<TaskPriority, int> get tasksByPriorityCount {
     return {
-      TaskPriority.critical: _tasks
-          .where((t) => t.priority == TaskPriority.critical)
-          .length,
-      TaskPriority.high: _tasks
-          .where((t) => t.priority == TaskPriority.high)
-          .length,
-      TaskPriority.medium: _tasks
-          .where((t) => t.priority == TaskPriority.medium)
-          .length,
-      TaskPriority.low: _tasks
-          .where((t) => t.priority == TaskPriority.low)
-          .length,
+      TaskPriority.critical:
+          _tasks.where((t) => t.priority == TaskPriority.critical).length,
+      TaskPriority.high:
+          _tasks.where((t) => t.priority == TaskPriority.high).length,
+      TaskPriority.medium:
+          _tasks.where((t) => t.priority == TaskPriority.medium).length,
+      TaskPriority.low:
+          _tasks.where((t) => t.priority == TaskPriority.low).length,
     };
   }
 
@@ -78,7 +74,7 @@ class TaskManager extends ChangeNotifier {
     try {
       final prefs = await SharedPreferences.getInstance();
       final encryptedData = prefs.getString('encrypted_tasks');
-      if (encryptedData != null && encryptedData!.isNotEmpty) {
+      if (encryptedData != null && encryptedData.isNotEmpty) {
         final decryptedJson = await EncryptionService.decryptData(
           encryptedData,
         );
@@ -90,7 +86,7 @@ class TaskManager extends ChangeNotifier {
       } else {
         _tasks = [];
       }
-    } on SecretBoxAuthenticationError catch (error) {
+    } on Exception {
       _error = 'Invalid password or corrupted data';
       _tasks = [];
     } catch (e) {
@@ -195,7 +191,7 @@ class TaskManager extends ChangeNotifier {
     return _tasks.where((t) => !t.isCompleted).toList();
   }
 
-  List<String> getCategories() {
+  List<String?> getCategories() {
     final categories = _tasks
         .where((t) => t.category != null)
         .map((t) => t.category)
@@ -227,7 +223,7 @@ class TaskManager extends ChangeNotifier {
           .toList();
       notifyListeners();
       await saveTasks();
-    } on SecretBoxAuthenticationError catch (error) {
+    } on Exception {
       _error = 'Invalid password or corrupted backup data';
       notifyListeners();
       rethrow;

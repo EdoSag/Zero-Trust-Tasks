@@ -1,20 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:zero_trust_tasks/models/task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
-import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:intl/intl.dart';
+import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/models/task.dart';
 
-@NowaGenerated({'auto-width': 362, 'auto-height': 815})
-class TaskDetailsScreen extends StatelessWidget {
+@NowaGenerated()
+class TaskDetailsScreen extends StatefulWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
   const TaskDetailsScreen({required this.task, super.key});
 
   final Task task;
 
   @override
+  State<TaskDetailsScreen> createState() {
+    return _TaskDetailsScreenState();
+  }
+}
+
+@NowaGenerated()
+class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
+  @override
   Widget build(BuildContext context) {
+    final taskManager = TaskManager.of(context, listen: true);
+    final currentTask = taskManager.tasks.firstWhere(
+      (t) => t.id == widget.task.id,
+      orElse: () => widget.task,
+    );
     final dateFormat = DateFormat('MMM dd, yyyy');
     return Scaffold(
       appBar: AppBar(
@@ -26,7 +39,7 @@ class TaskDetailsScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => AddTaskScreen(taskToEdit: task),
+                  builder: (context) => AddTaskScreen(taskToEdit: currentTask),
                 ),
               );
             },
@@ -54,7 +67,7 @@ class TaskDetailsScreen extends StatelessWidget {
                 ),
               );
               if (confirm == true && context.mounted) {
-                await TaskManager.of(context).deleteTask(task.id);
+                await TaskManager.of(context).deleteTask(currentTask.id);
                 if (context.mounted) {
                   Navigator.pop(context);
                 }
@@ -64,22 +77,22 @@ class TaskDetailsScreen extends StatelessWidget {
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         children: [
           Row(
             children: [
               Checkbox(
-                value: task.isCompleted,
+                value: currentTask.isCompleted,
                 onChanged: (value) {
-                  TaskManager.of(context).toggleTaskComplete(task.id);
+                  TaskManager.of(context).toggleTaskComplete(currentTask.id);
                 },
               ),
               Expanded(
                 child: Text(
-                  task.title,
+                  currentTask.title,
                   style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    decoration: task.isCompleted
+                    decoration: currentTask.isCompleted
                         ? TextDecoration.lineThrough
                         : null,
                   ),
@@ -87,104 +100,106 @@ class TaskDetailsScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 16.0),
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (task.description != null) ...[
+                  if (currentTask.description != null) ...[
                     Text(
                       'Description',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(task.description!),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 8.0),
+                    Text(currentTask.description!),
+                    const SizedBox(height: 16.0),
                   ],
                   Row(
                     children: [
-                      const Icon(Icons.flag, size: 20),
-                      const SizedBox(width: 8),
+                      const Icon(Icons.flag, size: 20.0),
+                      const SizedBox(width: 8.0),
                       Text(
                         'Priority: ',
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       Container(
                         padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
+                          horizontal: 8.0,
+                          vertical: 4.0,
                         ),
                         decoration: BoxDecoration(
-                          color: task.priority
+                          color: currentTask.priority
                               .getColor(context)
                               .withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(8.0),
                         ),
                         child: Text(
-                          task.priority.displayName,
+                          currentTask.priority.displayName,
                           style: TextStyle(
-                            color: task.priority.getColor(context),
+                            color: currentTask.priority.getColor(context),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
                     ],
                   ),
-                  if (task.category != null) ...[
-                    const SizedBox(height: 12),
+                  if (currentTask.category != null) ...[
+                    const SizedBox(height: 12.0),
                     Row(
                       children: [
-                        const Icon(Icons.label, size: 20),
-                        const SizedBox(width: 8),
+                        const Icon(Icons.label, size: 20.0),
+                        const SizedBox(width: 8.0),
                         Text(
                           'Category: ',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        Text(task.category!),
+                        Text(currentTask.category!),
                       ],
                     ),
                   ],
-                  if (task.dueDate != null) ...[
-                    const SizedBox(height: 12),
+                  if (currentTask.dueDate != null) ...[
+                    const SizedBox(height: 12.0),
                     Row(
                       children: [
                         Icon(
                           Icons.calendar_today,
-                          size: 20,
-                          color: task.isOverdue ? Colors.red : null,
+                          size: 20.0,
+                          color: currentTask.isOverdue ? Colors.red : null,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 8.0),
                         Text(
                           'Due Date: ',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
-                          dateFormat.format(task.dueDate),
+                          dateFormat.format(currentTask.dueDate!),
                           style: TextStyle(
-                            color: task.isOverdue ? Colors.red : null,
-                            fontWeight: task.isOverdue ? FontWeight.bold : null,
+                            color: currentTask.isOverdue ? Colors.red : null,
+                            fontWeight: currentTask.isOverdue
+                                ? FontWeight.bold
+                                : null,
                           ),
                         ),
-                        if (task.isOverdue) ...[
-                          const SizedBox(width: 8),
+                        if (currentTask.isOverdue) ...[
+                          const SizedBox(width: 8.0),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                              horizontal: 6,
-                              vertical: 2,
+                              horizontal: 6.0,
+                              vertical: 2.0,
                             ),
                             decoration: BoxDecoration(
                               color: Colors.red.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(4),
+                              borderRadius: BorderRadius.circular(4.0),
                             ),
                             child: const Text(
                               'OVERDUE',
                               style: TextStyle(
                                 color: Colors.red,
-                                fontSize: 10,
+                                fontSize: 10.0,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -197,24 +212,24 @@ class TaskDetailsScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (task.subTasks.isNotEmpty) ...[
-            const SizedBox(height: 24),
+          if (currentTask.subTasks.isNotEmpty) ...[
+            const SizedBox(height: 24.0),
             Text(
-              'Sub-tasks (${task.completedSubTasksCount}/${task.subTasks.length})',
+              'Sub-tasks (${currentTask.completedSubTasksCount}/${currentTask.subTasks.length})',
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            ...task.subTasks.map(
+            const SizedBox(height: 8.0),
+            ...currentTask.subTasks.map(
               (subTask) => Card(
-                margin: const EdgeInsets.only(bottom: 8),
+                margin: const EdgeInsets.only(bottom: 8.0),
                 child: CheckboxListTile(
                   value: subTask.isCompleted,
                   onChanged: (value) {
                     TaskManager.of(
                       context,
-                    ).toggleSubTaskComplete(task.id, subTask.id);
+                    ).toggleSubTaskComplete(currentTask.id, subTask.id);
                   },
                   title: Text(
                     subTask.title,
@@ -228,20 +243,20 @@ class TaskDetailsScreen extends StatelessWidget {
               ),
             ),
           ],
-          const SizedBox(height: 24),
+          const SizedBox(height: 24.0),
           Card(
             color: Theme.of(context).colorScheme.surfaceContainerHighest,
             child: Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Created: ${dateFormat.format(task.createdAt)}',
+                    'Created: ${dateFormat.format(currentTask.createdAt)}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Text(
-                    'Last updated: ${dateFormat.format(task.updatedAt)}',
+                    'Last updated: ${dateFormat.format(currentTask.updatedAt)}',
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],

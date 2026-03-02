@@ -67,7 +67,7 @@ class _TasksListPageState extends State<TasksListPage> {
                           (category) => Padding(
                             padding: const EdgeInsets.only(right: 8),
                             child: FilterChip(
-                              label: Text(category),
+                              label: Text(category!),
                               selected: _selectedCategory == category,
                               onSelected: (value) {
                                 setState(() {

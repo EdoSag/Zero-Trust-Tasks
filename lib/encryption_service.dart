@@ -1,18 +1,15 @@
 import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:flutter/material.dart';
-import 'dart:math';
+import 'package:cryptography/cryptography.dart';
 import 'dart:convert';
-import 'dart:typed_data';
-import 'package:crypto/crypto.dart';
-import 'package:pointycastle/pointycastle.dart';
+import 'package:zero_trust_tasks/core/security/base64_url_helper.dart';
+import 'package:zero_trust_tasks/core/security/security_constants.dart';
+import 'package:zero_trust_tasks/core/services/key_derivation_service.dart';
 
 @NowaGenerated()
 class EncryptionService {
   EncryptionService._();
 
   static SecretKey? _sessionKey;
-
-  static final _random = Random.secure();
 
   static final _aesGcm = AesGcm.with256bits();
 
@@ -21,29 +18,27 @@ class EncryptionService {
   }
 
   /// Derives a secure key from password using PBKDF2-HMAC-SHA256
-  /// with 100,000 iterations for resistance against brute-force attacks
+  /// with 600,000 iterations and 256-bit output.
   static Future<SecretKey> deriveKey(
     String masterPassword,
-    String saltBase64,
+    String saltBase64Url,
   ) async {
-    final saltBytes = base64.decode(saltBase64);
-    final passwordBytes = utf8.encode(masterPassword);
-    final pbkdf2 = Pbkdf2(
-      macAlgorithm: Hmac.sha256(),
-      iterations: 100000,
-      bits: 256,
+    final saltBytes = Base64UrlHelper.decode(saltBase64Url);
+    if (saltBytes.length != SecurityConstants.pbkdf2SaltLength) {
+      throw StateError(
+        'Salt must be exactly ${SecurityConstants.pbkdf2SaltLength} bytes.',
+      );
+    }
+    return KeyDerivationService.deriveKey(
+      password: masterPassword,
+      salt: saltBytes,
     );
-    final derivedKey = await pbkdf2.deriveKey(
-      secretKey: SecretKey(passwordBytes),
-      nonce: saltBytes,
-    );
-    return derivedKey;
   }
 
-  /// Generates a cryptographically secure random salt (32 bytes)
+  /// Generates a cryptographically secure random salt (16 bytes, base64url).
   static String generateSalt() {
-    final saltBytes = List<int>.generate(32, (_) => _random.nextInt(256));
-    return base64.encode(saltBytes);
+    final saltBytes = KeyDerivationService.generateSalt();
+    return Base64UrlHelper.encode(saltBytes);
   }
 
   /// Sets the session key in memory (never persisted to disk)
@@ -67,7 +62,7 @@ class EncryptionService {
     final plaintextBytes = utf8.encode(plaintext);
     final secretBox = await _aesGcm.encrypt(
       plaintextBytes,
-      secretKey: _sessionKey,
+      secretKey: _sessionKey!,
     );
     final result = {
       'nonce': base64.encode(secretBox.nonce),
@@ -86,19 +81,18 @@ class EncryptionService {
       );
     }
     try {
-      final decoded =
-          jsonDecode(utf8.decode(base64.decode(encryptedData)))
-              as Map<String, dynamic>;
+      final decoded = jsonDecode(utf8.decode(base64.decode(encryptedData)))
+          as Map<String, dynamic>;
       final nonce = base64.decode(decoded['nonce'] as String);
       final ciphertext = base64.decode(decoded['ciphertext'] as String);
       final mac = base64.decode(decoded['mac'] as String);
       final secretBox = SecretBox(ciphertext, nonce: nonce, mac: Mac(mac));
       final plaintextBytes = await _aesGcm.decrypt(
         secretBox,
-        secretKey: _sessionKey,
+        secretKey: _sessionKey!,
       );
       return utf8.decode(plaintextBytes);
-    } on SecretBoxAuthenticationError catch (error) {
+    } on SecretBoxAuthenticationError {
       throw Exception('Invalid password or corrupted data');
     }
   }
@@ -114,7 +108,7 @@ class EncryptionService {
       setSessionKey(key);
       final decrypted = await decryptData(verificationData);
       return decrypted == 'VERIFIED';
-    } on SecretBoxAuthenticationError catch (error) {
+    } on SecretBoxAuthenticationError {
       clearSessionKey();
       return false;
     } catch (e) {

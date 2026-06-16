@@ -6,6 +6,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:zero_trust_tasks/core/config/env_config.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/app_state.dart';
+import 'package:zero_trust_tasks/globals/settings_provider.dart';
+import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/themes.dart';
 import 'package:zero_trust_tasks/components/auth_wrapper.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
@@ -44,22 +46,28 @@ class MyApp extends StatelessWidget {
     return ChangeNotifierProvider<TaskManager>(
       create: (context) => TaskManager(),
       child: ChangeNotifierProvider<AppState>(
-        create: (context) => AppState(),
-        builder: (context, child) => MaterialApp(
-          title: 'Zero-Trust Tasks',
-          theme: lightTheme,
-          darkTheme: darkTheme,
-          themeMode: ThemeMode.dark,
-          debugShowCheckedModeBanner: false,
-          home: const AuthWrapper(),
-          routes: {
-            'AddTaskScreen': (context) => const AddTaskScreen(),
-            'LoginScreen': (context) => const LoginScreen(),
-            'MainScreen': (context) => const MainScreen(),
-            'OnboardingScreen': (context) => const OnboardingScreen(),
-            'SetupScreen': (context) => const SetupScreen(),
-            'TasksListPage': (context) => const TasksListPage(),
-          },
+        create: (context) => AppState(sharedPrefs),
+        child: ChangeNotifierProvider<SettingsProvider>(
+          create: (context) => SettingsProvider(sharedPrefs),
+          child: ChangeNotifierProvider<SyncProvider>(
+            create: (context) => SyncProvider(sharedPrefs),
+            builder: (context, child) => MaterialApp(
+              title: 'Zero-Trust Tasks',
+              theme: lightTheme,
+              darkTheme: darkTheme,
+              themeMode: context.watch<AppState>().themeMode,
+              debugShowCheckedModeBanner: false,
+              home: const AuthWrapper(),
+              routes: {
+                'AddTaskScreen': (context) => const AddTaskScreen(),
+                'LoginScreen': (context) => const LoginScreen(),
+                'MainScreen': (context) => const MainScreen(),
+                'OnboardingScreen': (context) => const OnboardingScreen(),
+                'SetupScreen': (context) => const SetupScreen(),
+                'TasksListPage': (context) => const TasksListPage(),
+              },
+            ),
+          ),
         ),
       ),
     );

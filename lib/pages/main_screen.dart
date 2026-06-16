@@ -3,8 +3,10 @@ import 'package:cryptography/cryptography.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/core/repositories/local_security_repository.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
+import 'package:zero_trust_tasks/globals/settings_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/components/dashboard_page.dart';
+import 'package:zero_trust_tasks/components/encryption_info_sheet.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 import 'package:zero_trust_tasks/components/settings_page.dart';
 import 'package:zero_trust_tasks/encryption_service.dart';
@@ -23,13 +25,29 @@ class MainScreen extends StatefulWidget {
 
 @NowaGenerated()
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 0;
+  late int _selectedIndex;
   final _localSecurityRepository = LocalSecurityRepository();
 
   @override
   void initState() {
     super.initState();
+    _selectedIndex = SettingsProvider.of(context, listen: false).lastSelectedTab;
     _guardAndLoad();
+  }
+
+  void _onDestinationSelected(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    SettingsProvider.of(context, listen: false).setLastSelectedTab(index);
+  }
+
+  void _showEncryptionInfo() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (context) => const EncryptionInfoSheet(),
+    );
   }
 
   @override
@@ -43,30 +61,40 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text('Zero-Trust Tasks'),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.verified_user,
-                  size: 16,
-                  color: Theme.of(context).colorScheme.primary,
+          InkWell(
+            onTap: _showEncryptionInfo,
+            borderRadius: BorderRadius.circular(20),
+            child: Tooltip(
+              message: 'Encryption details',
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  'Encryption: Active',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.primary,
-                        fontWeight: FontWeight.bold,
-                      ),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.verified_user,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.primary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      'Encryption: Active',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],
@@ -74,11 +102,7 @@ class _MainScreenState extends State<MainScreen> {
       body: pages[_selectedIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _selectedIndex = index;
-          });
-        },
+        onDestinationSelected: _onDestinationSelected,
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),

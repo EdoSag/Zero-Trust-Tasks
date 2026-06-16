@@ -1,5 +1,3 @@
-import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
@@ -15,5 +13,10 @@ extension TaskPriorityExtension on TaskPriority {
   @NowaGenerated()
   Color getColor(BuildContext context) {
     return TaskPriorityHelper.getColor(this, context);
+  }
+
+  @NowaGenerated()
+  IconData get icon {
+    return TaskPriorityHelper.getIcon(this);
   }
 }

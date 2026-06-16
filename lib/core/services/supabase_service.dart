@@ -136,6 +136,27 @@ class SupabaseService {
     return (rows.first as Map<String, dynamic>)['data_blob'] as String?;
   }
 
+  Future<DateTime?> fetchEncryptedTasksMetadataForCurrentUser() async {
+    final user = _requireCurrentUser();
+    final response = await _client
+        .from(_encryptedTasksTable)
+        .select('updated_at')
+        .eq('user_id', user.id)
+        .order('updated_at', ascending: false)
+        .order('id', ascending: false)
+        .limit(1);
+
+    final rows = response as List<dynamic>;
+    if (rows.isEmpty) {
+      return null;
+    }
+    final updatedAt = (rows.first as Map<String, dynamic>)['updated_at'] as String?;
+    if (updatedAt == null) {
+      return null;
+    }
+    return DateTime.parse(updatedAt);
+  }
+
   Future<void> deleteEncryptedTasksDataForCurrentUser() async {
     final user = _requireCurrentUser();
     await _client.from(_encryptedTasksTable).delete().eq('user_id', user.id);

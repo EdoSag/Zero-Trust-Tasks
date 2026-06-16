@@ -27,4 +27,18 @@ class TaskPriorityHelper {
       return Colors.green;
     }
   }
+
+  /// Icon used to distinguish priority levels without relying on color
+  /// alone (accessibility for color-blind users).
+  static IconData getIcon(TaskPriority priority) {
+    if (priority == TaskPriority.critical) {
+      return Icons.error;
+    } else if (priority == TaskPriority.high) {
+      return Icons.arrow_upward;
+    } else if (priority == TaskPriority.medium) {
+      return Icons.remove;
+    } else {
+      return Icons.arrow_downward;
+    }
+  }
 }

@@ -21,6 +21,10 @@ class TaskManager extends ChangeNotifier {
 
   String? _error;
 
+  Task? _lastDeletedTask;
+
+  int? _lastDeletedIndex;
+
   List<Task> get tasks {
     return List.unmodifiable(_tasks);
   }
@@ -131,7 +135,28 @@ class TaskManager extends ChangeNotifier {
   }
 
   Future<void> deleteTask(String taskId) async {
-    _tasks.removeWhere((t) => t.id == taskId);
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1) {
+      return;
+    }
+    _lastDeletedTask = _tasks[index];
+    _lastDeletedIndex = index;
+    _tasks.removeAt(index);
+    notifyListeners();
+    await saveTasks();
+  }
+
+  /// Restores the most recently deleted task to its original position.
+  Future<void> undoDelete() async {
+    final task = _lastDeletedTask;
+    final index = _lastDeletedIndex;
+    if (task == null || index == null) {
+      return;
+    }
+    _lastDeletedTask = null;
+    _lastDeletedIndex = null;
+    final insertIndex = index.clamp(0, _tasks.length);
+    _tasks.insert(insertIndex, task);
     notifyListeners();
     await saveTasks();
   }

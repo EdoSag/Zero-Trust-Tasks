@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
+import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 
 @NowaGenerated()
 class TaskDetailsScreen extends StatefulWidget {
@@ -29,12 +31,15 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       orElse: () => widget.task,
     );
     final dateFormat = DateFormat('MMM dd, yyyy');
+    final urgency = TaskUrgencyService.getUrgency(currentTask);
+    final urgencyColor = TaskUrgencyService.getColor(urgency, context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Task Details'),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
+            tooltip: 'Edit task',
             onPressed: () {
               Navigator.push(
                 context,
@@ -46,33 +51,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.delete),
-            onPressed: () async {
-              final confirm = await showDialog<bool>(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('Delete Task'),
-                  content: const Text(
-                    'Are you sure you want to delete this task?',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context, false),
-                      child: const Text('Cancel'),
-                    ),
-                    FilledButton(
-                      onPressed: () => Navigator.pop(context, true),
-                      child: const Text('Delete'),
-                    ),
-                  ],
-                ),
-              );
-              if (confirm == true && context.mounted) {
-                await TaskManager.of(context).deleteTask(currentTask.id);
-                if (context.mounted) {
-                  Navigator.pop(context);
-                }
-              }
-            },
+            tooltip: 'Delete task',
+            onPressed: () => _deleteTask(context, currentTask),
           ),
         ],
       ),
@@ -81,11 +61,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         children: [
           Row(
             children: [
-              Checkbox(
-                value: currentTask.isCompleted,
-                onChanged: (value) {
-                  TaskManager.of(context).toggleTaskComplete(currentTask.id);
-                },
+              Semantics(
+                label: currentTask.isCompleted
+                    ? 'Mark "${currentTask.title}" as not completed'
+                    : 'Mark "${currentTask.title}" as completed',
+                child: Checkbox(
+                  value: currentTask.isCompleted,
+                  onChanged: (value) => _toggleComplete(context, currentTask),
+                ),
               ),
               Expanded(
                 child: Text(
@@ -137,12 +120,23 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               .withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(8.0),
                         ),
-                        child: Text(
-                          currentTask.priority.displayName,
-                          style: TextStyle(
-                            color: currentTask.priority.getColor(context),
-                            fontWeight: FontWeight.bold,
-                          ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              currentTask.priority.icon,
+                              size: 14.0,
+                              color: currentTask.priority.getColor(context),
+                            ),
+                            const SizedBox(width: 4.0),
+                            Text(
+                              currentTask.priority.displayName,
+                              style: TextStyle(
+                                color: currentTask.priority.getColor(context),
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -166,9 +160,12 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                     Row(
                       children: [
                         Icon(
-                          Icons.calendar_today,
+                          TaskUrgencyService.getIcon(urgency),
                           size: 20.0,
-                          color: currentTask.isOverdue ? Colors.red : null,
+                          color: urgency == TaskUrgency.normal ||
+                                  urgency == TaskUrgency.none
+                              ? null
+                              : urgencyColor,
                         ),
                         const SizedBox(width: 8.0),
                         Text(
@@ -178,13 +175,16 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         Text(
                           dateFormat.format(currentTask.dueDate!),
                           style: TextStyle(
-                            color: currentTask.isOverdue ? Colors.red : null,
+                            color: urgency == TaskUrgency.normal ||
+                                    urgency == TaskUrgency.none
+                                ? null
+                                : urgencyColor,
                             fontWeight: currentTask.isOverdue
                                 ? FontWeight.bold
                                 : null,
                           ),
                         ),
-                        if (currentTask.isOverdue) ...[
+                        if (TaskUrgencyService.getLabel(urgency).isNotEmpty) ...[
                           const SizedBox(width: 8.0),
                           Container(
                             padding: const EdgeInsets.symmetric(
@@ -192,13 +192,13 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                               vertical: 2.0,
                             ),
                             decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.2),
+                              color: urgencyColor.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(4.0),
                             ),
-                            child: const Text(
-                              'OVERDUE',
+                            child: Text(
+                              TaskUrgencyService.getLabel(urgency).toUpperCase(),
                               style: TextStyle(
-                                color: Colors.red,
+                                color: urgencyColor,
                                 fontSize: 10.0,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -264,6 +264,68 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _toggleComplete(BuildContext context, Task task) async {
+    final taskManager = TaskManager.of(context);
+    final wasCompleted = task.isCompleted;
+    try {
+      await taskManager.toggleTaskComplete(task.id);
+    } catch (e) {
+      if (context.mounted) {
+        SnackbarHelper.showError(
+          context,
+          'Failed to update task: ${e.toString()}',
+          onRetry: () => _toggleComplete(context, task),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(wasCompleted ? 'Task marked incomplete' : 'Task completed'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            taskManager.toggleTaskComplete(task.id);
+          },
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteTask(BuildContext context, Task task) async {
+    final taskManager = TaskManager.of(context);
+    try {
+      await taskManager.deleteTask(task.id);
+    } catch (e) {
+      if (context.mounted) {
+        SnackbarHelper.showError(
+          context,
+          'Failed to delete task: ${e.toString()}',
+          onRetry: () => _deleteTask(context, task),
+        );
+      }
+      return;
+    }
+    if (!context.mounted) {
+      return;
+    }
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Task deleted'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            taskManager.undoDelete();
+          },
+        ),
       ),
     );
   }

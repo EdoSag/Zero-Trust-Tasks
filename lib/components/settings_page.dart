@@ -1,8 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:zero_trust_tasks/components/confirmation_dialog.dart';
+import 'package:zero_trust_tasks/components/settings/account_section.dart';
+import 'package:zero_trust_tasks/components/settings/appearance_section.dart';
+import 'package:zero_trust_tasks/components/settings/backup_section.dart';
+import 'package:zero_trust_tasks/components/settings/danger_zone_section.dart';
+import 'package:zero_trust_tasks/components/settings/security_section.dart';
 import 'package:zero_trust_tasks/core/repositories/local_security_repository.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
 import 'package:zero_trust_tasks/core/services/vault_auth_service.dart';
+import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/pages/onboarding_screen.dart';
 
@@ -28,6 +35,12 @@ class _SettingsPageState extends State<SettingsPage> {
   final _localSecurityRepository = LocalSecurityRepository();
 
   @override
+  void initState() {
+    super.initState();
+    SyncProvider.of(context, listen: false).checkRemoteStatus();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final user = SupabaseService.instance.currentUser;
@@ -39,105 +52,41 @@ class _SettingsPageState extends State<SettingsPage> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       children: [
         Text(
-          'Profile',
+          'Settings',
           style: theme.textTheme.headlineMedium?.copyWith(
             fontWeight: FontWeight.w700,
           ),
         ),
         const SizedBox(height: 20),
-        _buildAccountCard(theme, email),
-        const SizedBox(height: 20),
         if (_isLoading) ...[
           const LinearProgressIndicator(),
           const SizedBox(height: 12),
         ],
-        _buildPrimaryButton(
-          context: context,
-          icon: Icons.cloud_upload_outlined,
-          label: 'Sync To Cloud',
-          onPressed: _isLoading ? null : _handleSyncToSupabaseVault,
+        AccountSection(
+          email: email,
+          isLoading: _isLoading,
+          onSignOut: _handleSignOut,
         ),
-        const SizedBox(height: 14),
-        _buildSecondaryButton(
-          context: context,
-          icon: Icons.cloud_download_outlined,
-          label: 'Pull From Cloud',
-          onPressed: _isLoading ? null : _handleRestoreFromSupabaseVault,
+        const SizedBox(height: 16),
+        const SecuritySection(),
+        const SizedBox(height: 16),
+        BackupSection(
+          isLoading: _isLoading,
+          onBackup: _handleBackupToCloud,
+          onRestore: _handleRestoreFromCloud,
         ),
-        const SizedBox(height: 14),
-        _buildOutlinedButton(
-          context: context,
-          icon: Icons.delete_outline,
-          label: 'Delete Data',
-          onPressed: _isLoading ? null : _showDeleteDataDialog,
-        ),
-        const SizedBox(height: 18),
-        _buildDangerButton(
-          context: context,
-          icon: Icons.logout,
-          label: 'Sign Out',
-          onPressed: _isLoading ? null : _handleSignOut,
+        const SizedBox(height: 16),
+        const AppearanceSection(),
+        const SizedBox(height: 16),
+        DangerZoneSection(
+          isLoading: _isLoading,
+          onDeleteData: _showDeleteDataDialog,
         ),
         if (_message != null) ...[
           const SizedBox(height: 16),
           _buildMessageCard(context),
         ],
       ],
-    );
-  }
-
-  Widget _buildAccountCard(ThemeData theme, String email) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: theme.colorScheme.primary.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.person_outline,
-              color: theme.colorScheme.primary,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Account',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  email,
-                  style: theme.textTheme.bodyLarge,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -153,121 +102,6 @@ class _SettingsPageState extends State<SettingsPage> {
         child: Text(
           _message!,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: color),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPrimaryButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onPressed,
-  }) {
-    final primary = Theme.of(context).colorScheme.primary;
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style:
-              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
-        ),
-        style: FilledButton.styleFrom(
-          backgroundColor: primary,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSecondaryButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onPressed,
-  }) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style:
-              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
-        ),
-        style: FilledButton.styleFrom(
-          backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.22),
-          foregroundColor: theme.colorScheme.onSurface,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildOutlinedButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onPressed,
-  }) {
-    final theme = Theme.of(context);
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: OutlinedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style:
-              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
-        ),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: theme.colorScheme.primary,
-          side: BorderSide(color: theme.colorScheme.outline, width: 1.4),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildDangerButton({
-    required BuildContext context,
-    required IconData icon,
-    required String label,
-    required VoidCallback? onPressed,
-  }) {
-    return SizedBox(
-      width: double.infinity,
-      height: 58,
-      child: FilledButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, size: 22),
-        label: Text(
-          label,
-          style:
-              const TextStyle(fontSize: 30 / 1.6, fontWeight: FontWeight.w700),
-        ),
-        style: FilledButton.styleFrom(
-          backgroundColor: Colors.red.shade700,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(999),
-          ),
         ),
       ),
     );
@@ -300,7 +134,7 @@ class _SettingsPageState extends State<SettingsPage> {
             FilledButton(
               onPressed: () async {
                 Navigator.of(dialogContext).pop();
-                await _deleteData(_DeleteDataScope.all);
+                await _confirmAndDeleteAllData();
               },
               child: const Text('All data'),
             ),
@@ -308,6 +142,22 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       },
     );
+  }
+
+  Future<void> _confirmAndDeleteAllData() async {
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: 'Delete all data?',
+      message:
+          'This permanently deletes your encrypted tasks from this device '
+          'and the cloud. This cannot be undone.',
+      confirmPhrase: 'DELETE',
+      confirmButtonLabel: 'Delete all data',
+    );
+    if (!confirmed) {
+      return;
+    }
+    await _deleteData(_DeleteDataScope.all);
   }
 
   Future<void> _deleteData(_DeleteDataScope scope) async {
@@ -365,7 +215,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _handleSyncToSupabaseVault() async {
+  Future<void> _handleBackupToCloud() async {
     setState(() {
       _isLoading = true;
       _message = null;
@@ -376,25 +226,30 @@ class _SettingsPageState extends State<SettingsPage> {
       await SupabaseService.instance.upsertEncryptedTasksBlobForCurrentUser(
         dataBlob,
       );
-      if (mounted) {
-        setState(() {
-          _message = 'Cloud sync completed.';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cloud sync completed'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (!mounted) {
+        return;
       }
+      await SyncProvider.of(context, listen: false).markSynced();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _message = 'Backup completed.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Backup completed'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
-          _message = 'Cloud sync failed: $e';
+          _message = 'Backup failed: $e';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cloud sync failed: $e'),
+            content: Text('Backup failed: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -408,7 +263,21 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _handleRestoreFromSupabaseVault() async {
+  Future<void> _handleRestoreFromCloud() async {
+    final confirmed = await ConfirmationDialog.show(
+      context,
+      title: 'Restore from cloud?',
+      message:
+          'This replaces the tasks on this device with your most recent '
+          'cloud backup. Any local changes made since your last backup '
+          'will be lost.',
+      confirmPhrase: 'RESTORE',
+      confirmButtonLabel: 'Restore',
+    );
+    if (!confirmed || !mounted) {
+      return;
+    }
+
     setState(() {
       _isLoading = true;
       _message = null;
@@ -423,25 +292,30 @@ class _SettingsPageState extends State<SettingsPage> {
       await _localSecurityRepository.saveCloudVaultBlob(dataBlob);
       await taskManager.restoreFromBackup(dataBlob);
 
-      if (mounted) {
-        setState(() {
-          _message = 'Cloud pull completed.';
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cloud pull completed'),
-            backgroundColor: Colors.green,
-          ),
-        );
+      if (!mounted) {
+        return;
       }
+      await SyncProvider.of(context, listen: false).markSynced();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _message = 'Restore completed.';
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Restore completed'),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (mounted) {
         setState(() {
-          _message = 'Cloud pull failed: $e';
+          _message = 'Restore failed: $e';
         });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Cloud pull failed: $e'),
+            content: Text('Restore failed: $e'),
             backgroundColor: Colors.red,
           ),
         );

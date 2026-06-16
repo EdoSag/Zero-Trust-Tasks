@@ -5,19 +5,48 @@ import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/components/dashboard_card.dart';
 import 'package:zero_trust_tasks/components/priority_breakdown.dart';
 import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
+import 'package:zero_trust_tasks/components/error_state_widget.dart';
+import 'package:zero_trust_tasks/components/skeleton_task_card.dart';
 import 'package:zero_trust_tasks/components/task_card.dart';
+import 'package:zero_trust_tasks/models/task_filter_state.dart';
+import 'package:zero_trust_tasks/models/task_status_filter.dart';
+import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
 @NowaGenerated()
 class DashboardPage extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
   const DashboardPage({super.key});
 
+  void _openFilteredList(
+    BuildContext context, {
+    required String title,
+    TaskFilterState filter = TaskFilterState.defaults,
+  }) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TasksListPage(initialFilter: filter, title: title),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<TaskManager>(
       builder: (context, taskManager, child) {
         if (taskManager.isLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: 4,
+            itemBuilder: (context, index) => const SkeletonTaskCard(),
+          );
+        }
+        if (taskManager.error != null) {
+          return ErrorStateWidget(
+            message: taskManager.error!,
+            onRetry: () => taskManager.loadTasks(),
+          );
         }
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -44,28 +73,49 @@ class DashboardPage extends StatelessWidget {
                     value: '${taskManager.totalTasks}',
                     icon: Icons.assignment,
                     color: Theme.of(context).colorScheme.primary,
-                    onTap: () {},
+                    onTap: () => _openFilteredList(
+                      context,
+                      title: 'All Tasks',
+                    ),
                   ),
                   DashboardCard(
                     title: 'Pending',
                     value: '${taskManager.pendingTasksCount}',
                     icon: Icons.pending_actions,
                     color: Colors.orange,
-                    onTap: () {},
+                    onTap: () => _openFilteredList(
+                      context,
+                      title: 'Pending Tasks',
+                      filter: TaskFilterState.statusFilter(
+                        TaskStatusFilter.pending,
+                      ),
+                    ),
                   ),
                   DashboardCard(
                     title: 'Completed',
                     value: '${taskManager.completedTasksCount}',
                     icon: Icons.check_circle,
                     color: Colors.green,
-                    onTap: () {},
+                    onTap: () => _openFilteredList(
+                      context,
+                      title: 'Completed Tasks',
+                      filter: TaskFilterState.statusFilter(
+                        TaskStatusFilter.completed,
+                      ),
+                    ),
                   ),
                   DashboardCard(
                     title: 'Overdue',
                     value: '${taskManager.overdueTasksCount}',
                     icon: Icons.warning,
                     color: Colors.red,
-                    onTap: () {},
+                    onTap: () => _openFilteredList(
+                      context,
+                      title: 'Overdue Tasks',
+                      filter: TaskFilterState.statusFilter(
+                        TaskStatusFilter.overdue,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -87,7 +137,14 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               if (taskManager.tasks.isEmpty)
-                const EmptyTasksWidget()
+                EmptyTasksWidget(
+                  onCreateTask: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AddTaskScreen(),
+                    ),
+                  ),
+                )
               else
                 ListView.builder(
                   shrinkWrap: true,

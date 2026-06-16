@@ -29,11 +29,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   final _categoryController = TextEditingController();
 
+  TextEditingController? _categoryAutocompleteController;
+
   TaskPriority _selectedPriority = TaskPriority.medium;
 
   DateTime? _dueDate;
 
-  final List<SubTask> _subTasks = [];
+  List<SubTask> _subTasks = [];
+
+  final Map<String, TextEditingController> _subTaskControllers = {};
 
   @override
   void initState() {
@@ -45,7 +49,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _categoryController.text = task.category ?? '';
       _selectedPriority = task.priority;
       _dueDate = task.dueDate;
-      _subTasks.addAll(task.subTasks);
+      _subTasks = List.of(task.subTasks);
+    }
+    for (final subTask in _subTasks) {
+      _subTaskControllers[subTask.id] = TextEditingController(
+        text: subTask.title,
+      );
     }
   }
 
@@ -54,6 +63,9 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     _titleController.dispose();
     _descriptionController.dispose();
     _categoryController.dispose();
+    for (final controller in _subTaskControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -62,6 +74,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       return;
     }
     final taskManager = TaskManager.of(context);
+    final finalSubTasks = _subTasks
+        .map(
+          (subTask) => subTask.copyWith(
+            title: _subTaskControllers[subTask.id]?.text.trim() ??
+                subTask.title,
+          ),
+        )
+        .toList();
     if (widget.taskToEdit != null) {
       final updatedTask = widget.taskToEdit!.copyWith(
         title: _titleController.text.trim(),
@@ -73,7 +93,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             : _categoryController.text.trim(),
         priority: _selectedPriority,
         dueDate: _dueDate,
-        subTasks: _subTasks,
+        subTasks: finalSubTasks,
       );
       await taskManager.updateTask(updatedTask);
     } else {
@@ -87,7 +107,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             : _categoryController.text.trim(),
         priority: _selectedPriority,
         dueDate: _dueDate,
-        subTasks: _subTasks,
+        subTasks: finalSubTasks,
       );
       await taskManager.addTask(newTask);
     }
@@ -97,60 +117,56 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   }
 
   void _addSubTask() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Add Sub-task'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Sub-task title',
-              border: OutlineInputBorder(),
-            ),
-            autofocus: true,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () {
-                if (controller.text.trim().isNotEmpty) {
-                  setState(() {
-                    _subTasks.add(
-                      SubTask(
-                        id: DateTime.now().millisecondsSinceEpoch.toString(),
-                        title: controller.text.trim(),
-                      ),
-                    );
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Add'),
-            ),
-          ],
+    setState(() {
+      final subTask = SubTask(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        title: '',
+      );
+      _subTasks.add(subTask);
+      _subTaskControllers[subTask.id] = TextEditingController();
+    });
+  }
+
+  void _removeSubTask(String subTaskId) {
+    setState(() {
+      _subTasks.removeWhere((s) => s.id == subTaskId);
+      _subTaskControllers.remove(subTaskId)?.dispose();
+    });
+  }
+
+  void _toggleSubTaskComplete(String subTaskId, bool? value) {
+    setState(() {
+      final index = _subTasks.indexWhere((s) => s.id == subTaskId);
+      if (index != -1) {
+        _subTasks[index] = _subTasks[index].copyWith(
+          isCompleted: value ?? false,
         );
-      },
-    );
+      }
+    });
+  }
+
+  void _reorderSubTasks(int oldIndex, int newIndex) {
+    setState(() {
+      if (newIndex > oldIndex) {
+        newIndex -= 1;
+      }
+      final subTask = _subTasks.removeAt(oldIndex);
+      _subTasks.insert(newIndex, subTask);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final taskManager = TaskManager.of(context);
+    final categories = taskManager.getCategories().whereType<String>();
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.taskToEdit != null ? 'Edit Task' : 'New Task'),
-        actions: [
-          IconButton(icon: const Icon(Icons.check), onPressed: _saveTask),
-        ],
       ),
       body: Form(
         key: _formKey,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
           children: [
             TextFormField(
               controller: _titleController,
@@ -177,13 +193,39 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               maxLines: 3,
             ),
             const SizedBox(height: 16),
-            TextFormField(
-              controller: _categoryController,
-              decoration: const InputDecoration(
-                labelText: 'Category',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.label),
-              ),
+            Autocomplete<String>(
+              initialValue: TextEditingValue(text: _categoryController.text),
+              optionsBuilder: (textEditingValue) {
+                if (textEditingValue.text.isEmpty) {
+                  return categories;
+                }
+                final query = textEditingValue.text.toLowerCase();
+                return categories.where(
+                  (category) => category.toLowerCase().contains(query),
+                );
+              },
+              onSelected: (selection) {
+                _categoryController.text = selection;
+              },
+              fieldViewBuilder:
+                  (context, controller, focusNode, onFieldSubmitted) {
+                if (_categoryAutocompleteController != controller) {
+                  _categoryAutocompleteController = controller;
+                  controller.text = _categoryController.text;
+                  controller.addListener(() {
+                    _categoryController.text = controller.text;
+                  });
+                }
+                return TextFormField(
+                  controller: controller,
+                  focusNode: focusNode,
+                  decoration: const InputDecoration(
+                    labelText: 'Category',
+                    border: OutlineInputBorder(),
+                    prefixIcon: Icon(Icons.label),
+                  ),
+                );
+              },
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<TaskPriority>(
@@ -199,13 +241,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       value: priority,
                       child: Row(
                         children: [
-                          Container(
-                            width: 12,
-                            height: 12,
-                            decoration: BoxDecoration(
-                              color: priority.getColor(context),
-                              shape: BoxShape.circle,
-                            ),
+                          Icon(
+                            priority.icon,
+                            size: 16,
+                            color: priority.getColor(context),
                           ),
                           const SizedBox(width: 8),
                           Text(priority.displayName),
@@ -234,6 +273,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
+                      tooltip: 'Clear due date',
                       onPressed: () {
                         setState(() {
                           _dueDate = null;
@@ -289,25 +329,65 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 ),
               )
             else
-              ..._subTasks.asMap().entries.map((entry) {
-                final index = entry.key;
-                final subTask = entry.value;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    title: Text(subTask.title),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () {
-                        setState(() {
-                          _subTasks.removeAt(index);
-                        });
-                      },
+              ReorderableListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: _subTasks.length,
+                onReorder: _reorderSubTasks,
+                itemBuilder: (context, index) {
+                  final subTask = _subTasks[index];
+                  return Card(
+                    key: ValueKey(subTask.id),
+                    margin: const EdgeInsets.only(bottom: 8),
+                    child: ListTile(
+                      leading: Checkbox(
+                        value: subTask.isCompleted,
+                        onChanged: (value) =>
+                            _toggleSubTaskComplete(subTask.id, value),
+                      ),
+                      title: TextFormField(
+                        controller: _subTaskControllers[subTask.id],
+                        decoration: const InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: 'Sub-task title',
+                        ),
+                        style: TextStyle(
+                          decoration: subTask.isCompleted
+                              ? TextDecoration.lineThrough
+                              : null,
+                        ),
+                      ),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            tooltip: 'Delete sub-task',
+                            onPressed: () => _removeSubTask(subTask.id),
+                          ),
+                          ReorderableDragStartListener(
+                            index: index,
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 4.0),
+                              child: Icon(Icons.drag_handle),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              }),
+                  );
+                },
+              ),
           ],
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: FilledButton.icon(
+          onPressed: _saveTask,
+          icon: const Icon(Icons.save),
+          label: Text(widget.taskToEdit != null ? 'Update Task' : 'Save Task'),
         ),
       ),
     );

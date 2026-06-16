@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 
 @NowaGenerated()
 class TaskCard extends StatelessWidget {
@@ -16,9 +17,13 @@ class TaskCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final dateFormat = DateFormat('MMM dd, yyyy');
+    final urgency = TaskUrgencyService.getUrgency(task);
+    final urgencyColor = TaskUrgencyService.getColor(urgency, context);
+    final hasSubTasks = task.subTasks.isNotEmpty;
     return Card(
       margin: const EdgeInsets.only(bottom: 12.0),
       elevation: 1.0,
+      clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: InkWell(
         onTap: () {
@@ -29,197 +34,267 @@ class TaskCard extends StatelessWidget {
             ),
           );
         },
-        borderRadius: BorderRadius.circular(12.0),
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+        child: IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Row(
-                children: [
-                  Checkbox(
-                    value: task.isCompleted,
-                    onChanged: (value) {
-                      TaskManager.of(context).toggleTaskComplete(task.id);
-                    },
-                  ),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          task.title,
-                          style: Theme.of(context).textTheme.titleMedium
-                              ?.copyWith(
-                                decoration: task.isCompleted
-                                    ? TextDecoration.lineThrough
-                                    : null,
-                                fontWeight: FontWeight.bold,
-                              ),
-                        ),
-                        if (task.description != null) ...[
-                          const SizedBox(height: 4.0),
-                          Text(
-                            task.description!,
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurface
-                                      .withValues(alpha: 0.6),
-                                ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8.0,
-                      vertical: 4.0,
-                    ),
-                    decoration: BoxDecoration(
-                      color: task.priority
-                          .getColor(context)
-                          .withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(8.0),
-                    ),
-                    child: Text(
-                      task.priority.displayName,
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: task.priority.getColor(context),
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+              Container(
+                width: 4.0,
+                color: urgency == TaskUrgency.none
+                    ? Colors.transparent
+                    : urgencyColor,
               ),
-              if (task.dueDate != null ||
-                  task.category != null ||
-                  task.subTasks.isNotEmpty) ...[
-                const SizedBox(height: 12.0),
-                Wrap(
-                  spacing: 8.0,
-                  runSpacing: 8.0,
-                  children: [
-                    if (task.dueDate != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                          vertical: 4.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: task.isOverdue
-                              ? Colors.red.withValues(alpha: 0.1)
-                              : Theme.of(
-                                  context,
-                                ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.calendar_today,
-                              size: 12.0,
-                              color: task.isOverdue
-                                  ? Colors.red
-                                  : Theme.of(context).colorScheme.onSurface
-                                        .withValues(alpha: 0.6),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Semantics(
+                            label: task.isCompleted
+                                ? 'Mark "${task.title}" as not completed'
+                                : 'Mark "${task.title}" as completed',
+                            child: Checkbox(
+                              value: task.isCompleted,
+                              onChanged: (value) {
+                                _toggleComplete(context);
+                              },
                             ),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              dateFormat.format(task.dueDate!),
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: task.isOverdue
-                                        ? Colors.red
-                                        : Theme.of(context)
+                          ),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  task.title,
+                                  style: Theme.of(context).textTheme.titleMedium
+                                      ?.copyWith(
+                                        decoration: task.isCompleted
+                                            ? TextDecoration.lineThrough
+                                            : null,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                                if (task.description != null) ...[
+                                  const SizedBox(height: 4.0),
+                                  Text(
+                                    task.description!,
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: Theme.of(context)
                                               .colorScheme
                                               .onSurface
                                               .withValues(alpha: 0.6),
+                                        ),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
+                                ],
+                              ],
                             ),
-                          ],
-                        ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                              vertical: 4.0,
+                            ),
+                            decoration: BoxDecoration(
+                              color: task.priority
+                                  .getColor(context)
+                                  .withValues(alpha: 0.2),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  task.priority.icon,
+                                  size: 12.0,
+                                  color: task.priority.getColor(context),
+                                ),
+                                const SizedBox(width: 4.0),
+                                Text(
+                                  task.priority.displayName,
+                                  style: Theme.of(context).textTheme.bodySmall
+                                      ?.copyWith(
+                                        color: task.priority.getColor(context),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    if (task.category != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                          vertical: 4.0,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
+                      if (task.dueDate != null ||
+                          task.category != null ||
+                          hasSubTasks) ...[
+                        const SizedBox(height: 12.0),
+                        Wrap(
+                          spacing: 8.0,
+                          runSpacing: 8.0,
                           children: [
-                            Icon(
-                              Icons.label,
-                              size: 12.0,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              task.category!,
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                            ),
+                            if (task.dueDate != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 4.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: urgency == TaskUrgency.overdue ||
+                                          urgency == TaskUrgency.dueToday
+                                      ? urgencyColor.withValues(alpha: 0.1)
+                                      : Theme.of(context)
+                                          .colorScheme
+                                          .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      TaskUrgencyService.getIcon(urgency),
+                                      size: 12.0,
+                                      color: urgencyColor,
+                                    ),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      TaskUrgencyService.getLabel(
+                                                urgency,
+                                              ).isNotEmpty
+                                          ? '${TaskUrgencyService.getLabel(urgency)} • ${dateFormat.format(task.dueDate!)}'
+                                          : dateFormat.format(task.dueDate!),
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(color: urgencyColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (task.category != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 4.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.label,
+                                      size: 12.0,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      task.category!,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (hasSubTasks)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 4.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.checklist,
+                                      size: 12.0,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      '${task.completedSubTasksCount}/${task.subTasks.length}',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                           ],
                         ),
-                      ),
-                    if (task.subTasks.isNotEmpty)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8.0,
-                          vertical: 4.0,
+                      ],
+                      if (hasSubTasks) ...[
+                        const SizedBox(height: 8.0),
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(4.0),
+                          child: LinearProgressIndicator(
+                            value: task.completedSubTasksCount /
+                                task.subTasks.length,
+                            minHeight: 4.0,
+                            backgroundColor: Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest,
+                          ),
                         ),
-                        decoration: BoxDecoration(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.surfaceContainerHighest,
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              Icons.checklist,
-                              size: 12.0,
-                              color: Theme.of(
-                                context,
-                              ).colorScheme.onSurface.withValues(alpha: 0.6),
-                            ),
-                            const SizedBox(width: 4.0),
-                            Text(
-                              '${task.completedSubTasksCount}/${task.subTasks.length}',
-                              style: Theme.of(context).textTheme.bodySmall
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurface
-                                        .withValues(alpha: 0.6),
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
-                  ],
+                      ],
+                    ],
+                  ),
                 ),
-              ],
+              ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _toggleComplete(BuildContext context) async {
+    final taskManager = TaskManager.of(context);
+    final wasCompleted = task.isCompleted;
+    await taskManager.toggleTaskComplete(task.id);
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(wasCompleted ? 'Task marked incomplete' : 'Task completed'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {
+            taskManager.toggleTaskComplete(task.id);
+          },
         ),
       ),
     );

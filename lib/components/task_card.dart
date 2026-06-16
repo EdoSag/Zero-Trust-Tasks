@@ -82,15 +82,23 @@ class TaskCard extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  task.title,
-                                  style: Theme.of(context).textTheme.titleMedium
-                                      ?.copyWith(
-                                        decoration: task.isCompleted
-                                            ? TextDecoration.lineThrough
-                                            : null,
-                                        fontWeight: FontWeight.bold,
-                                      ),
+                                Hero(
+                                  tag: 'task-title-${task.id}',
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: Text(
+                                      task.title,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleMedium
+                                          ?.copyWith(
+                                            decoration: task.isCompleted
+                                                ? TextDecoration.lineThrough
+                                                : null,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
+                                  ),
                                 ),
                                 if (task.description != null) ...[
                                   const SizedBox(height: 4.0),

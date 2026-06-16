@@ -183,6 +183,67 @@ class SupabaseService {
         .neq('id', keepId);
   }
 
+  // ── Per-task sync (item 27) ───────────────────────────────────────────────
+
+  static const String _taskItemsTable = 'encrypted_task_items';
+
+  /// Upserts a single encrypted task into [_taskItemsTable].
+  Future<void> upsertEncryptedTaskItem({
+    required String id,
+    required String dataBlob,
+    required DateTime updatedAt,
+  }) async {
+    final user = _requireCurrentUser();
+    await _client.from(_taskItemsTable).upsert(
+      {
+        'id': id,
+        'user_id': user.id,
+        'data_blob': dataBlob,
+        'updated_at': updatedAt.toUtc().toIso8601String(),
+        'deleted': false,
+      },
+      onConflict: 'id',
+    );
+  }
+
+  /// Fetches all task item rows (id, data_blob, updated_at, deleted) for the
+  /// current user. Includes tombstoned rows so callers can propagate deletes.
+  Future<List<Map<String, dynamic>>> fetchEncryptedTaskItemsForCurrentUser() async {
+    final user = _requireCurrentUser();
+    final response = await _client
+        .from(_taskItemsTable)
+        .select('id, data_blob, updated_at, deleted')
+        .eq('user_id', user.id);
+    return (response as List<dynamic>).cast<Map<String, dynamic>>();
+  }
+
+  /// Marks a task as deleted (tombstone) without removing the row, so other
+  /// devices can learn about the deletion on next sync.
+  Future<void> markEncryptedTaskItemDeleted(String taskId) async {
+    _requireCurrentUser();
+    await _client.from(_taskItemsTable).upsert(
+      {
+        'id': taskId,
+        'user_id': _requireCurrentUser().id,
+        'data_blob': null,
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'deleted': true,
+      },
+      onConflict: 'id',
+    );
+  }
+
+  /// Returns true if the current user already has rows in [_taskItemsTable].
+  Future<bool> hasEncryptedTaskItemsForCurrentUser() async {
+    final user = _requireCurrentUser();
+    final response = await _client
+        .from(_taskItemsTable)
+        .select('id')
+        .eq('user_id', user.id)
+        .limit(1);
+    return (response as List<dynamic>).isNotEmpty;
+  }
+
   User _requireCurrentUser() {
     final user = currentUser;
     if (user == null) {

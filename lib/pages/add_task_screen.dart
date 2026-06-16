@@ -684,6 +684,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.close, size: 18),
+                            tooltip: 'Remove link',
                             onPressed: () => setState(() => _links.remove(link)),
                           ),
                           dense: true,

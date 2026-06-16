@@ -10,6 +10,7 @@ class BackupSection extends StatelessWidget {
   const BackupSection({
     super.key,
     required this.isLoading,
+    required this.onSync,
     required this.onBackup,
     required this.onRestore,
     required this.onExportFile,
@@ -17,6 +18,7 @@ class BackupSection extends StatelessWidget {
   });
 
   final bool isLoading;
+  final VoidCallback onSync;
   final VoidCallback onBackup;
   final VoidCallback onRestore;
   final VoidCallback onExportFile;
@@ -71,6 +73,27 @@ class BackupSection extends StatelessWidget {
               ],
             ),
           ),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: (isLoading || sync.isSyncing) ? null : onSync,
+            icon: sync.isSyncing
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+            label: Text(sync.isSyncing ? 'Syncing…' : 'Sync now'),
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
         SizedBox(
           width: double.infinity,
           child: FilledButton.icon(

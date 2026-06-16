@@ -112,13 +112,19 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 ),
               ),
               Expanded(
-                child: Text(
-                  currentTask.title,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    decoration: currentTask.isCompleted
-                        ? TextDecoration.lineThrough
-                        : null,
+                child: Hero(
+                  tag: 'task-title-${currentTask.id}',
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Text(
+                      currentTask.title,
+                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        decoration: currentTask.isCompleted
+                            ? TextDecoration.lineThrough
+                            : null,
+                      ),
+                    ),
                   ),
                 ),
               ),

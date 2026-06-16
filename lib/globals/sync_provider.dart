@@ -53,12 +53,20 @@ class SyncProvider extends ChangeNotifier {
   DateTime? _lastSyncedAt;
   DateTime? _remoteUpdatedAt;
   bool _isChecking = false;
+  bool _isSyncing = false;
   AutoBackupFrequency _autoBackupFrequency = AutoBackupFrequency.off;
 
   DateTime? get lastSyncedAt => _lastSyncedAt;
   DateTime? get remoteUpdatedAt => _remoteUpdatedAt;
   bool get isChecking => _isChecking;
+  bool get isSyncing => _isSyncing;
   AutoBackupFrequency get autoBackupFrequency => _autoBackupFrequency;
+
+  void setSyncing(bool value) {
+    if (_isSyncing == value) return;
+    _isSyncing = value;
+    notifyListeners();
+  }
 
   bool get hasNewerRemoteData {
     if (_remoteUpdatedAt == null) return false;

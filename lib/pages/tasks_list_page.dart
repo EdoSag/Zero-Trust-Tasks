@@ -392,7 +392,23 @@ class _TasksListPageState extends State<TasksListPage> {
                     ],
                   ),
                 ),
-              Expanded(child: body),
+              Expanded(
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 220),
+                  child: KeyedSubtree(
+                    key: ValueKey(
+                      _calendarView
+                          ? 'calendar'
+                          : _selectionMode
+                          ? 'select'
+                          : _sectioned
+                          ? 'sectioned'
+                          : 'flat',
+                    ),
+                    child: body,
+                  ),
+                ),
+              ),
             ],
           ),
           bottomNavigationBar: _selectionMode

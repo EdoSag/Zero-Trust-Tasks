@@ -74,6 +74,7 @@ class _SettingsPageState extends State<SettingsPage> {
         const SizedBox(height: 16),
         BackupSection(
           isLoading: _isLoading,
+          onSync: _handleSync,
           onBackup: _handleBackupToCloud,
           onRestore: _handleRestoreFromCloud,
           onExportFile: _handleExportToFile,
@@ -216,6 +217,36 @@ class _SettingsPageState extends State<SettingsPage> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  Future<void> _handleSync() async {
+    final syncProvider = SyncProvider.of(context, listen: false);
+    syncProvider.setSyncing(true);
+    setState(() => _message = null);
+    try {
+      final result = await TaskManager.of(context).syncTasks();
+      if (!mounted) return;
+      await syncProvider.markSynced();
+      if (!mounted) return;
+      final summary = result.hadChanges
+          ? 'Sync complete — ↑${result.uploaded} ↓${result.downloaded}'
+          : 'Already up to date';
+      setState(() => _message = summary);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(summary), backgroundColor: Colors.green),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _message = 'Sync failed: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Sync failed: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) syncProvider.setSyncing(false);
     }
   }
 

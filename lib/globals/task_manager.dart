@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/recurrence_service.dart';
+import 'package:zero_trust_tasks/core/services/supabase_service.dart';
+import 'package:zero_trust_tasks/models/sync_result.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -178,6 +180,10 @@ class TaskManager extends ChangeNotifier {
     notifyListeners();
     await saveTasks();
     unawaited(NotificationService.instance.cancelReminder(taskId));
+    // Best-effort remote tombstone so other devices learn about this deletion.
+    if (SupabaseService.instance.currentUser != null) {
+      unawaited(SupabaseService.instance.markEncryptedTaskItemDeleted(taskId));
+    }
   }
 
   Future<void> archiveTask(String taskId) async {
@@ -450,6 +456,97 @@ class TaskManager extends ChangeNotifier {
     }
     notifyListeners();
     await saveTasks();
+  }
+
+  /// Performs a conflict-safe per-task merge with the cloud (item 27).
+  ///
+  /// Strategy: last-writer-wins per task using [Task.updatedAt].
+  /// Returns a [SyncResult] summary of what changed.
+  Future<SyncResult> syncTasks() async {
+    final supabase = SupabaseService.instance;
+    if (supabase.currentUser == null) {
+      throw StateError('Cannot sync: no authenticated user.');
+    }
+
+    // 1. Fetch all remote task items (including tombstones).
+    final remoteItems = await supabase.fetchEncryptedTaskItemsForCurrentUser();
+    final remoteMap = <String, Map<String, dynamic>>{
+      for (final r in remoteItems) r['id'] as String: r,
+    };
+
+    int uploaded = 0;
+    int downloaded = 0;
+
+    // 2. Apply remote → local (download newer / tombstoned items).
+    for (final entry in remoteMap.entries) {
+      final id = entry.key;
+      final remote = entry.value;
+      final remoteUpdatedAt = DateTime.parse(remote['updated_at'] as String);
+      final isDeleted = remote['deleted'] as bool? ?? false;
+      final localIndex = _tasks.indexWhere((t) => t.id == id);
+
+      if (isDeleted) {
+        // Propagate remote deletion only if local version isn't newer.
+        if (localIndex != -1 &&
+            !_tasks[localIndex].updatedAt.isAfter(remoteUpdatedAt)) {
+          _tasks.removeAt(localIndex);
+        }
+      } else {
+        final blob = remote['data_blob'] as String?;
+        if (blob == null) continue;
+
+        Task remoteTask;
+        try {
+          final decrypted = await EncryptionService.decryptData(blob);
+          remoteTask = Task.fromJson(
+            jsonDecode(decrypted) as Map<String, dynamic>,
+          );
+        } catch (_) {
+          continue; // Skip any corrupted remote item.
+        }
+
+        if (localIndex == -1) {
+          _tasks.add(remoteTask);
+          downloaded++;
+        } else if (remoteUpdatedAt.isAfter(_tasks[localIndex].updatedAt)) {
+          _tasks[localIndex] = remoteTask;
+          downloaded++;
+        }
+      }
+    }
+
+    // 3. Upload local tasks that are absent from remote or newer than remote.
+    for (final task in List.of(_tasks)) {
+      final remote = remoteMap[task.id];
+      final remoteUpdatedAt = remote != null
+          ? DateTime.parse(remote['updated_at'] as String)
+          : null;
+      final needsUpload =
+          remoteUpdatedAt == null || task.updatedAt.isAfter(remoteUpdatedAt);
+      if (!needsUpload) continue;
+
+      if (task.deletedAt != null && remote != null) {
+        // Soft-deleted and already known to remote: promote to tombstone.
+        await supabase.markEncryptedTaskItemDeleted(task.id);
+      } else if (task.deletedAt == null) {
+        final encrypted = await EncryptionService.encryptData(
+          jsonEncode(task.toJson()),
+        );
+        await supabase.upsertEncryptedTaskItem(
+          id: task.id,
+          dataBlob: encrypted,
+          updatedAt: task.updatedAt,
+        );
+      }
+      uploaded++;
+    }
+
+    if (downloaded > 0) {
+      notifyListeners();
+      await saveTasks();
+    }
+
+    return SyncResult(uploaded: uploaded, downloaded: downloaded);
   }
 
   /// Returns a list of (date, completionCount) entries for the last [days] days,

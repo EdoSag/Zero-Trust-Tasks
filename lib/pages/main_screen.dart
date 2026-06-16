@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
@@ -11,6 +12,7 @@ import 'package:zero_trust_tasks/globals/settings_provider.dart';
 import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/pages/lock_screen.dart';
+import 'package:zero_trust_tasks/pages/sync_conflicts_page.dart';
 import 'package:zero_trust_tasks/components/dashboard_page.dart';
 import 'package:zero_trust_tasks/components/encryption_info_sheet.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
@@ -34,6 +36,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late int _selectedIndex;
   final _localSecurityRepository = LocalSecurityRepository();
   Timer? _lockTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   @override
   void initState() {
@@ -41,11 +44,15 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _selectedIndex = SettingsProvider.of(context, listen: false).lastSelectedTab;
     _guardAndLoad();
+    _connectivitySubscription = Connectivity()
+        .onConnectivityChanged
+        .listen(_onConnectivityChanged);
   }
 
   @override
   void dispose() {
     _lockTimer?.cancel();
+    _connectivitySubscription?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -85,6 +92,46 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
     }
     _triggerAutoBackup();
+  }
+
+  void _onConnectivityChanged(List<ConnectivityResult> results) {
+    final hasNetwork = results.any((r) => r != ConnectivityResult.none);
+    if (hasNetwork && mounted) {
+      // Small delay to let the connection stabilise before syncing.
+      Future.delayed(const Duration(seconds: 2), () {
+        if (mounted) unawaited(_handleAutoSync());
+      });
+    }
+  }
+
+  Future<void> _handleAutoSync() async {
+    final syncProvider = SyncProvider.of(context, listen: false);
+    if (syncProvider.isSyncing) return;
+    if (SupabaseService.instance.currentUser == null) return;
+
+    syncProvider.setSyncing(true);
+    try {
+      final result = await TaskManager.of(context).syncTasks(
+        lastSyncedAt: syncProvider.lastSyncedAt,
+      );
+      if (!mounted) return;
+      await syncProvider.markSynced();
+      if (!mounted) return;
+      if (result.hasConflicts) {
+        syncProvider.setSyncing(false);
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SyncConflictsPage(conflicts: result.conflicts),
+          ),
+        );
+        return;
+      }
+    } catch (_) {
+      // Auto-sync is best-effort; suppress errors to avoid interrupting the user.
+    } finally {
+      if (mounted) syncProvider.setSyncing(false);
+    }
   }
 
   void _triggerAutoBackup() {

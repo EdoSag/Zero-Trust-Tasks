@@ -4,16 +4,22 @@ import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
+import 'package:zero_trust_tasks/pages/templates_page.dart';
 
 @NowaGenerated()
 class AddTaskScreen extends StatefulWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const AddTaskScreen({super.key, this.taskToEdit});
+  const AddTaskScreen({super.key, this.taskToEdit, this.template});
 
   final Task? taskToEdit;
+
+  /// When provided (and [taskToEdit] is null), pre-fills all form fields from
+  /// this template blueprint (item 32).
+  final TaskTemplate? template;
 
   @override
   State<AddTaskScreen> createState() {
@@ -66,8 +72,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   void initState() {
     super.initState();
     if (widget.taskToEdit != null) {
-      final task = widget.taskToEdit;
-      _titleController.text = task!.title;
+      final task = widget.taskToEdit!;
+      _titleController.text = task.title;
       _descriptionController.text = task.description ?? '';
       _categoryController.text = task.category ?? '';
       _selectedPriority = task.priority;
@@ -87,6 +93,27 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         _recurrenceEndDate = task.recurrence!.endDate;
       }
       _subTasks = List.of(task.subTasks);
+    } else if (widget.template != null) {
+      final t = widget.template!;
+      _titleController.text = t.title;
+      _descriptionController.text = t.description ?? '';
+      _categoryController.text = t.category ?? '';
+      _selectedPriority = t.priority;
+      _tags = List.of(t.tags);
+      _notesController.text = t.notes ?? '';
+      _links = List.of(t.links);
+      if (t.recurrence != null) {
+        _recurrenceFrequency = t.recurrence!.frequency;
+        _recurrenceInterval = t.recurrence!.interval;
+        _recurrenceWeekdays = List.of(t.recurrence!.weekdays ?? []);
+        _recurrenceEndDate = t.recurrence!.endDate;
+      }
+      _subTasks = List.generate(t.subTaskTitles.length, (i) {
+        return SubTask(
+          id: '${DateTime.now().millisecondsSinceEpoch + i}',
+          title: t.subTaskTitles[i],
+        );
+      });
     }
     for (final subTask in _subTasks) {
       _subTaskControllers[subTask.id] = TextEditingController(
@@ -242,6 +269,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.taskToEdit != null ? 'Edit Task' : 'New Task'),
+        actions: [
+          if (widget.taskToEdit == null && widget.template == null)
+            IconButton(
+              icon: const Icon(Icons.article_outlined),
+              tooltip: 'Use a template',
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TemplatesPage()),
+              ),
+            ),
+        ],
       ),
       body: Form(
         key: _formKey,

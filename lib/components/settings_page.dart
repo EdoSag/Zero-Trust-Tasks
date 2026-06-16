@@ -14,6 +14,8 @@ import 'package:zero_trust_tasks/core/services/vault_auth_service.dart';
 import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/pages/onboarding_screen.dart';
+import 'package:zero_trust_tasks/pages/sync_conflicts_page.dart';
+import 'package:zero_trust_tasks/pages/templates_page.dart';
 
 @NowaGenerated()
 class SettingsPage extends StatefulWidget {
@@ -82,6 +84,11 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
         const SizedBox(height: 16),
         const AppearanceSection(),
+        const SizedBox(height: 16),
+        _TemplatesSettingsTile(onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const TemplatesPage()),
+        )),
         const SizedBox(height: 16),
         DangerZoneSection(
           isLoading: _isLoading,
@@ -225,10 +232,27 @@ class _SettingsPageState extends State<SettingsPage> {
     syncProvider.setSyncing(true);
     setState(() => _message = null);
     try {
-      final result = await TaskManager.of(context).syncTasks();
+      final result = await TaskManager.of(context).syncTasks(
+        lastSyncedAt: syncProvider.lastSyncedAt,
+      );
       if (!mounted) return;
       await syncProvider.markSynced();
       if (!mounted) return;
+
+      if (result.hasConflicts) {
+        syncProvider.setSyncing(false);
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SyncConflictsPage(conflicts: result.conflicts),
+          ),
+        );
+        if (!mounted) return;
+        setState(() => _message =
+            'Sync complete — ${result.conflicts.length} conflict(s) need resolution');
+        return;
+      }
+
       final summary = result.hadChanges
           ? 'Sync complete — ↑${result.uploaded} ↓${result.downloaded}'
           : 'Already up to date';
@@ -496,5 +520,29 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     }
+  }
+}
+
+class _TemplatesSettingsTile extends StatelessWidget {
+  const _TemplatesSettingsTile({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Card(
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      child: ListTile(
+        leading: Icon(Icons.article_outlined, color: theme.colorScheme.primary),
+        title: const Text('Templates'),
+        subtitle: const Text('Reusable task blueprints'),
+        trailing: const Icon(Icons.chevron_right),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+        onTap: onTap,
+      ),
+    );
   }
 }

@@ -9,7 +9,9 @@ import 'package:zero_trust_tasks/globals/app_state.dart';
 import 'package:zero_trust_tasks/globals/settings_provider.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/globals/lock_provider.dart';
+import 'package:zero_trust_tasks/globals/smart_filter_provider.dart';
 import 'package:zero_trust_tasks/globals/sync_provider.dart';
+import 'package:zero_trust_tasks/globals/template_provider.dart';
 import 'package:zero_trust_tasks/globals/themes.dart';
 import 'package:zero_trust_tasks/components/auth_wrapper.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
@@ -56,7 +58,11 @@ class MyApp extends StatelessWidget {
             create: (context) => SyncProvider(sharedPrefs),
             child: ChangeNotifierProvider<LockProvider>(
               create: (context) => LockProvider(sharedPrefs),
-              builder: (context, child) => MaterialApp(
+              child: ChangeNotifierProvider<SmartFilterProvider>(
+                create: (context) => SmartFilterProvider(sharedPrefs),
+                child: ChangeNotifierProvider<TemplateProvider>(
+                  create: (context) => TemplateProvider(sharedPrefs),
+                  builder: (context, child) => MaterialApp(
                 title: 'Zero-Trust Tasks',
                 theme: lightTheme,
                 darkTheme: darkTheme,
@@ -71,6 +77,8 @@ class MyApp extends StatelessWidget {
                   'SetupScreen': (context) => const SetupScreen(),
                   'TasksListPage': (context) => const TasksListPage(),
                 },
+              ),
+                ),
               ),
             ),
           ),

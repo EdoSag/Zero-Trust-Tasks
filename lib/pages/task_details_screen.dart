@@ -9,8 +9,10 @@ import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
+import 'package:zero_trust_tasks/globals/template_provider.dart';
+import 'package:zero_trust_tasks/models/task_template.dart';
 
-enum _TaskAction { duplicate, archive, delete }
+enum _TaskAction { duplicate, saveAsTemplate, archive, delete }
 
 @NowaGenerated()
 class TaskDetailsScreen extends StatefulWidget {
@@ -58,6 +60,8 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               switch (action) {
                 case _TaskAction.duplicate:
                   _duplicateTask(context, currentTask);
+                case _TaskAction.saveAsTemplate:
+                  _saveAsTemplate(context, currentTask);
                 case _TaskAction.archive:
                   _archiveTask(context, currentTask);
                 case _TaskAction.delete:
@@ -70,6 +74,14 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 child: ListTile(
                   leading: Icon(Icons.copy_outlined),
                   title: Text('Duplicate'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: _TaskAction.saveAsTemplate,
+                child: ListTile(
+                  leading: Icon(Icons.article_outlined),
+                  title: Text('Save as template'),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -428,6 +440,55 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Task duplicated')),
+      );
+    }
+  }
+
+  Future<void> _saveAsTemplate(BuildContext context, Task task) async {
+    final nameCtrl = TextEditingController(text: task.title);
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        title: const Text('Save as template'),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: const InputDecoration(labelText: 'Template name'),
+          autofocus: true,
+          onSubmitted: (v) => Navigator.pop(dCtx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dCtx, nameCtrl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    nameCtrl.dispose();
+    if (name == null || name.isEmpty || !context.mounted) return;
+
+    final template = TaskTemplate(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      title: name,
+      description: task.description,
+      category: task.category,
+      priority: task.priority,
+      tags: List.of(task.tags),
+      notes: task.notes,
+      links: List.of(task.links),
+      subTaskTitles: task.subTasks.map((s) => s.title).toList(),
+      recurrence: task.recurrence,
+    );
+
+    await TemplateProvider.of(context, listen: false).addTemplate(template);
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Template saved')),
       );
     }
   }

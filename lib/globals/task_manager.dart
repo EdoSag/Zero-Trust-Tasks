@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/recurrence_service.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
+import 'package:zero_trust_tasks/models/conflict_resolution.dart';
+import 'package:zero_trust_tasks/models/sync_conflict.dart';
 import 'package:zero_trust_tasks/models/sync_result.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
 import 'package:zero_trust_tasks/models/task.dart';
@@ -458,11 +460,13 @@ class TaskManager extends ChangeNotifier {
     await saveTasks();
   }
 
-  /// Performs a conflict-safe per-task merge with the cloud (item 27).
+  /// Performs a conflict-safe per-task merge with the cloud (items 27 & 36).
   ///
-  /// Strategy: last-writer-wins per task using [Task.updatedAt].
-  /// Returns a [SyncResult] summary of what changed.
-  Future<SyncResult> syncTasks() async {
+  /// When [lastSyncedAt] is provided, tasks where both the local copy and the
+  /// remote copy were modified after that timestamp are treated as true
+  /// conflicts and returned in [SyncResult.conflicts] instead of being
+  /// auto-resolved.  Without [lastSyncedAt], falls back to last-writer-wins.
+  Future<SyncResult> syncTasks({DateTime? lastSyncedAt}) async {
     final supabase = SupabaseService.instance;
     if (supabase.currentUser == null) {
       throw StateError('Cannot sync: no authenticated user.');
@@ -476,6 +480,7 @@ class TaskManager extends ChangeNotifier {
 
     int uploaded = 0;
     int downloaded = 0;
+    final conflicts = <SyncConflict>[];
 
     // 2. Apply remote → local (download newer / tombstoned items).
     for (final entry in remoteMap.entries) {
@@ -508,15 +513,26 @@ class TaskManager extends ChangeNotifier {
         if (localIndex == -1) {
           _tasks.add(remoteTask);
           downloaded++;
-        } else if (remoteUpdatedAt.isAfter(_tasks[localIndex].updatedAt)) {
-          _tasks[localIndex] = remoteTask;
-          downloaded++;
+        } else {
+          final localTask = _tasks[localIndex];
+          // True conflict: both sides changed after the last known sync point.
+          if (lastSyncedAt != null &&
+              localTask.updatedAt.isAfter(lastSyncedAt) &&
+              remoteUpdatedAt.isAfter(lastSyncedAt)) {
+            conflicts.add(SyncConflict(local: localTask, remote: remoteTask));
+          } else if (remoteUpdatedAt.isAfter(localTask.updatedAt)) {
+            _tasks[localIndex] = remoteTask;
+            downloaded++;
+          }
         }
       }
     }
 
     // 3. Upload local tasks that are absent from remote or newer than remote.
+    //    Skip tasks that are in conflict — the user must resolve them first.
+    final conflictIds = {for (final c in conflicts) c.local.id};
     for (final task in List.of(_tasks)) {
+      if (conflictIds.contains(task.id)) continue;
       final remote = remoteMap[task.id];
       final remoteUpdatedAt = remote != null
           ? DateTime.parse(remote['updated_at'] as String)
@@ -546,7 +562,63 @@ class TaskManager extends ChangeNotifier {
       await saveTasks();
     }
 
-    return SyncResult(uploaded: uploaded, downloaded: downloaded);
+    return SyncResult(
+      uploaded: uploaded,
+      downloaded: downloaded,
+      conflicts: conflicts,
+    );
+  }
+
+  /// Resolves a single sync conflict as directed by the user (item 36).
+  Future<void> resolveConflict(
+    SyncConflict conflict,
+    ConflictResolution resolution,
+  ) async {
+    switch (resolution) {
+      case ConflictResolution.keepLocal:
+        // Bump updatedAt so local wins during the next sync upload.
+        final index = _tasks.indexWhere((t) => t.id == conflict.local.id);
+        if (index == -1) return;
+        _tasks[index] = _tasks[index].copyWith(updatedAt: DateTime.now());
+        notifyListeners();
+        await saveTasks();
+
+      case ConflictResolution.keepRemote:
+        final index = _tasks.indexWhere((t) => t.id == conflict.remote.id);
+        if (index != -1) {
+          _tasks[index] = conflict.remote;
+        } else {
+          _tasks.add(conflict.remote);
+        }
+        notifyListeners();
+        await saveTasks();
+
+      case ConflictResolution.keepBoth:
+        // Keep local as-is; add the remote version as a new task.
+        final now = DateTime.now();
+        final remoteCopy = Task(
+          id: 'conflict_${now.millisecondsSinceEpoch}',
+          title: '${conflict.remote.title} (Remote copy)',
+          description: conflict.remote.description,
+          category: conflict.remote.category,
+          priority: conflict.remote.priority,
+          startDate: conflict.remote.startDate,
+          dueDate: conflict.remote.dueDate,
+          recurrence: conflict.remote.recurrence,
+          tags: List.of(conflict.remote.tags),
+          notes: conflict.remote.notes,
+          links: List.of(conflict.remote.links),
+          isCompleted: conflict.remote.isCompleted,
+          subTasks: conflict.remote.subTasks
+              .map((s) => s.copyWith(isCompleted: s.isCompleted))
+              .toList(),
+          createdAt: now,
+          updatedAt: now,
+        );
+        _tasks.add(remoteCopy);
+        notifyListeners();
+        await saveTasks();
+    }
   }
 
   /// Returns a list of (date, completionCount) entries for the last [days] days,

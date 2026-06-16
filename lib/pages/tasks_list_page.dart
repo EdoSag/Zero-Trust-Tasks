@@ -3,8 +3,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:provider/provider.dart';
+import 'package:zero_trust_tasks/globals/smart_filter_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/settings_provider.dart';
+import 'package:zero_trust_tasks/models/smart_filter.dart';
 import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
 import 'package:zero_trust_tasks/components/error_state_widget.dart';
 import 'package:zero_trust_tasks/components/skeleton_task_card.dart';
@@ -47,6 +49,7 @@ class _TasksListPageState extends State<TasksListPage> {
   bool _calendarView = false;
   bool _selectionMode = false;
   Set<String> _selectedTaskIds = {};
+  SmartFilter? _activeSmartFilter;
 
   @override
   void initState() {
@@ -73,15 +76,55 @@ class _TasksListPageState extends State<TasksListPage> {
     _sectioned = !settings.taskSectionsCollapsed;
   }
 
-  void _updateFilter(TaskFilterState newState) {
+  void _updateFilter(TaskFilterState newState, {bool fromSmartFilter = false}) {
     setState(() {
       _filterState = newState;
+      if (!fromSmartFilter) _activeSmartFilter = null;
     });
     if (_persistFilter) {
       SettingsProvider.of(context, listen: false).setTaskFilterStateJson(
         jsonEncode(newState.toJson()),
       );
     }
+  }
+
+  void _applySmartFilter(SmartFilter filter) {
+    setState(() => _activeSmartFilter = filter);
+    _updateFilter(filter.filter, fromSmartFilter: true);
+  }
+
+  Future<void> _showSaveFilterDialog() async {
+    final nameCtrl = TextEditingController();
+    final name = await showDialog<String>(
+      context: context,
+      builder: (dCtx) => AlertDialog(
+        title: const Text('Save current filter'),
+        content: TextField(
+          controller: nameCtrl,
+          decoration: const InputDecoration(labelText: 'Filter name'),
+          autofocus: true,
+          onSubmitted: (v) => Navigator.pop(dCtx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dCtx),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dCtx, nameCtrl.text.trim()),
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    nameCtrl.dispose();
+    if (name == null || name.isEmpty || !mounted) return;
+    final filter = SmartFilter(
+      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      name: name,
+      filter: _filterState,
+    );
+    SmartFilterProvider.of(context, listen: false).addFilter(filter);
   }
 
   void _toggleSectioned() {
@@ -362,6 +405,11 @@ class _TasksListPageState extends State<TasksListPage> {
                           onPressed: () => _openFilterSheet(categories),
                         ),
                       ),
+                      IconButton(
+                        icon: const Icon(Icons.bookmark_add_outlined),
+                        tooltip: 'Save current filter',
+                        onPressed: _showSaveFilterDialog,
+                      ),
                       if (!_calendarView)
                         IconButton(
                           icon: Icon(
@@ -392,6 +440,34 @@ class _TasksListPageState extends State<TasksListPage> {
                     ],
                   ),
                 ),
+              Consumer<SmartFilterProvider>(
+                builder: (context, sfp, _) {
+                  if (sfp.filters.isEmpty || _selectionMode) {
+                    return const SizedBox.shrink();
+                  }
+                  return SizedBox(
+                    height: 44,
+                    child: ListView.separated(
+                      scrollDirection: Axis.horizontal,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+                      itemCount: sfp.filters.length,
+                      separatorBuilder: (_, __) => const SizedBox(width: 8),
+                      itemBuilder: (context, i) {
+                        final f = sfp.filters[i];
+                        final isActive = _activeSmartFilter?.id == f.id;
+                        return FilterChip(
+                          label: Text(f.name),
+                          selected: isActive,
+                          onSelected: (_) => _applySmartFilter(f),
+                          onDeleted: () => sfp.removeFilter(f.id),
+                          deleteIcon: const Icon(Icons.close, size: 14),
+                          visualDensity: VisualDensity.compact,
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
               Expanded(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),

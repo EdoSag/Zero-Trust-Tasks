@@ -7,6 +7,8 @@ import 'package:zero_trust_tasks/core/config/env_config.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/app_state.dart';
 import 'package:zero_trust_tasks/globals/settings_provider.dart';
+import 'package:zero_trust_tasks/core/services/notification_service.dart';
+import 'package:zero_trust_tasks/globals/lock_provider.dart';
 import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/themes.dart';
 import 'package:zero_trust_tasks/components/auth_wrapper.dart';
@@ -30,6 +32,7 @@ Future<void> main() async {
       url: EnvConfig.supabaseUrl,
       anonKey: EnvConfig.supabaseAnonKey,
     );
+    await NotificationService.instance.init();
     runApp(const MyApp());
   } catch (e) {
     runApp(StartupErrorApp(errorMessage: e.toString()));
@@ -51,21 +54,24 @@ class MyApp extends StatelessWidget {
           create: (context) => SettingsProvider(sharedPrefs),
           child: ChangeNotifierProvider<SyncProvider>(
             create: (context) => SyncProvider(sharedPrefs),
-            builder: (context, child) => MaterialApp(
-              title: 'Zero-Trust Tasks',
-              theme: lightTheme,
-              darkTheme: darkTheme,
-              themeMode: context.watch<AppState>().themeMode,
-              debugShowCheckedModeBanner: false,
-              home: const AuthWrapper(),
-              routes: {
-                'AddTaskScreen': (context) => const AddTaskScreen(),
-                'LoginScreen': (context) => const LoginScreen(),
-                'MainScreen': (context) => const MainScreen(),
-                'OnboardingScreen': (context) => const OnboardingScreen(),
-                'SetupScreen': (context) => const SetupScreen(),
-                'TasksListPage': (context) => const TasksListPage(),
-              },
+            child: ChangeNotifierProvider<LockProvider>(
+              create: (context) => LockProvider(sharedPrefs),
+              builder: (context, child) => MaterialApp(
+                title: 'Zero-Trust Tasks',
+                theme: lightTheme,
+                darkTheme: darkTheme,
+                themeMode: context.watch<AppState>().themeMode,
+                debugShowCheckedModeBanner: false,
+                home: const AuthWrapper(),
+                routes: {
+                  'AddTaskScreen': (context) => const AddTaskScreen(),
+                  'LoginScreen': (context) => const LoginScreen(),
+                  'MainScreen': (context) => const MainScreen(),
+                  'OnboardingScreen': (context) => const OnboardingScreen(),
+                  'SetupScreen': (context) => const SetupScreen(),
+                  'TasksListPage': (context) => const TasksListPage(),
+                },
+              ),
             ),
           ),
         ),

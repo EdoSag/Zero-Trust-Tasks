@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:zero_trust_tasks/backup_file_helper.dart';
 import 'package:zero_trust_tasks/components/confirmation_dialog.dart';
+import 'package:zero_trust_tasks/components/restore_preview_dialog.dart';
 import 'package:zero_trust_tasks/components/settings/account_section.dart';
 import 'package:zero_trust_tasks/components/settings/appearance_section.dart';
 import 'package:zero_trust_tasks/components/settings/backup_section.dart';
@@ -74,6 +76,8 @@ class _SettingsPageState extends State<SettingsPage> {
           isLoading: _isLoading,
           onBackup: _handleBackupToCloud,
           onRestore: _handleRestoreFromCloud,
+          onExportFile: _handleExportToFile,
+          onImportFile: _handleImportFromFile,
         ),
         const SizedBox(height: 16),
         const AppearanceSection(),
@@ -264,20 +268,6 @@ class _SettingsPageState extends State<SettingsPage> {
   }
 
   Future<void> _handleRestoreFromCloud() async {
-    final confirmed = await ConfirmationDialog.show(
-      context,
-      title: 'Restore from cloud?',
-      message:
-          'This replaces the tasks on this device with your most recent '
-          'cloud backup. Any local changes made since your last backup '
-          'will be lost.',
-      confirmPhrase: 'RESTORE',
-      confirmButtonLabel: 'Restore',
-    );
-    if (!confirmed || !mounted) {
-      return;
-    }
-
     setState(() {
       _isLoading = true;
       _message = null;
@@ -289,6 +279,21 @@ class _SettingsPageState extends State<SettingsPage> {
       if (dataBlob == null || dataBlob.isEmpty) {
         throw Exception('No encrypted tasks data found for this user.');
       }
+
+      final preview = await taskManager.previewBackup(dataBlob);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      final confirmed = await RestorePreviewDialog.show(
+        context,
+        preview: preview,
+      );
+      if (!confirmed || !mounted) return;
+
+      setState(() {
+        _isLoading = true;
+        _message = null;
+      });
       await _localSecurityRepository.saveCloudVaultBlob(dataBlob);
       await taskManager.restoreFromBackup(dataBlob);
 
@@ -316,6 +321,108 @@ class _SettingsPageState extends State<SettingsPage> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Restore failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleExportToFile() async {
+    setState(() {
+      _isLoading = true;
+      _message = null;
+    });
+    try {
+      final taskManager = TaskManager.of(context);
+      await BackupFileHelper.exportToFile(taskManager);
+      if (mounted) {
+        setState(() {
+          _message = 'Backup exported to your documents folder.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Backup file exported'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _message = 'Export failed: $e';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Export failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleImportFromFile() async {
+    setState(() {
+      _isLoading = true;
+      _message = null;
+    });
+    try {
+      final taskManager = TaskManager.of(context);
+      final encryptedPayload =
+          await BackupFileHelper.readEncryptedPayloadFromFile();
+      if (encryptedPayload == null || !mounted) {
+        setState(() => _isLoading = false);
+        return; // user cancelled file picker
+      }
+
+      final preview = await taskManager.previewBackup(encryptedPayload);
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      final confirmed = await RestorePreviewDialog.show(
+        context,
+        preview: preview,
+        confirmButtonLabel: 'Import',
+      );
+      if (!confirmed || !mounted) return;
+
+      setState(() {
+        _isLoading = true;
+        _message = null;
+      });
+      await taskManager.restoreFromBackup(encryptedPayload);
+      if (mounted) {
+        setState(() {
+          _message = 'Import completed.';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Import completed'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _message = 'Import failed: $e';
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Import failed: $e'),
             backgroundColor: Colors.red,
           ),
         );

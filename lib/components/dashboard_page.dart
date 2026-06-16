@@ -11,6 +11,7 @@ import 'package:zero_trust_tasks/components/task_card.dart';
 import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/models/task_status_filter.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/pages/insights_page.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
 @NowaGenerated()
@@ -128,6 +129,17 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               PriorityBreakdown(priorities: taskManager.tasksByPriorityCount),
+              const SizedBox(height: 16),
+              FilledButton.tonalIcon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const InsightsPage(),
+                  ),
+                ),
+                icon: const Icon(Icons.insights),
+                label: const Text('View Productivity Insights'),
+              ),
               const SizedBox(height: 24),
               Text(
                 'Recent Tasks',

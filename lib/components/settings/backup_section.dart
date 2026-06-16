@@ -4,18 +4,23 @@ import 'package:zero_trust_tasks/core/utils/relative_time_formatter.dart';
 import 'package:zero_trust_tasks/components/settings/settings_section_card.dart';
 import 'package:zero_trust_tasks/globals/sync_provider.dart';
 
-/// Backup/restore controls and sync status (items 4, 18).
+/// Backup/restore controls, sync status, and local file export/import
+/// (items 4, 18, 26).
 class BackupSection extends StatelessWidget {
   const BackupSection({
     super.key,
     required this.isLoading,
     required this.onBackup,
     required this.onRestore,
+    required this.onExportFile,
+    required this.onImportFile,
   });
 
   final bool isLoading;
   final VoidCallback onBackup;
   final VoidCallback onRestore;
+  final VoidCallback onExportFile;
+  final VoidCallback onImportFile;
 
   @override
   Widget build(BuildContext context) {
@@ -94,6 +99,67 @@ class BackupSection extends StatelessWidget {
               ),
             ),
           ),
+        ),
+        const Divider(height: 28),
+        Text(
+          'Auto backup',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        SegmentedButton<AutoBackupFrequency>(
+          segments: AutoBackupFrequency.values
+              .map(
+                (f) => ButtonSegment(
+                  value: f,
+                  label: Text(f.displayName),
+                ),
+              )
+              .toList(),
+          selected: {sync.autoBackupFrequency},
+          onSelectionChanged: (selection) {
+            sync.setAutoBackupFrequency(selection.first);
+          },
+        ),
+        const Divider(height: 28),
+        Text(
+          'Local file backup',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: isLoading ? null : onExportFile,
+                icon: const Icon(Icons.upload_file_outlined, size: 18),
+                label: const Text('Export file'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: isLoading ? null : onImportFile,
+                icon: const Icon(Icons.download_outlined, size: 18),
+                label: const Text('Import file'),
+                style: OutlinedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ],
     );

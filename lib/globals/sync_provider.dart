@@ -4,13 +4,43 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
 import 'package:zero_trust_tasks/core/storage/preference_keys.dart';
 
-/// Tracks when the local data was last backed up to the cloud, and whether
-/// the cloud copy is newer than that (item 4).
+enum AutoBackupFrequency { off, daily, weekly }
+
+extension AutoBackupFrequencyExtension on AutoBackupFrequency {
+  String get displayName {
+    switch (this) {
+      case AutoBackupFrequency.off:
+        return 'Off';
+      case AutoBackupFrequency.daily:
+        return 'Daily';
+      case AutoBackupFrequency.weekly:
+        return 'Weekly';
+    }
+  }
+
+  String get _key {
+    return name;
+  }
+
+  static AutoBackupFrequency fromKey(String key) {
+    return AutoBackupFrequency.values.firstWhere(
+      (f) => f.name == key,
+      orElse: () => AutoBackupFrequency.off,
+    );
+  }
+}
+
+/// Tracks sync state (last backup time, remote status) and auto-backup
+/// frequency preference (items 4, 22).
 class SyncProvider extends ChangeNotifier {
   SyncProvider(this._prefs) {
-    final stored = _prefs.getString(PreferenceKeys.lastSyncedAt);
-    if (stored != null) {
-      _lastSyncedAt = DateTime.tryParse(stored);
+    final storedSyncedAt = _prefs.getString(PreferenceKeys.lastSyncedAt);
+    if (storedSyncedAt != null) {
+      _lastSyncedAt = DateTime.tryParse(storedSyncedAt);
+    }
+    final storedFreq = _prefs.getString(PreferenceKeys.autoBackupFrequency);
+    if (storedFreq != null) {
+      _autoBackupFrequency = AutoBackupFrequencyExtension.fromKey(storedFreq);
     }
   }
 
@@ -23,33 +53,29 @@ class SyncProvider extends ChangeNotifier {
   DateTime? _lastSyncedAt;
   DateTime? _remoteUpdatedAt;
   bool _isChecking = false;
+  AutoBackupFrequency _autoBackupFrequency = AutoBackupFrequency.off;
 
-  /// When the local data was last backed up to (or restored from) the cloud.
-  DateTime? get lastSyncedAt {
-    return _lastSyncedAt;
-  }
+  DateTime? get lastSyncedAt => _lastSyncedAt;
+  DateTime? get remoteUpdatedAt => _remoteUpdatedAt;
+  bool get isChecking => _isChecking;
+  AutoBackupFrequency get autoBackupFrequency => _autoBackupFrequency;
 
-  /// The cloud copy's `updated_at`, last time it was checked.
-  DateTime? get remoteUpdatedAt {
-    return _remoteUpdatedAt;
-  }
-
-  bool get isChecking {
-    return _isChecking;
-  }
-
-  /// Whether the cloud copy appears newer than the last local backup.
   bool get hasNewerRemoteData {
-    if (_remoteUpdatedAt == null) {
-      return false;
-    }
-    if (_lastSyncedAt == null) {
-      return true;
-    }
+    if (_remoteUpdatedAt == null) return false;
+    if (_lastSyncedAt == null) return true;
     return _remoteUpdatedAt!.isAfter(_lastSyncedAt!);
   }
 
-  /// Marks the data as just backed up to / restored from the cloud.
+  Future<void> setAutoBackupFrequency(AutoBackupFrequency frequency) async {
+    if (_autoBackupFrequency == frequency) return;
+    _autoBackupFrequency = frequency;
+    notifyListeners();
+    await _prefs.setString(
+      PreferenceKeys.autoBackupFrequency,
+      frequency._key,
+    );
+  }
+
   Future<void> markSynced({DateTime? at}) async {
     final timestamp = at ?? DateTime.now().toUtc();
     _lastSyncedAt = timestamp;
@@ -61,18 +87,15 @@ class SyncProvider extends ChangeNotifier {
     );
   }
 
-  /// Fetches the cloud copy's last-updated timestamp without downloading it.
   Future<void> checkRemoteStatus() async {
-    if (SupabaseService.instance.currentUser == null) {
-      return;
-    }
+    if (SupabaseService.instance.currentUser == null) return;
     _isChecking = true;
     notifyListeners();
     try {
-      _remoteUpdatedAt =
-          await SupabaseService.instance.fetchEncryptedTasksMetadataForCurrentUser();
+      _remoteUpdatedAt = await SupabaseService.instance
+          .fetchEncryptedTasksMetadataForCurrentUser();
     } catch (_) {
-      // Leave previous value; failures here are non-critical.
+      // Non-critical; leave previous value.
     } finally {
       _isChecking = false;
       notifyListeners();

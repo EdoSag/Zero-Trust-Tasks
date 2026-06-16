@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
+
+enum _TaskAction { duplicate, archive, delete }
 
 @NowaGenerated()
 class TaskDetailsScreen extends StatefulWidget {
@@ -49,10 +53,47 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
               );
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.delete),
-            tooltip: 'Delete task',
-            onPressed: () => _deleteTask(context, currentTask),
+          PopupMenuButton<_TaskAction>(
+            onSelected: (action) {
+              switch (action) {
+                case _TaskAction.duplicate:
+                  _duplicateTask(context, currentTask);
+                case _TaskAction.archive:
+                  _archiveTask(context, currentTask);
+                case _TaskAction.delete:
+                  _deleteTask(context, currentTask);
+              }
+            },
+            itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: _TaskAction.duplicate,
+                child: ListTile(
+                  leading: Icon(Icons.copy_outlined),
+                  title: Text('Duplicate'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _TaskAction.archive,
+                child: ListTile(
+                  leading: Icon(
+                    currentTask.isArchived
+                        ? Icons.unarchive_outlined
+                        : Icons.archive_outlined,
+                  ),
+                  title: Text(currentTask.isArchived ? 'Unarchive' : 'Archive'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: _TaskAction.delete,
+                child: ListTile(
+                  leading: Icon(Icons.delete_outline, color: Colors.red),
+                  title: Text('Delete', style: TextStyle(color: Colors.red)),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -155,6 +196,20 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                       ],
                     ),
                   ],
+                  if (currentTask.startDate != null) ...[
+                    const SizedBox(height: 12.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.play_circle_outline, size: 20.0),
+                        const SizedBox(width: 8.0),
+                        Text(
+                          'Start Date: ',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(dateFormat.format(currentTask.startDate!)),
+                      ],
+                    ),
+                  ],
                   if (currentTask.dueDate != null) ...[
                     const SizedBox(height: 12.0),
                     Row(
@@ -169,11 +224,11 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                         ),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Due Date: ',
+                          'Due: ',
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
-                          dateFormat.format(currentTask.dueDate!),
+                          _formatDueDate(currentTask.dueDate!),
                           style: TextStyle(
                             color: urgency == TaskUrgency.normal ||
                                     urgency == TaskUrgency.none
@@ -206,6 +261,99 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                           ),
                         ],
                       ],
+                    ),
+                  ],
+                  if (currentTask.recurrence != null) ...[
+                    const SizedBox(height: 12.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.repeat, size: 20.0),
+                        const SizedBox(width: 8.0),
+                        Text(
+                          'Repeats: ',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(currentTask.recurrence!.frequency.displayName),
+                        if (currentTask.recurrence!.interval > 1)
+                          Text(' every ${currentTask.recurrence!.interval}'),
+                      ],
+                    ),
+                  ],
+                  if (currentTask.reminderAt != null) ...[
+                    const SizedBox(height: 12.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.notifications_outlined, size: 20.0),
+                        const SizedBox(width: 8.0),
+                        Text(
+                          'Reminder: ',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                        Text(DateFormat('MMM dd, yyyy • h:mm a').format(currentTask.reminderAt!)),
+                      ],
+                    ),
+                  ],
+                  if (currentTask.tags.isNotEmpty) ...[
+                    const SizedBox(height: 12.0),
+                    Wrap(
+                      spacing: 6.0,
+                      runSpacing: 4.0,
+                      children: currentTask.tags
+                          .map(
+                            (tag) => Chip(
+                              label: Text(tag),
+                              avatar: const Icon(Icons.tag, size: 14),
+                              materialTapTargetSize:
+                                  MaterialTapTargetSize.shrinkWrap,
+                              padding: EdgeInsets.zero,
+                            ),
+                          )
+                          .toList(),
+                    ),
+                  ],
+                  if (currentTask.notes != null) ...[
+                    const SizedBox(height: 12.0),
+                    Text(
+                      'Notes',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4.0),
+                    Text(currentTask.notes!),
+                  ],
+                  if (currentTask.links.isNotEmpty) ...[
+                    const SizedBox(height: 12.0),
+                    Text(
+                      'Links',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4.0),
+                    ...currentTask.links.map(
+                      (link) => InkWell(
+                        onTap: () => _launchUrl(link),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2.0),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.link, size: 16.0, color: Colors.blue),
+                              const SizedBox(width: 4.0),
+                              Expanded(
+                                child: Text(
+                                  link,
+                                  style: const TextStyle(
+                                    color: Colors.blue,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
                   ],
                 ],
@@ -266,6 +414,51 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _duplicateTask(BuildContext context, Task task) async {
+    await TaskManager.of(context).duplicateTask(task.id);
+    if (context.mounted) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Task duplicated')),
+      );
+    }
+  }
+
+  Future<void> _archiveTask(BuildContext context, Task task) async {
+    final taskManager = TaskManager.of(context);
+    if (task.isArchived) {
+      await taskManager.unarchiveTask(task.id);
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Task unarchived')),
+        );
+      }
+    } else {
+      await taskManager.archiveTask(task.id);
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Task archived')),
+        );
+      }
+    }
+  }
+
+  String _formatDueDate(DateTime date) {
+    final hasTime = date.hour != 0 || date.minute != 0;
+    return hasTime
+        ? DateFormat('MMM dd, yyyy • h:mm a').format(date)
+        : DateFormat('MMM dd, yyyy').format(date);
+  }
+
+  Future<void> _launchUrl(String url) async {
+    final uri = Uri.tryParse(url);
+    if (uri == null) return;
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
   }
 
   Future<void> _toggleComplete(BuildContext context, Task task) async {

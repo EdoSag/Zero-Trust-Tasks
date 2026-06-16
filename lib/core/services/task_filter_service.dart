@@ -27,6 +27,8 @@ class TaskFilterService {
       if (task.category?.toLowerCase().contains(trimmed) ?? false) {
         return true;
       }
+      if (task.tags.any((t) => t.toLowerCase().contains(trimmed))) return true;
+      if (task.notes?.toLowerCase().contains(trimmed) ?? false) return true;
       return task.subTasks.any(
         (subTask) => subTask.title.toLowerCase().contains(trimmed),
       );
@@ -62,7 +64,11 @@ class TaskFilterService {
   }
 
   static List<Task> applyFilters(List<Task> tasks, TaskFilterState filter) {
-    var result = searchTasks(tasks, filter.searchQuery);
+    // Normal views never show trashed or archived tasks.
+    var result = tasks
+        .where((t) => t.deletedAt == null && !t.isArchived)
+        .toList();
+    result = searchTasks(result, filter.searchQuery);
     if (filter.category != null) {
       result = result.where((t) => t.category == filter.category).toList();
     }

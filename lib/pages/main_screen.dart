@@ -1,10 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/core/repositories/local_security_repository.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
+import 'package:zero_trust_tasks/core/services/auto_backup_service.dart';
+import 'package:zero_trust_tasks/globals/lock_provider.dart';
 import 'package:zero_trust_tasks/globals/settings_provider.dart';
+import 'package:zero_trust_tasks/globals/sync_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
+import 'package:zero_trust_tasks/pages/lock_screen.dart';
 import 'package:zero_trust_tasks/components/dashboard_page.dart';
 import 'package:zero_trust_tasks/components/encryption_info_sheet.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
@@ -24,15 +30,71 @@ class MainScreen extends StatefulWidget {
 }
 
 @NowaGenerated()
-class _MainScreenState extends State<MainScreen> {
+class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   late int _selectedIndex;
   final _localSecurityRepository = LocalSecurityRepository();
+  Timer? _lockTimer;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _selectedIndex = SettingsProvider.of(context, listen: false).lastSelectedTab;
     _guardAndLoad();
+  }
+
+  @override
+  void dispose() {
+    _lockTimer?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused) {
+      _scheduleLock();
+    } else if (state == AppLifecycleState.resumed) {
+      _lockTimer?.cancel();
+      _checkLockAndResume();
+    }
+  }
+
+  void _scheduleLock() {
+    if (!mounted) return;
+    final lockProvider = LockProvider.of(context, listen: false);
+    if (lockProvider.autoLockDuration == AutoLockDuration.never) return;
+    final delay = lockProvider.autoLockDuration.duration ?? Duration.zero;
+    _lockTimer?.cancel();
+    _lockTimer = Timer(delay, () {
+      if (mounted) {
+        LockProvider.of(context, listen: false).lock();
+      }
+    });
+  }
+
+  void _checkLockAndResume() {
+    if (!mounted) return;
+    final lockProvider = LockProvider.of(context, listen: false);
+    if (lockProvider.isLocked) {
+      Navigator.of(context).push(
+        MaterialPageRoute<void>(
+          builder: (_) => const LockScreen(),
+          fullscreenDialog: true,
+        ),
+      );
+    }
+    _triggerAutoBackup();
+  }
+
+  void _triggerAutoBackup() {
+    if (!mounted) return;
+    final taskManager = TaskManager.of(context);
+    final syncProvider = SyncProvider.of(context, listen: false);
+    AutoBackupService.maybeRunBackup(
+      taskManager: taskManager,
+      syncProvider: syncProvider,
+    );
   }
 
   void _onDestinationSelected(int index) {

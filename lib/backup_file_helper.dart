@@ -38,6 +38,39 @@ class BackupFileHelper {
     await file.writeAsString(jsonString);
   }
 
+  /// Picks a .ztasks file and returns its validated encrypted payload without
+  /// applying it. Returns null if the user cancelled.
+  /// Throws if the salt doesn't match the current account.
+  static Future<String?> readEncryptedPayloadFromFile() async {
+    if (!EncryptionService.isUnlocked) {
+      throw Exception('Session locked. Cannot import.');
+    }
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['ztasks'],
+    );
+    if (result == null || result.files.isEmpty) {
+      return null;
+    }
+    final filePath = result.files.first.path;
+    if (filePath == null) {
+      throw Exception('Invalid file path');
+    }
+    final file = io.File(filePath);
+    final jsonString = await file.readAsString();
+    final migrationPackage = MigrationPackage.fromJsonString(jsonString);
+    final localSaltBytes = await _localSecurityRepository.readSalt();
+    final localSalt =
+        localSaltBytes == null ? null : Base64UrlHelper.encode(localSaltBytes);
+    if (localSalt != migrationPackage.salt) {
+      throw Exception(
+        'WARNING: This backup was created with a different master password. '
+        'You may need to re-authenticate with the original password.',
+      );
+    }
+    return migrationPackage.encryptedPayload;
+  }
+
   /// Import tasks from a local file (.ztasks)
   static Future<void> importFromFile(TaskManager taskManager) async {
     if (!EncryptionService.isUnlocked) {

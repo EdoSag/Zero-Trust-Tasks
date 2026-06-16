@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/storage/preference_keys.dart';
 
 /// Holds non-sensitive app/UI preferences that are persisted locally via
@@ -12,6 +13,12 @@ class SettingsProvider extends ChangeNotifier {
     _taskSectionsCollapsed =
         _prefs.getBool(PreferenceKeys.taskSectionsCollapsed) ?? false;
     _taskFilterStateJson = _prefs.getString(PreferenceKeys.taskFilterState);
+    _showTaskDetailsInNotifications = _prefs.getBool(
+          PreferenceKeys.showTaskDetailsInNotifications,
+        ) ??
+        false;
+    NotificationService.instance.showTaskDetailsInNotifications =
+        _showTaskDetailsInNotifications;
   }
 
   factory SettingsProvider.of(BuildContext context, {bool listen = true}) {
@@ -23,6 +30,7 @@ class SettingsProvider extends ChangeNotifier {
   late int _lastSelectedTab;
   late bool _taskSectionsCollapsed;
   String? _taskFilterStateJson;
+  late bool _showTaskDetailsInNotifications;
 
   int get lastSelectedTab {
     return _lastSelectedTab;
@@ -35,6 +43,10 @@ class SettingsProvider extends ChangeNotifier {
   /// Raw JSON string of the persisted [TaskFilterState], if any.
   String? get taskFilterStateJson {
     return _taskFilterStateJson;
+  }
+
+  bool get showTaskDetailsInNotifications {
+    return _showTaskDetailsInNotifications;
   }
 
   Future<void> setLastSelectedTab(int index) async {
@@ -62,5 +74,16 @@ class SettingsProvider extends ChangeNotifier {
     } else {
       await _prefs.setString(PreferenceKeys.taskFilterState, json);
     }
+  }
+
+  Future<void> setShowTaskDetailsInNotifications(bool value) async {
+    if (_showTaskDetailsInNotifications == value) return;
+    _showTaskDetailsInNotifications = value;
+    NotificationService.instance.showTaskDetailsInNotifications = value;
+    notifyListeners();
+    await _prefs.setBool(
+      PreferenceKeys.showTaskDetailsInNotifications,
+      value,
+    );
   }
 }

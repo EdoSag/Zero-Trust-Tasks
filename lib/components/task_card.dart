@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:intl/intl.dart';
@@ -10,9 +11,20 @@ import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 @NowaGenerated()
 class TaskCard extends StatelessWidget {
   @NowaGenerated({'loader': 'auto-constructor'})
-  const TaskCard({super.key, required this.task});
+  const TaskCard({
+    super.key,
+    required this.task,
+    this.selectionMode = false,
+    this.isSelected = false,
+    this.onLongPress,
+    this.onSelectionToggle,
+  });
 
   final Task task;
+  final bool selectionMode;
+  final bool isSelected;
+  final VoidCallback? onLongPress;
+  final VoidCallback? onSelectionToggle;
 
   @override
   Widget build(BuildContext context) {
@@ -26,15 +38,18 @@ class TaskCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
       child: InkWell(
-        onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => TaskDetailsScreen(task: task),
-            ),
-          );
-        },
-        child: IntrinsicHeight(
+        onTap: selectionMode
+            ? onSelectionToggle
+            : () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => TaskDetailsScreen(task: task),
+                  ),
+                ),
+        onLongPress: selectionMode ? null : onLongPress,
+        child: Stack(
+          children: [
+            IntrinsicHeight(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
@@ -130,6 +145,7 @@ class TaskCard extends StatelessWidget {
                       ),
                       if (task.dueDate != null ||
                           task.category != null ||
+                          task.recurrence != null ||
                           hasSubTasks) ...[
                         const SizedBox(height: 12.0),
                         Wrap(
@@ -170,6 +186,45 @@ class TaskCard extends StatelessWidget {
                                           .textTheme
                                           .bodySmall
                                           ?.copyWith(color: urgencyColor),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            if (task.recurrence != null)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8.0,
+                                  vertical: 4.0,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .surfaceContainerHighest,
+                                  borderRadius: BorderRadius.circular(8.0),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.repeat,
+                                      size: 12.0,
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurface
+                                          .withValues(alpha: 0.6),
+                                    ),
+                                    const SizedBox(width: 4.0),
+                                    Text(
+                                      task.recurrence!.frequency.displayName,
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface
+                                                .withValues(alpha: 0.6),
+                                          ),
                                     ),
                                   ],
                                 ),
@@ -275,6 +330,32 @@ class TaskCard extends StatelessWidget {
               ),
             ],
           ),
+        ),
+            if (isSelected)
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .primary
+                        .withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12.0),
+                  ),
+                ),
+              ),
+            if (selectionMode)
+              Positioned(
+                top: 8,
+                right: 8,
+                child: Icon(
+                  isSelected
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
+                  color: Theme.of(context).colorScheme.primary,
+                  size: 20.0,
+                ),
+              ),
+          ],
         ),
       ),
     );

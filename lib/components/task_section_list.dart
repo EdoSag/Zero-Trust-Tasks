@@ -12,11 +12,19 @@ class TaskSectionList extends StatelessWidget {
     required this.tasks,
     required this.sectioned,
     this.padding = const EdgeInsets.all(16),
+    this.selectionMode = false,
+    this.selectedTaskIds = const {},
+    this.onLongPress,
+    this.onToggleSelection,
   });
 
   final List<Task> tasks;
   final bool sectioned;
   final EdgeInsets padding;
+  final bool selectionMode;
+  final Set<String> selectedTaskIds;
+  final void Function(String taskId)? onLongPress;
+  final void Function(String taskId)? onToggleSelection;
 
   static const _sectionOrder = [
     TaskSection.overdue,
@@ -32,7 +40,7 @@ class TaskSectionList extends StatelessWidget {
       return ListView.builder(
         padding: padding,
         itemCount: tasks.length,
-        itemBuilder: (context, index) => TaskCard(task: tasks[index]),
+        itemBuilder: (context, index) => _buildCard(tasks[index]),
       );
     }
 
@@ -56,12 +64,23 @@ class TaskSectionList extends StatelessWidget {
           }
           remaining--;
           if (remaining < items.length) {
-            return TaskCard(task: items[remaining]);
+            return _buildCard(items[remaining]);
           }
           remaining -= items.length;
         }
         return const SizedBox.shrink();
       },
+    );
+  }
+
+  Widget _buildCard(Task task) {
+    return TaskCard(
+      task: task,
+      selectionMode: selectionMode,
+      isSelected: selectedTaskIds.contains(task.id),
+      onLongPress: onLongPress != null ? () => onLongPress!(task.id) : null,
+      onSelectionToggle:
+          onToggleSelection != null ? () => onToggleSelection!(task.id) : null,
     );
   }
 }

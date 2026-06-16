@@ -74,6 +74,10 @@ class LocalSecurityRepository {
     return Base64UrlHelper.decode(encoded);
   }
 
+  Future<String?> readVerificationData() async {
+    return _secureStorage.read(key: SecurityConstants.secureVerificationData);
+  }
+
   Future<void> saveVerificationData(String verificationData) async {
     await _secureStorage.write(
       key: SecurityConstants.secureVerificationData,

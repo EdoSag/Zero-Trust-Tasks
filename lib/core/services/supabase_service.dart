@@ -244,6 +244,34 @@ class SupabaseService {
     return (response as List<dynamic>).isNotEmpty;
   }
 
+  /// Opens a Realtime channel that fires [onChange] for every insert/update
+  /// on the current user's rows in [_taskItemsTable], so other devices' task
+  /// changes can be applied live. Caller owns the returned channel and must
+  /// pass it to [unsubscribeTaskItemChanges] when done listening.
+  RealtimeChannel subscribeToTaskItemChanges({
+    required void Function(PostgresChangePayload payload) onChange,
+  }) {
+    final user = _requireCurrentUser();
+    final channel = _client.channel('encrypted_task_items:${user.id}')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: _taskItemsTable,
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: 'user_id',
+          value: user.id,
+        ),
+        callback: onChange,
+      );
+    channel.subscribe();
+    return channel;
+  }
+
+  Future<void> unsubscribeTaskItemChanges(RealtimeChannel channel) async {
+    await _client.removeChannel(channel);
+  }
+
   User _requireCurrentUser() {
     final user = currentUser;
     if (user == null) {

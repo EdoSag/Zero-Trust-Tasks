@@ -33,6 +33,29 @@ class BackupSection extends StatelessWidget {
       title: 'Backup',
       icon: Icons.cloud_outlined,
       children: [
+        Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Real-time sync', style: theme.textTheme.titleSmall),
+                  Text(
+                    'Automatically sync changes across your devices as they happen.',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Switch(
+              value: sync.autoSyncEnabled,
+              onChanged: (value) => sync.setAutoSyncEnabled(value),
+            ),
+          ],
+        ),
+        const Divider(height: 28),
         if (sync.lastSyncedAt != null)
           Padding(
             padding: const EdgeInsets.only(bottom: 12),

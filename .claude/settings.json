@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls \"/c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/\" 2>/dev/null | grep -i realtime)",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev//**)",
+      "Bash(grep -rn \"class RealtimeChannel\\\\|onPostgresChanges\\\\|class PostgresChangeFilter\\\\|enum PostgresChangeEvent\\\\|enum PostgresChangeFilterType\" \"/c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.7.0/lib/\" 2>/dev/null)",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.7.0/lib//**)",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.7.0/lib/src/**)",
+      "Bash(grep -n \"class PostgresChangePayload\" -A 40 \"/c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/realtime_client-2.7.0/lib/src/types.dart\")",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/supabase_flutter-2.12.0/lib/**)",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/supabase-2.10.2/lib//**)",
+      "Bash(grep -n \"export\" \"/c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/supabase-2.10.2/lib/supabase.dart\")",
+      "Read(//c/Users/Edo/AppData/Local/Pub/Cache/hosted/pub.dev/supabase-2.10.2/lib/**)",
+      "mcp__claude_ai_Supabase__list_projects",
+      "mcp__claude_ai_Supabase__apply_migration",
+      "mcp__claude_ai_Supabase__execute_sql"
+    ]
+  }
+}

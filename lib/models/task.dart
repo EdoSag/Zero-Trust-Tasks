@@ -2,6 +2,7 @@ import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:uuid/uuid.dart';
 
 @NowaGenerated()
 class Task {
@@ -43,7 +44,7 @@ class Task {
   }) {
     final now = DateTime.now();
     return Task(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       title: title,
       description: description,
       category: category,

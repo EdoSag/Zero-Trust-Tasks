@@ -4,6 +4,8 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cryptography/cryptography.dart';
 import 'package:nowa_runtime/nowa_runtime.dart';
+import 'package:supabase_flutter/supabase_flutter.dart'
+    show PostgresChangeEvent, PostgresChangePayload, RealtimeChannel;
 import 'package:zero_trust_tasks/core/repositories/local_security_repository.dart';
 import 'package:zero_trust_tasks/core/services/supabase_service.dart';
 import 'package:zero_trust_tasks/core/services/auto_backup_service.dart';
@@ -37,12 +39,16 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   final _localSecurityRepository = LocalSecurityRepository();
   Timer? _lockTimer;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  RealtimeChannel? _taskItemsChannel;
+  late final SyncProvider _syncProvider;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _selectedIndex = SettingsProvider.of(context, listen: false).lastSelectedTab;
+    _syncProvider = SyncProvider.of(context, listen: false);
+    _syncProvider.addListener(_onSyncSettingsChanged);
     _guardAndLoad();
     _connectivitySubscription = Connectivity()
         .onConnectivityChanged
@@ -53,6 +59,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void dispose() {
     _lockTimer?.cancel();
     _connectivitySubscription?.cancel();
+    _syncProvider.removeListener(_onSyncSettingsChanged);
+    _unsubscribeTaskRealtime();
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
@@ -61,10 +69,58 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.paused) {
       _scheduleLock();
+      _unsubscribeTaskRealtime();
     } else if (state == AppLifecycleState.resumed) {
       _lockTimer?.cancel();
       _checkLockAndResume();
     }
+  }
+
+  /// Mirrors the auto-sync toggle into [TaskManager] (which gates immediate
+  /// push-on-mutation) and opens/closes the Realtime pull channel to match.
+  void _onSyncSettingsChanged() {
+    if (!mounted) return;
+    TaskManager.of(context, listen: false).autoSyncEnabled =
+        _syncProvider.autoSyncEnabled;
+    if (_syncProvider.autoSyncEnabled) {
+      _subscribeToTaskRealtime();
+    } else {
+      _unsubscribeTaskRealtime();
+    }
+  }
+
+  void _subscribeToTaskRealtime() {
+    if (!mounted || _taskItemsChannel != null) return;
+    if (!_syncProvider.autoSyncEnabled) return;
+    if (SupabaseService.instance.currentUser == null) return;
+    _taskItemsChannel = SupabaseService.instance.subscribeToTaskItemChanges(
+      onChange: _handleRealtimeTaskChange,
+    );
+  }
+
+  void _unsubscribeTaskRealtime() {
+    final channel = _taskItemsChannel;
+    if (channel == null) return;
+    _taskItemsChannel = null;
+    unawaited(SupabaseService.instance.unsubscribeTaskItemChanges(channel));
+  }
+
+  void _handleRealtimeTaskChange(PostgresChangePayload payload) {
+    if (!mounted || !EncryptionService.isUnlocked) return;
+    final isDeleteEvent = payload.eventType == PostgresChangeEvent.delete;
+    final record = isDeleteEvent ? payload.oldRecord : payload.newRecord;
+    final id = record['id'] as String?;
+    final updatedAtRaw = record['updated_at'] as String?;
+    if (id == null || updatedAtRaw == null) return;
+    final deleted = isDeleteEvent || (record['deleted'] as bool? ?? false);
+    unawaited(
+      TaskManager.of(context, listen: false).applyRemoteTaskItem(
+        id: id,
+        deleted: deleted,
+        dataBlob: record['data_blob'] as String?,
+        updatedAt: DateTime.parse(updatedAtRaw),
+      ),
+    );
   }
 
   void _scheduleLock() {
@@ -92,6 +148,7 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       );
     }
     _triggerAutoBackup();
+    _subscribeToTaskRealtime();
   }
 
   void _onConnectivityChanged(List<ConnectivityResult> results) {
@@ -270,6 +327,8 @@ class _MainScreenState extends State<MainScreen> with WidgetsBindingObserver {
       return;
     }
 
-    TaskManager.of(context).loadTasks();
+    await TaskManager.of(context).loadTasks();
+    if (!mounted) return;
+    _onSyncSettingsChanged();
   }
 }

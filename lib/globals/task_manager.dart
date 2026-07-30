@@ -15,6 +15,7 @@ import 'package:zero_trust_tasks/encryption_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
 
 @NowaGenerated()
 class TaskManager extends ChangeNotifier {
@@ -32,6 +33,12 @@ class TaskManager extends ChangeNotifier {
 
   Task? _lastDeletedTask;
 
+  /// Mirrors [SyncProvider.autoSyncEnabled]; kept in sync by MainScreen.
+  bool autoSyncEnabled = false;
+
+  final Map<String, Timer> _pendingRemotePushes = {};
+  static const Duration _remotePushDebounce = Duration(milliseconds: 800);
+
   List<Task> get tasks {
     return List.unmodifiable(_tasks);
   }
@@ -42,6 +49,15 @@ class TaskManager extends ChangeNotifier {
 
   String? get error {
     return _error;
+  }
+
+  @override
+  void dispose() {
+    for (final timer in _pendingRemotePushes.values) {
+      timer.cancel();
+    }
+    _pendingRemotePushes.clear();
+    super.dispose();
   }
 
   int get totalTasks {
@@ -131,10 +147,47 @@ class TaskManager extends ChangeNotifier {
     }
   }
 
+  /// Schedules a debounced, best-effort push of [taskId]'s current state to
+  /// `encrypted_task_items`. No-ops silently if auto-sync is off, the vault
+  /// is locked, or no user is signed in — local-first UX must never depend
+  /// on this succeeding; a future [syncTasks] pass will catch up any misses.
+  void _scheduleRemotePush(String taskId) {
+    if (!autoSyncEnabled) return;
+    if (!EncryptionService.isUnlocked) return;
+    if (SupabaseService.instance.currentUser == null) return;
+    _pendingRemotePushes[taskId]?.cancel();
+    _pendingRemotePushes[taskId] = Timer(_remotePushDebounce, () {
+      _pendingRemotePushes.remove(taskId);
+      unawaited(_pushTaskNow(taskId));
+    });
+  }
+
+  Future<void> _pushTaskNow(String taskId) async {
+    if (!EncryptionService.isUnlocked) return;
+    if (SupabaseService.instance.currentUser == null) return;
+    final index = _tasks.indexWhere((t) => t.id == taskId);
+    if (index == -1) return; // removed locally since scheduling
+    final task = _tasks[index];
+    try {
+      final encrypted = await EncryptionService.encryptData(
+        jsonEncode(task.toJson()),
+      );
+      await SupabaseService.instance.upsertEncryptedTaskItem(
+        id: task.id,
+        dataBlob: encrypted,
+        updatedAt: task.updatedAt,
+      );
+    } catch (_) {
+      // Best-effort: local save already succeeded; a future syncTasks() call
+      // (connectivity regain / manual "Sync now") will catch this up.
+    }
+  }
+
   Future<void> addTask(Task task) async {
     _tasks.add(task);
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(task.id);
     unawaited(NotificationService.instance.scheduleTaskReminder(task));
   }
 
@@ -145,6 +198,7 @@ class TaskManager extends ChangeNotifier {
       _tasks[index] = saved;
       notifyListeners();
       await saveTasks();
+      _scheduleRemotePush(saved.id);
       unawaited(NotificationService.instance.scheduleTaskReminder(saved));
     }
   }
@@ -158,6 +212,7 @@ class TaskManager extends ChangeNotifier {
     _tasks[index] = _tasks[index].copyWith(deletedAt: DateTime.now());
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(taskId);
     unawaited(NotificationService.instance.cancelReminder(taskId));
   }
 
@@ -175,6 +230,7 @@ class TaskManager extends ChangeNotifier {
     _tasks[index] = _tasks[index].copyWith(clearDeletedAt: true);
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(taskId);
   }
 
   Future<void> permanentlyDeleteTask(String taskId) async {
@@ -194,6 +250,7 @@ class TaskManager extends ChangeNotifier {
     _tasks[index] = _tasks[index].copyWith(isArchived: true, updatedAt: DateTime.now());
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(taskId);
   }
 
   Future<void> unarchiveTask(String taskId) async {
@@ -202,6 +259,7 @@ class TaskManager extends ChangeNotifier {
     _tasks[index] = _tasks[index].copyWith(isArchived: false, updatedAt: DateTime.now());
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(taskId);
   }
 
   List<Task> getTrashedTasks() {
@@ -215,7 +273,7 @@ class TaskManager extends ChangeNotifier {
     final original = _tasks.firstWhere((t) => t.id == taskId);
     final now = DateTime.now();
     final copy = Task(
-      id: now.millisecondsSinceEpoch.toString(),
+      id: const Uuid().v4(),
       title: '${original.title} (Copy)',
       description: original.description,
       category: original.category,
@@ -238,6 +296,7 @@ class TaskManager extends ChangeNotifier {
     _tasks.add(copy);
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(copy.id);
   }
 
   List<Task> getArchivedTasks() {
@@ -266,6 +325,7 @@ class TaskManager extends ChangeNotifier {
         _tasks[index] = rolled;
         notifyListeners();
         await saveTasks();
+        _scheduleRemotePush(rolled.id);
         unawaited(NotificationService.instance.scheduleTaskReminder(rolled));
         return;
       }
@@ -280,6 +340,7 @@ class TaskManager extends ChangeNotifier {
     );
     notifyListeners();
     await saveTasks();
+    _scheduleRemotePush(taskId);
   }
 
   Future<void> toggleSubTaskComplete(String taskId, String subTaskId) async {
@@ -298,6 +359,7 @@ class TaskManager extends ChangeNotifier {
       );
       notifyListeners();
       await saveTasks();
+      _scheduleRemotePush(taskId);
     }
   }
 
@@ -417,6 +479,9 @@ class TaskManager extends ChangeNotifier {
     }
     notifyListeners();
     await saveTasks();
+    for (final id in taskIds) {
+      _scheduleRemotePush(id);
+    }
   }
 
   Future<void> bulkDelete(Set<String> taskIds) async {
@@ -430,6 +495,9 @@ class TaskManager extends ChangeNotifier {
     }
     notifyListeners();
     await saveTasks();
+    for (final id in taskIds) {
+      _scheduleRemotePush(id);
+    }
   }
 
   Future<void> bulkSetCategory(Set<String> taskIds, String? category) async {
@@ -444,6 +512,9 @@ class TaskManager extends ChangeNotifier {
     }
     notifyListeners();
     await saveTasks();
+    for (final id in taskIds) {
+      _scheduleRemotePush(id);
+    }
   }
 
   Future<void> bulkSetPriority(Set<String> taskIds, TaskPriority priority) async {
@@ -458,6 +529,9 @@ class TaskManager extends ChangeNotifier {
     }
     notifyListeners();
     await saveTasks();
+    for (final id in taskIds) {
+      _scheduleRemotePush(id);
+    }
   }
 
   /// Performs a conflict-safe per-task merge with the cloud (items 27 & 36).
@@ -569,6 +643,47 @@ class TaskManager extends ChangeNotifier {
     );
   }
 
+  /// Applies a single incoming Realtime change to in-memory state. Lightweight
+  /// counterpart to [syncTasks] — no conflict detection, since a lone realtime
+  /// event carries no [lastSyncedAt] context to compare against.
+  Future<void> applyRemoteTaskItem({
+    required String id,
+    required bool deleted,
+    String? dataBlob,
+    required DateTime updatedAt,
+  }) async {
+    if (!EncryptionService.isUnlocked) return;
+    final index = _tasks.indexWhere((t) => t.id == id);
+
+    if (deleted) {
+      if (index != -1 && !_tasks[index].updatedAt.isAfter(updatedAt)) {
+        _tasks.removeAt(index);
+        notifyListeners();
+        await saveTasks();
+      }
+      return;
+    }
+    if (dataBlob == null) return;
+
+    Task remoteTask;
+    try {
+      final decrypted = await EncryptionService.decryptData(dataBlob);
+      remoteTask = Task.fromJson(jsonDecode(decrypted) as Map<String, dynamic>);
+    } catch (_) {
+      return; // Corrupted/undecryptable — ignore; next syncTasks() will retry.
+    }
+
+    if (index == -1) {
+      _tasks.add(remoteTask);
+    } else if (updatedAt.isAfter(_tasks[index].updatedAt)) {
+      _tasks[index] = remoteTask;
+    } else {
+      return; // Local is newer/equal — keep local (also ignores our own echo).
+    }
+    notifyListeners();
+    await saveTasks();
+  }
+
   /// Resolves a single sync conflict as directed by the user (item 36).
   Future<void> resolveConflict(
     SyncConflict conflict,
@@ -597,7 +712,7 @@ class TaskManager extends ChangeNotifier {
         // Keep local as-is; add the remote version as a new task.
         final now = DateTime.now();
         final remoteCopy = Task(
-          id: 'conflict_${now.millisecondsSinceEpoch}',
+          id: const Uuid().v4(),
           title: '${conflict.remote.title} (Remote copy)',
           description: conflict.remote.description,
           category: conflict.remote.category,

@@ -42,6 +42,8 @@ class SyncProvider extends ChangeNotifier {
     if (storedFreq != null) {
       _autoBackupFrequency = AutoBackupFrequencyExtension.fromKey(storedFreq);
     }
+    _autoSyncEnabled =
+        _prefs.getBool(PreferenceKeys.autoSyncEnabled) ?? false;
   }
 
   factory SyncProvider.of(BuildContext context, {bool listen = true}) {
@@ -55,12 +57,14 @@ class SyncProvider extends ChangeNotifier {
   bool _isChecking = false;
   bool _isSyncing = false;
   AutoBackupFrequency _autoBackupFrequency = AutoBackupFrequency.off;
+  bool _autoSyncEnabled = false;
 
   DateTime? get lastSyncedAt => _lastSyncedAt;
   DateTime? get remoteUpdatedAt => _remoteUpdatedAt;
   bool get isChecking => _isChecking;
   bool get isSyncing => _isSyncing;
   AutoBackupFrequency get autoBackupFrequency => _autoBackupFrequency;
+  bool get autoSyncEnabled => _autoSyncEnabled;
 
   void setSyncing(bool value) {
     if (_isSyncing == value) return;
@@ -82,6 +86,13 @@ class SyncProvider extends ChangeNotifier {
       PreferenceKeys.autoBackupFrequency,
       frequency._key,
     );
+  }
+
+  Future<void> setAutoSyncEnabled(bool value) async {
+    if (_autoSyncEnabled == value) return;
+    _autoSyncEnabled = value;
+    notifyListeners();
+    await _prefs.setBool(PreferenceKeys.autoSyncEnabled, value);
   }
 
   Future<void> markSynced({DateTime? at}) async {

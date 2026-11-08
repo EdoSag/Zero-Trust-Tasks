@@ -1,6 +1,6 @@
 {
-    "name": "zero_trust_tasks",
-    "short_name": "zero_trust_tasks",
+    "name": "Zero-Trust Tasks",
+    "short_name": "ZT Tasks",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

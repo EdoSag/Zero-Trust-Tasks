@@ -63,7 +63,7 @@ class MyApp extends StatelessWidget {
                 child: ChangeNotifierProvider<TemplateProvider>(
                   create: (context) => TemplateProvider(sharedPrefs),
                   builder: (context, child) => MaterialApp(
-                title: 'Zero-Trust Tasks',
+                title: 'ZT Tasks',
                 theme: lightTheme,
                 darkTheme: darkTheme,
                 themeMode: context.watch<AppState>().themeMode,

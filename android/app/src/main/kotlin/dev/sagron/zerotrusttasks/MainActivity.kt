@@ -1,5 +1,6 @@
 package dev.sagron.zerotrusttasks
 
-import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.android.FlutterFragmentActivity
 
-class MainActivity : FlutterActivity()
+// FlutterFragmentActivity: biometric unlock (local_auth) needs a FragmentActivity.
+class MainActivity : FlutterFragmentActivity()

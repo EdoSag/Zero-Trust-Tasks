@@ -1,8 +1,7 @@
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
@@ -10,9 +9,7 @@ import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/pages/templates_page.dart';
 
-@NowaGenerated()
 class AddTaskScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const AddTaskScreen({super.key, this.taskToEdit, this.template});
 
   final Task? taskToEdit;
@@ -27,7 +24,6 @@ class AddTaskScreen extends StatefulWidget {
   }
 }
 
-@NowaGenerated()
 class _AddTaskScreenState extends State<AddTaskScreen> {
   final _formKey = GlobalKey<FormState>();
 
@@ -164,7 +160,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     }
     final effectiveNotes =
         _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     final finalSubTasks = _subTasks
         .map(
           (subTask) => subTask.copyWith(
@@ -264,7 +260,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     final categories = taskManager.getCategories().whereType<String>();
     return Scaffold(
       appBar: AppBar(

@@ -4,14 +4,10 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
-  audioplayers_windows
-  connectivity_plus
-  file_selector_windows
-  flutter_inappwebview_windows
+  dynamic_color
   flutter_secure_storage_windows
   flutter_timezone
   local_auth_windows
-  sqlcipher_flutter_libs
   url_launcher_windows
 )
 

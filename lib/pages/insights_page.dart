@@ -1,8 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 
@@ -14,8 +14,9 @@ class InsightsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskManager>(
-      builder: (context, taskManager, child) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final taskManager = ref.watch(taskManagerProvider);
         final trend = taskManager.getCompletionTrend(_trendDays);
         final priorities = taskManager.activePriorityBreakdown;
         final totalActive =

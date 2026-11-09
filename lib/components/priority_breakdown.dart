@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
-@NowaGenerated()
 class PriorityBreakdown extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const PriorityBreakdown({super.key, required this.priorities});
 
   final Map<TaskPriority, int> priorities;

@@ -1,15 +1,17 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/components/confirmation_dialog.dart';
 
 /// Shows soft-deleted tasks. Tasks are auto-purged after 30 days.
-class TrashPage extends StatelessWidget {
+class TrashPage extends ConsumerWidget {
   const TrashPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final taskManager = TaskManager.of(context, listen: true);
+  Widget build(BuildContext context, WidgetRef ref) {
+    final taskManager = ref.watch(taskManagerProvider);
     final trashed = taskManager.getTrashedTasks();
     final dateFormat = DateFormat('MMM dd, yyyy');
 

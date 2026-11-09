@@ -1,7 +1,6 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:provider/provider.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/components/dashboard_card.dart';
 import 'package:zero_trust_tasks/components/priority_breakdown.dart';
 import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
@@ -14,9 +13,7 @@ import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/pages/insights_page.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
-@NowaGenerated()
 class DashboardPage extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const DashboardPage({super.key});
 
   void _openFilteredList(
@@ -34,8 +31,9 @@ class DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskManager>(
-      builder: (context, taskManager, child) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final taskManager = ref.watch(taskManagerProvider);
         if (taskManager.isLoading) {
           return ListView.builder(
             padding: const EdgeInsets.all(16),

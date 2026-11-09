@@ -1,24 +1,20 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
-import 'package:zero_trust_tasks/globals/template_provider.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 
 /// Displays saved [TaskTemplate]s and lets the user apply or delete them
 /// (item 32).
-class TemplatesPage extends StatefulWidget {
+class TemplatesPage extends ConsumerStatefulWidget {
   const TemplatesPage({super.key});
 
   @override
-  State<TemplatesPage> createState() => _TemplatesPageState();
+  ConsumerState<TemplatesPage> createState() => _TemplatesPageState();
 }
 
-class _TemplatesPageState extends State<TemplatesPage> {
-  @override
-  void initState() {
-    super.initState();
-    TemplateProvider.of(context, listen: false).loadTemplates();
-  }
+class _TemplatesPageState extends ConsumerState<TemplatesPage> {
 
   Future<void> _useTemplate(TaskTemplate template) async {
     await Navigator.push(
@@ -51,13 +47,13 @@ class _TemplatesPageState extends State<TemplatesPage> {
       ),
     );
     if (confirmed == true && context.mounted) {
-      await TemplateProvider.of(context, listen: false).removeTemplate(template.id);
+      await context.templates.removeTemplate(template.id);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final provider = TemplateProvider.of(context);
+    final provider = ref.watch(templateProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Templates')),
       body: provider.isLoading

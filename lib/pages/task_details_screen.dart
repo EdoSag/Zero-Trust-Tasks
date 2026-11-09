@@ -1,7 +1,7 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
@@ -9,29 +9,25 @@ import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
-import 'package:zero_trust_tasks/globals/template_provider.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 
 enum _TaskAction { duplicate, saveAsTemplate, archive, delete }
 
-@NowaGenerated()
-class TaskDetailsScreen extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
+class TaskDetailsScreen extends ConsumerStatefulWidget {
   const TaskDetailsScreen({required this.task, super.key});
 
   final Task task;
 
   @override
-  State<TaskDetailsScreen> createState() {
+  ConsumerState<TaskDetailsScreen> createState() {
     return _TaskDetailsScreenState();
   }
 }
 
-@NowaGenerated()
-class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
+class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
   @override
   Widget build(BuildContext context) {
-    final taskManager = TaskManager.of(context, listen: true);
+    final taskManager = ref.watch(taskManagerProvider);
     final currentTask = taskManager.tasks.firstWhere(
       (t) => t.id == widget.task.id,
       orElse: () => widget.task,
@@ -393,9 +389,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
                 child: CheckboxListTile(
                   value: subTask.isCompleted,
                   onChanged: (value) {
-                    TaskManager.of(
-                      context,
-                    ).toggleSubTaskComplete(currentTask.id, subTask.id);
+                    context.taskManager.toggleSubTaskComplete(currentTask.id, subTask.id);
                   },
                   title: Text(
                     subTask.title,
@@ -435,7 +429,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _duplicateTask(BuildContext context, Task task) async {
-    await TaskManager.of(context).duplicateTask(task.id);
+    await context.taskManager.duplicateTask(task.id);
     if (context.mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -484,7 +478,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
       recurrence: task.recurrence,
     );
 
-    await TemplateProvider.of(context, listen: false).addTemplate(template);
+    await context.templates.addTemplate(template);
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -494,7 +488,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _archiveTask(BuildContext context, Task task) async {
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     if (task.isArchived) {
       await taskManager.unarchiveTask(task.id);
       if (context.mounted) {
@@ -529,7 +523,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _toggleComplete(BuildContext context, Task task) async {
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     final wasCompleted = task.isCompleted;
     try {
       await taskManager.toggleTaskComplete(task.id);
@@ -560,7 +554,7 @@ class _TaskDetailsScreenState extends State<TaskDetailsScreen> {
   }
 
   Future<void> _deleteTask(BuildContext context, Task task) async {
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     try {
       await taskManager.deleteTask(task.id);
     } catch (e) {

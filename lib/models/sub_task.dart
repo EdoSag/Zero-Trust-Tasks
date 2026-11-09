@@ -1,6 +1,4 @@
-import 'package:nowa_runtime/nowa_runtime.dart';
 
-@NowaGenerated()
 class SubTask {
   SubTask({required this.id, required this.title, this.isCompleted = false});
 

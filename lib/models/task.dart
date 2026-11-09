@@ -1,10 +1,8 @@
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:uuid/uuid.dart';
 
-@NowaGenerated()
 class Task {
   Task({
     required this.id,

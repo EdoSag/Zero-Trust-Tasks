@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/storage/preference_keys.dart';
@@ -19,10 +18,6 @@ class SettingsProvider extends ChangeNotifier {
         false;
     NotificationService.instance.showTaskDetailsInNotifications =
         _showTaskDetailsInNotifications;
-  }
-
-  factory SettingsProvider.of(BuildContext context, {bool listen = true}) {
-    return Provider.of<SettingsProvider>(context, listen: listen);
   }
 
   final SharedPreferences _prefs;

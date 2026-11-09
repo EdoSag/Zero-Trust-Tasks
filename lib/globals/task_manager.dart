@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
@@ -105,7 +106,16 @@ class TaskManager extends ChangeNotifier {
   }
 
   void _notify() {
-    if (!_disposed) notifyListeners();
+    if (_disposed) return;
+    // A lock can arrive while widgets are building (a covered screen wakes
+    // up as the routes above it are popped). The data is already cleared;
+    // listeners hear about it once the frame is done.
+    final binding = SchedulerBinding.instance;
+    if (binding.schedulerPhase == SchedulerPhase.persistentCallbacks) {
+      binding.addPostFrameCallback((_) => _notify());
+      return;
+    }
+    notifyListeners();
   }
 
   @override

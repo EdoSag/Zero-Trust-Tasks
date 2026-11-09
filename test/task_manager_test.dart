@@ -18,6 +18,7 @@ class MemoryWriter implements TaskWriter {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
   late TaskManager manager;
   late MemoryWriter writer;
   late StreamController<List<Task>> source;

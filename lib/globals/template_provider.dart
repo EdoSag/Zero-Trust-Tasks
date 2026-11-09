@@ -1,68 +1,73 @@
-import 'dart:convert';
+import 'dart:async';
 
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:zero_trust_tasks/encryption_service.dart';
+import 'package:flutter/foundation.dart';
+import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 
-/// Manages [TaskTemplate]s — encrypted, stored in SharedPreferences (item 32).
+/// Saved [TaskTemplate]s, synced and encrypted like tasks (see
+/// `templatesCollection`).
 class TemplateProvider extends ChangeNotifier {
-  TemplateProvider(this._prefs);
-
-  factory TemplateProvider.of(BuildContext context, {bool listen = true}) {
-    return Provider.of<TemplateProvider>(context, listen: listen);
-  }
-
-  static const _key = 'encrypted_templates_v1';
-
-  final SharedPreferences _prefs;
   List<TaskTemplate> _templates = [];
-  bool _isLoading = false;
+  bool _isLoading = true;
   String? _error;
+  StreamSubscription<List<TaskTemplate>>? _subscription;
+  Future<void> Function(TaskTemplate)? _save;
+  Future<void> Function(String)? _delete;
+  bool _disposed = false;
 
   List<TaskTemplate> get templates => List.unmodifiable(_templates);
   bool get isLoading => _isLoading;
   String? get error => _error;
 
-  Future<void> loadTemplates() async {
-    if (!EncryptionService.isUnlocked) return;
-    _isLoading = true;
+  void attach({
+    Stream<List<TaskTemplate>>? source,
+    Future<void> Function(TaskTemplate)? save,
+    Future<void> Function(String)? delete,
+  }) {
+    unawaited(_subscription?.cancel());
+    _subscription = null;
+    _save = save;
+    _delete = delete;
+    _templates = [];
+    _isLoading = source != null;
     _error = null;
-    notifyListeners();
-    try {
-      final encrypted = _prefs.getString(_key);
-      if (encrypted != null && encrypted.isNotEmpty) {
-        final json = await EncryptionService.decryptData(encrypted);
-        final list = jsonDecode(json) as List<dynamic>;
-        _templates = list
-            .map((e) => TaskTemplate.fromJson(e as Map<String, dynamic>))
-            .toList();
-      }
-    } catch (e) {
-      _error = 'Failed to load templates: $e';
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+    _notify();
+    _subscription = source?.listen(
+      (templates) {
+        _templates = templates..sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
+        _isLoading = false;
+        _notify();
+      },
+      onError: (Object e) {
+        _isLoading = false;
+        _error = ztErrorMessage(e);
+        _notify();
+      },
+    );
   }
 
   Future<void> addTemplate(TaskTemplate template) async {
-    _templates.add(template);
-    notifyListeners();
-    await _persist();
+    final save = _save ?? (throw StateError('Your tasks are locked.'));
+    _templates = [..._templates, template];
+    _notify();
+    await save(template);
   }
 
   Future<void> removeTemplate(String id) async {
-    _templates.removeWhere((t) => t.id == id);
-    notifyListeners();
-    await _persist();
+    final delete = _delete ?? (throw StateError('Your tasks are locked.'));
+    _templates = _templates.where((t) => t.id != id).toList();
+    _notify();
+    await delete(id);
   }
 
-  Future<void> _persist() async {
-    if (!EncryptionService.isUnlocked) return;
-    final json = jsonEncode(_templates.map((t) => t.toJson()).toList());
-    final encrypted = await EncryptionService.encryptData(json);
-    await _prefs.setString(_key, encrypted);
+  void _notify() {
+    if (!_disposed) notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    unawaited(_subscription?.cancel());
+    super.dispose();
   }
 }

@@ -1,8 +1,6 @@
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:flutter/material.dart';
 
-@NowaGenerated()
 class TaskPriorityHelper {
   static String getDisplayName(TaskPriority priority) {
     if (priority == TaskPriority.critical) {

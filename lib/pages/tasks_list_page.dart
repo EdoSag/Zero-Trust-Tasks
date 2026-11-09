@@ -1,11 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
-import 'package:provider/provider.dart';
-import 'package:zero_trust_tasks/globals/smart_filter_provider.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
-import 'package:zero_trust_tasks/globals/settings_provider.dart';
 import 'package:zero_trust_tasks/models/smart_filter.dart';
 import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
 import 'package:zero_trust_tasks/components/error_state_widget.dart';
@@ -22,9 +19,7 @@ import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 
-@NowaGenerated()
 class TasksListPage extends StatefulWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const TasksListPage({super.key, this.initialFilter, this.title});
 
   /// When provided, the page opens pre-filtered (e.g. from a dashboard
@@ -41,7 +36,6 @@ class TasksListPage extends StatefulWidget {
   }
 }
 
-@NowaGenerated()
 class _TasksListPageState extends State<TasksListPage> {
   late TaskFilterState _filterState;
   late bool _sectioned;
@@ -60,7 +54,7 @@ class _TasksListPageState extends State<TasksListPage> {
       _sectioned = true;
       return;
     }
-    final settings = SettingsProvider.of(context, listen: false);
+    final settings = context.settings;
     final storedJson = settings.taskFilterStateJson;
     if (storedJson != null) {
       try {
@@ -82,7 +76,7 @@ class _TasksListPageState extends State<TasksListPage> {
       if (!fromSmartFilter) _activeSmartFilter = null;
     });
     if (_persistFilter) {
-      SettingsProvider.of(context, listen: false).setTaskFilterStateJson(
+      context.settings.setTaskFilterStateJson(
         jsonEncode(newState.toJson()),
       );
     }
@@ -124,7 +118,7 @@ class _TasksListPageState extends State<TasksListPage> {
       name: name,
       filter: _filterState,
     );
-    SmartFilterProvider.of(context, listen: false).addFilter(filter);
+    context.smartFilters.addFilter(filter);
   }
 
   void _toggleSectioned() {
@@ -132,7 +126,7 @@ class _TasksListPageState extends State<TasksListPage> {
       _sectioned = !_sectioned;
     });
     if (_persistFilter) {
-      SettingsProvider.of(context, listen: false).setTaskSectionsCollapsed(
+      context.settings.setTaskSectionsCollapsed(
         !_sectioned,
       );
     }
@@ -191,12 +185,12 @@ class _TasksListPageState extends State<TasksListPage> {
   }
 
   Future<void> _bulkComplete(BuildContext ctx) async {
-    await TaskManager.of(ctx).bulkComplete(_selectedTaskIds, complete: true);
+    await ctx.taskManager.bulkComplete(_selectedTaskIds, complete: true);
     _exitSelectionMode();
   }
 
   Future<void> _bulkDelete(BuildContext ctx) async {
-    await TaskManager.of(ctx).bulkDelete(_selectedTaskIds);
+    await ctx.taskManager.bulkDelete(_selectedTaskIds);
     if (ctx.mounted) {
       ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(
@@ -237,7 +231,7 @@ class _TasksListPageState extends State<TasksListPage> {
       ),
     );
     if (result == null || !ctx.mounted) return;
-    await TaskManager.of(ctx).bulkSetCategory(
+    await ctx.taskManager.bulkSetCategory(
       _selectedTaskIds,
       result.isEmpty ? null : result,
     );
@@ -266,7 +260,7 @@ class _TasksListPageState extends State<TasksListPage> {
       ),
     );
     if (result == null || !ctx.mounted) return;
-    await TaskManager.of(ctx).bulkSetPriority(_selectedTaskIds, result);
+    await ctx.taskManager.bulkSetPriority(_selectedTaskIds, result);
     _exitSelectionMode();
   }
 
@@ -296,8 +290,9 @@ class _TasksListPageState extends State<TasksListPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskManager>(
-      builder: (context, taskManager, child) {
+    return Consumer(
+      builder: (context, ref, child) {
+        final taskManager = ref.watch(taskManagerProvider);
         final categories =
             taskManager.getCategories().whereType<String>().toList();
 
@@ -440,8 +435,9 @@ class _TasksListPageState extends State<TasksListPage> {
                     ],
                   ),
                 ),
-              Consumer<SmartFilterProvider>(
-                builder: (context, sfp, _) {
+              Consumer(
+                builder: (context, ref, _) {
+                  final sfp = ref.watch(smartFilterProvider);
                   if (sfp.filters.isEmpty || _selectionMode) {
                     return const SizedBox.shrink();
                   }

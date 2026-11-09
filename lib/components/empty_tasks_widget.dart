@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 
 /// Distinguishes "you have no tasks at all" from "your filters/search
 /// matched nothing" so the user gets an actionable, accurate message.
 enum EmptyTasksReason { noTasksAtAll, noMatchingFilters }
 
-@NowaGenerated()
 class EmptyTasksWidget extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const EmptyTasksWidget({
     super.key,
     this.reason = EmptyTasksReason.noTasksAtAll,

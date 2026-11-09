@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zero_trust_tasks/models/smart_filter.dart';
 
@@ -9,10 +8,6 @@ import 'package:zero_trust_tasks/models/smart_filter.dart';
 class SmartFilterProvider extends ChangeNotifier {
   SmartFilterProvider(this._prefs) {
     _load();
-  }
-
-  factory SmartFilterProvider.of(BuildContext context, {bool listen = true}) {
-    return Provider.of<SmartFilterProvider>(context, listen: listen);
   }
 
   static const _key = 'smart_filters_v1';

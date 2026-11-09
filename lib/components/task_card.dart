@@ -1,16 +1,13 @@
+import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/task.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
-import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 
-@NowaGenerated()
 class TaskCard extends StatelessWidget {
-  @NowaGenerated({'loader': 'auto-constructor'})
   const TaskCard({
     super.key,
     required this.task,
@@ -370,7 +367,7 @@ class TaskCard extends StatelessWidget {
   }
 
   Future<void> _toggleComplete(BuildContext context) async {
-    final taskManager = TaskManager.of(context);
+    final taskManager = context.taskManager;
     final wasCompleted = task.isCompleted;
     await taskManager.toggleTaskComplete(task.id);
     if (!context.mounted) {

@@ -1,222 +1,197 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/recurrence_service.dart';
-import 'package:zero_trust_tasks/core/services/supabase_service.dart';
-import 'package:zero_trust_tasks/models/conflict_resolution.dart';
-import 'package:zero_trust_tasks/models/sync_conflict.dart';
-import 'package:zero_trust_tasks/models/sync_result.dart';
+import 'package:zero_trust_tasks/data/task_collections.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
 import 'package:zero_trust_tasks/models/task.dart';
-import 'package:nowa_runtime/nowa_runtime.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
-import 'package:zero_trust_tasks/encryption_service.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
 
-@NowaGenerated()
+/// Saves and deletes go through the core's sync, so every edit is encrypted,
+/// stored on the device and pushed to the account's other devices.
+abstract interface class TaskWriter {
+  Future<void> save(Task task);
+  Future<void> delete(String taskId);
+}
+
+/// The vault's tasks while it is unlocked, read from the core's encrypted
+/// local store and kept current as this or another device changes them.
+///
+/// The UI reads [tasks] and calls the mutations; each one updates the list
+/// at once and then writes through [TaskWriter].
 class TaskManager extends ChangeNotifier {
-  TaskManager();
+  TaskManager({this.reminders = true});
 
-  factory TaskManager.of(BuildContext context, {bool listen = false}) {
-    return Provider.of<TaskManager>(context, listen: listen);
-  }
+  /// Whether to schedule notifications (off in tests).
+  final bool reminders;
 
   List<Task> _tasks = [];
-
-  bool _isLoading = false;
-
+  bool _isLoading = true;
   String? _error;
-
   Task? _lastDeletedTask;
+  TaskWriter? _writer;
+  Stream<List<Task>> Function()? _source;
+  StreamSubscription<List<Task>>? _subscription;
+  bool _remindersScheduled = false;
+  bool _disposed = false;
 
-  /// Mirrors [SyncProvider.autoSyncEnabled]; kept in sync by MainScreen.
-  bool autoSyncEnabled = false;
+  List<Task> get tasks => List.unmodifiable(_tasks);
+  bool get isLoading => _isLoading;
+  String? get error => _error;
 
-  final Map<String, Timer> _pendingRemotePushes = {};
-  static const Duration _remotePushDebounce = Duration(milliseconds: 800);
-
-  List<Task> get tasks {
-    return List.unmodifiable(_tasks);
+  /// Connects to an open store, or (with nulls) disconnects when the vault
+  /// locks and forgets every task in memory.
+  void attach({Stream<List<Task>> Function()? source, TaskWriter? writer}) {
+    _source = source;
+    unawaited(_subscription?.cancel());
+    _subscription = null;
+    _writer = writer;
+    _lastDeletedTask = null;
+    _remindersScheduled = false;
+    if (source == null) {
+      _tasks = [];
+      _isLoading = true;
+      _error = null;
+      _notify();
+      return;
+    }
+    _listen(source);
   }
 
-  bool get isLoading {
-    return _isLoading;
+  /// Reads the tasks again after a read error.
+  Future<void> loadTasks() async {
+    final source = _source;
+    if (source == null) return;
+    unawaited(_subscription?.cancel());
+    _isLoading = true;
+    _error = null;
+    _notify();
+    _listen(source);
   }
 
-  String? get error {
-    return _error;
+  void _listen(Stream<List<Task>> Function() source) {
+    _subscription = source().listen(
+      (tasks) {
+        _tasks = tasks;
+        _isLoading = false;
+        _error = null;
+        _notify();
+        _afterFirstLoad();
+      },
+      onError: (Object e) {
+        _isLoading = false;
+        _error = 'Couldn\'t read your tasks: ${ztErrorMessage(e)}';
+        _notify();
+      },
+    );
+  }
+
+  /// Once per unlock: empties trash older than 30 days and puts reminders
+  /// back for tasks that arrived from other devices.
+  void _afterFirstLoad() {
+    if (_remindersScheduled) return;
+    _remindersScheduled = true;
+    final cutoff = DateTime.now().subtract(const Duration(days: 30));
+    for (final t in List.of(_tasks)) {
+      if (t.deletedAt != null && t.deletedAt!.isBefore(cutoff)) {
+        unawaited(permanentlyDeleteTask(t.id));
+      } else if (reminders && t.deletedAt == null && !t.isCompleted) {
+        unawaited(NotificationService.instance.scheduleTaskReminder(t));
+      }
+    }
+  }
+
+  void _notify() {
+    if (!_disposed) notifyListeners();
   }
 
   @override
   void dispose() {
-    for (final timer in _pendingRemotePushes.values) {
-      timer.cancel();
-    }
-    _pendingRemotePushes.clear();
+    _disposed = true;
+    unawaited(_subscription?.cancel());
     super.dispose();
   }
 
-  int get totalTasks {
-    return _tasks.length;
-  }
+  int get totalTasks => _tasks.length;
+  int get completedTasksCount => _tasks.where((t) => t.isCompleted).length;
+  int get pendingTasksCount => _tasks.where((t) => !t.isCompleted).length;
+  int get overdueTasksCount => _tasks.where((t) => t.isOverdue).length;
 
-  int get completedTasksCount {
-    return _tasks.where((t) => t.isCompleted).length;
-  }
+  Map<TaskPriority, int> get tasksByPriorityCount => {
+        for (final p in [
+          TaskPriority.critical,
+          TaskPriority.high,
+          TaskPriority.medium,
+          TaskPriority.low,
+        ])
+          p: _tasks.where((t) => t.priority == p).length,
+      };
 
-  int get pendingTasksCount {
-    return _tasks.where((t) => !t.isCompleted).length;
-  }
+  TaskWriter get _requireWriter =>
+      _writer ?? (throw StateError('Your tasks are locked. Unlock to make changes.'));
 
-  int get overdueTasksCount {
-    return _tasks.where((t) => t.isOverdue).length;
-  }
-
-  Map<TaskPriority, int> get tasksByPriorityCount {
-    return {
-      TaskPriority.critical:
-          _tasks.where((t) => t.priority == TaskPriority.critical).length,
-      TaskPriority.high:
-          _tasks.where((t) => t.priority == TaskPriority.high).length,
-      TaskPriority.medium:
-          _tasks.where((t) => t.priority == TaskPriority.medium).length,
-      TaskPriority.low:
-          _tasks.where((t) => t.priority == TaskPriority.low).length,
-    };
-  }
-
-  Future<void> loadTasks() async {
-    if (!EncryptionService.isUnlocked) {
-      _error = 'Session locked. Please unlock first.';
-      notifyListeners();
-      return;
-    }
-    _isLoading = true;
-    _error = null;
-    notifyListeners();
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final encryptedData = prefs.getString('encrypted_tasks');
-      if (encryptedData != null && encryptedData.isNotEmpty) {
-        final decryptedJson = await EncryptionService.decryptData(
-          encryptedData,
-        );
-        final List<dynamic> tasksJson =
-            jsonDecode(decryptedJson) as List<dynamic>;
-        _tasks = tasksJson
-            .map((json) => Task.fromJson(json as Map<String, dynamic>))
-            .toList();
-        // Auto-purge tasks that have been in the trash for more than 30 days.
-        final cutoff = DateTime.now().subtract(const Duration(days: 30));
-        _tasks.removeWhere(
-          (t) => t.deletedAt != null && t.deletedAt!.isBefore(cutoff),
-        );
+  /// Shows [changed] at once, then saves them.
+  Future<void> _put(List<Task> changed) async {
+    final writer = _requireWriter;
+    for (final task in changed) {
+      final i = _tasks.indexWhere((t) => t.id == task.id);
+      if (i == -1) {
+        _tasks = [..._tasks, task];
       } else {
-        _tasks = [];
+        _tasks = List.of(_tasks)..[i] = task;
       }
-    } on Exception {
-      _error = 'Invalid password or corrupted data';
-      _tasks = [];
-    } catch (e) {
-      _error = 'Failed to load tasks: ${e.toString()}';
-      _tasks = [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
     }
-  }
-
-  Future<void> saveTasks() async {
-    if (!EncryptionService.isUnlocked) {
-      throw Exception('Session locked. Cannot save tasks.');
-    }
+    _notify();
     try {
-      final tasksJson = _tasks.map((task) => task.toJson()).toList();
-      final jsonString = jsonEncode(tasksJson);
-      final encryptedData = await EncryptionService.encryptData(jsonString);
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('encrypted_tasks', encryptedData);
-    } catch (e) {
-      _error = 'Failed to save tasks: ${e.toString()}';
-      notifyListeners();
+      for (final task in changed) {
+        await writer.save(task);
+      }
+    } on Object {
+      // The list shows the edit already; the next read puts it back as stored.
+      await loadTasks();
       rethrow;
     }
   }
 
-  /// Schedules a debounced, best-effort push of [taskId]'s current state to
-  /// `encrypted_task_items`. No-ops silently if auto-sync is off, the vault
-  /// is locked, or no user is signed in — local-first UX must never depend
-  /// on this succeeding; a future [syncTasks] pass will catch up any misses.
-  void _scheduleRemotePush(String taskId) {
-    if (!autoSyncEnabled) return;
-    if (!EncryptionService.isUnlocked) return;
-    if (SupabaseService.instance.currentUser == null) return;
-    _pendingRemotePushes[taskId]?.cancel();
-    _pendingRemotePushes[taskId] = Timer(_remotePushDebounce, () {
-      _pendingRemotePushes.remove(taskId);
-      unawaited(_pushTaskNow(taskId));
-    });
+  Task? _find(String id) {
+    for (final t in _tasks) {
+      if (t.id == id) return t;
+    }
+    return null;
   }
 
-  Future<void> _pushTaskNow(String taskId) async {
-    if (!EncryptionService.isUnlocked) return;
-    if (SupabaseService.instance.currentUser == null) return;
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return; // removed locally since scheduling
-    final task = _tasks[index];
-    try {
-      final encrypted = await EncryptionService.encryptData(
-        jsonEncode(task.toJson()),
-      );
-      await SupabaseService.instance.upsertEncryptedTaskItem(
-        id: task.id,
-        dataBlob: encrypted,
-        updatedAt: task.updatedAt,
-      );
-    } catch (_) {
-      // Best-effort: local save already succeeded; a future syncTasks() call
-      // (connectivity regain / manual "Sync now") will catch this up.
-    }
+  void _remind(Task task) {
+    if (reminders) unawaited(NotificationService.instance.scheduleTaskReminder(task));
+  }
+
+  void _cancelReminder(String id) {
+    if (reminders) unawaited(NotificationService.instance.cancelReminder(id));
   }
 
   Future<void> addTask(Task task) async {
-    _tasks.add(task);
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(task.id);
-    unawaited(NotificationService.instance.scheduleTaskReminder(task));
+    await _put([task]);
+    _remind(task);
   }
 
   Future<void> updateTask(Task updatedTask) async {
-    final index = _tasks.indexWhere((t) => t.id == updatedTask.id);
-    if (index != -1) {
-      final saved = updatedTask.copyWith(updatedAt: DateTime.now());
-      _tasks[index] = saved;
-      notifyListeners();
-      await saveTasks();
-      _scheduleRemotePush(saved.id);
-      unawaited(NotificationService.instance.scheduleTaskReminder(saved));
-    }
+    if (_find(updatedTask.id) == null) return;
+    final saved = updatedTask.copyWith(updatedAt: DateTime.now());
+    await _put([saved]);
+    _remind(saved);
   }
 
-  /// Soft-deletes a task (moves to trash). Use [undoDelete] to restore within
-  /// the same session, or [restoreFromTrash] from the trash page.
+  /// Soft-deletes a task (moves it to trash). [undoDelete] restores it.
   Future<void> deleteTask(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    _lastDeletedTask = _tasks[index];
-    _tasks[index] = _tasks[index].copyWith(deletedAt: DateTime.now());
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(taskId);
-    unawaited(NotificationService.instance.cancelReminder(taskId));
+    final task = _find(taskId);
+    if (task == null) return;
+    _lastDeletedTask = task;
+    await _put([task.copyWith(deletedAt: DateTime.now(), updatedAt: DateTime.now())]);
+    _cancelReminder(taskId);
   }
 
-  /// Undoes the most recent [deleteTask] call (restores from trash in-place).
   Future<void> undoDelete() async {
     final task = _lastDeletedTask;
     if (task == null) return;
@@ -225,548 +200,242 @@ class TaskManager extends ChangeNotifier {
   }
 
   Future<void> restoreFromTrash(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    _tasks[index] = _tasks[index].copyWith(clearDeletedAt: true);
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(taskId);
+    final task = _find(taskId);
+    if (task == null) return;
+    final restored = task.copyWith(clearDeletedAt: true, updatedAt: DateTime.now());
+    await _put([restored]);
+    _remind(restored);
   }
 
+  /// Deletes for good, on every device.
   Future<void> permanentlyDeleteTask(String taskId) async {
-    _tasks.removeWhere((t) => t.id == taskId);
-    notifyListeners();
-    await saveTasks();
-    unawaited(NotificationService.instance.cancelReminder(taskId));
-    // Best-effort remote tombstone so other devices learn about this deletion.
-    if (SupabaseService.instance.currentUser != null) {
-      unawaited(SupabaseService.instance.markEncryptedTaskItemDeleted(taskId));
-    }
+    final writer = _requireWriter;
+    _tasks = _tasks.where((t) => t.id != taskId).toList();
+    _notify();
+    _cancelReminder(taskId);
+    await writer.delete(taskId);
   }
 
   Future<void> archiveTask(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    _tasks[index] = _tasks[index].copyWith(isArchived: true, updatedAt: DateTime.now());
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(taskId);
+    final task = _find(taskId);
+    if (task == null) return;
+    await _put([task.copyWith(isArchived: true, updatedAt: DateTime.now())]);
   }
 
   Future<void> unarchiveTask(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    _tasks[index] = _tasks[index].copyWith(isArchived: false, updatedAt: DateTime.now());
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(taskId);
+    final task = _find(taskId);
+    if (task == null) return;
+    await _put([task.copyWith(isArchived: false, updatedAt: DateTime.now())]);
   }
 
-  List<Task> getTrashedTasks() {
-    return _tasks.where((t) => t.deletedAt != null).toList()
-      ..sort((a, b) => b.deletedAt!.compareTo(a.deletedAt!));
-  }
+  List<Task> getTrashedTasks() => _tasks.where((t) => t.deletedAt != null).toList()
+    ..sort((a, b) => b.deletedAt!.compareTo(a.deletedAt!));
 
-  /// Creates a copy of [taskId] with a new id, reset completion/dates, and
-  /// "(Copy)" appended to the title.
+  /// A copy of [taskId] with a new id, open again, "(Copy)" in the title.
   Future<void> duplicateTask(String taskId) async {
-    final original = _tasks.firstWhere((t) => t.id == taskId);
+    final original = _find(taskId);
+    if (original == null) return;
     final now = DateTime.now();
-    final copy = Task(
-      id: const Uuid().v4(),
-      title: '${original.title} (Copy)',
-      description: original.description,
-      category: original.category,
-      priority: original.priority,
-      startDate: original.startDate,
-      dueDate: original.dueDate,
-      reminderAt: null,
-      recurrence: original.recurrence,
-      tags: List.of(original.tags),
-      notes: original.notes,
-      links: List.of(original.links),
-      isCompleted: false,
-      isArchived: false,
-      subTasks: original.subTasks
-          .map((s) => s.copyWith(isCompleted: false))
-          .toList(),
-      createdAt: now,
-      updatedAt: now,
-    );
-    _tasks.add(copy);
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(copy.id);
+    await _put([
+      Task(
+        id: const Uuid().v4(),
+        title: '${original.title} (Copy)',
+        description: original.description,
+        category: original.category,
+        priority: original.priority,
+        startDate: original.startDate,
+        dueDate: original.dueDate,
+        reminderAt: null,
+        recurrence: original.recurrence,
+        tags: List.of(original.tags),
+        notes: original.notes,
+        links: List.of(original.links),
+        isCompleted: false,
+        isArchived: false,
+        subTasks: original.subTasks.map((s) => s.copyWith(isCompleted: false)).toList(),
+        createdAt: now,
+        updatedAt: now,
+      ),
+    ]);
   }
 
-  List<Task> getArchivedTasks() {
-    return _tasks.where((t) => t.isArchived && t.deletedAt == null).toList()
-      ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
-  }
+  List<Task> getArchivedTasks() =>
+      _tasks.where((t) => t.isArchived && t.deletedAt == null).toList()
+        ..sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
 
   Future<void> toggleTaskComplete(String taskId) async {
-    final index = _tasks.indexWhere((t) => t.id == taskId);
-    if (index == -1) return;
-    final task = _tasks[index];
+    final task = _find(taskId);
+    if (task == null) return;
 
-    // For recurring tasks being marked complete: roll forward instead of
-    // marking done, unless the recurrence has ended.
+    // A recurring task rolls forward instead, unless its recurrence ended.
     if (!task.isCompleted && task.recurrence != null) {
       final next = RecurrenceService.nextOccurrence(task);
       if (next != null && !RecurrenceService.hasEnded(task.recurrence!, next)) {
         final rolled = task.copyWith(
           dueDate: next,
           clearReminderAt: true,
-          subTasks: task.subTasks
-              .map((s) => s.copyWith(isCompleted: false))
-              .toList(),
+          subTasks: task.subTasks.map((s) => s.copyWith(isCompleted: false)).toList(),
           updatedAt: DateTime.now(),
         );
-        _tasks[index] = rolled;
-        notifyListeners();
-        await saveTasks();
-        _scheduleRemotePush(rolled.id);
-        unawaited(NotificationService.instance.scheduleTaskReminder(rolled));
+        await _put([rolled]);
+        _remind(rolled);
         return;
       }
     }
 
     final completing = !task.isCompleted;
-    _tasks[index] = task.copyWith(
-      isCompleted: completing,
-      completedAt: completing ? DateTime.now() : null,
-      clearCompletedAt: !completing,
-      updatedAt: DateTime.now(),
-    );
-    notifyListeners();
-    await saveTasks();
-    _scheduleRemotePush(taskId);
+    await _put([
+      task.copyWith(
+        isCompleted: completing,
+        completedAt: completing ? DateTime.now() : null,
+        clearCompletedAt: !completing,
+        updatedAt: DateTime.now(),
+      ),
+    ]);
+    if (completing) _cancelReminder(taskId);
   }
 
   Future<void> toggleSubTaskComplete(String taskId, String subTaskId) async {
-    final taskIndex = _tasks.indexWhere((t) => t.id == taskId);
-    if (taskIndex != -1) {
-      final task = _tasks[taskIndex];
-      final updatedSubTasks = task.subTasks.map((st) {
-        if (st.id == subTaskId) {
-          return st.copyWith(isCompleted: !st.isCompleted);
-        }
-        return st;
-      }).toList();
-      _tasks[taskIndex] = task.copyWith(
-        subTasks: updatedSubTasks,
+    final task = _find(taskId);
+    if (task == null) return;
+    await _put([
+      task.copyWith(
+        subTasks: [
+          for (final st in task.subTasks)
+            st.id == subTaskId ? st.copyWith(isCompleted: !st.isCompleted) : st,
+        ],
         updatedAt: DateTime.now(),
-      );
-      notifyListeners();
-      await saveTasks();
-      _scheduleRemotePush(taskId);
-    }
+      ),
+    ]);
   }
 
-  List<Task> getTasksByCategory(String? category) {
-    if (category == null) {
-      return _tasks;
-    }
-    return _tasks.where((t) => t.category == category).toList();
-  }
+  List<Task> getTasksByCategory(String? category) =>
+      category == null ? _tasks : _tasks.where((t) => t.category == category).toList();
 
-  List<Task> getTasksByPriority(TaskPriority priority) {
-    return _tasks.where((t) => t.priority == priority).toList();
-  }
+  List<Task> getTasksByPriority(TaskPriority priority) =>
+      _tasks.where((t) => t.priority == priority).toList();
 
-  List<Task> getOverdueTasks() {
-    return _tasks.where((t) => t.isOverdue).toList();
-  }
-
-  List<Task> getCompletedTasks() {
-    return _tasks.where((t) => t.isCompleted).toList();
-  }
-
-  List<Task> getPendingTasks() {
-    return _tasks.where((t) => !t.isCompleted).toList();
-  }
+  List<Task> getOverdueTasks() => _tasks.where((t) => t.isOverdue).toList();
+  List<Task> getCompletedTasks() => _tasks.where((t) => t.isCompleted).toList();
+  List<Task> getPendingTasks() => _tasks.where((t) => !t.isCompleted).toList();
 
   List<String?> getCategories() {
-    final categories = _tasks
-        .where((t) => t.category != null)
-        .map((t) => t.category)
-        .toSet()
-        .toList();
+    final categories =
+        _tasks.where((t) => t.category != null).map((t) => t.category).toSet().toList();
     categories.sort();
     return categories;
   }
 
-  Future<String> getEncryptedBackupData() async {
-    if (!EncryptionService.isUnlocked) {
-      throw Exception('Session locked. Cannot create backup.');
-    }
-    final tasksJson = _tasks.map((task) => task.toJson()).toList();
-    final jsonString = jsonEncode(tasksJson);
-    return await EncryptionService.encryptData(jsonString);
-  }
-
-  Future<void> restoreFromBackup(String encryptedData) async {
-    if (!EncryptionService.isUnlocked) {
-      throw Exception('Session locked. Cannot restore backup.');
-    }
-    try {
-      final decryptedJson = await EncryptionService.decryptData(encryptedData);
-      final List<dynamic> tasksJson =
-          jsonDecode(decryptedJson) as List<dynamic>;
-      _tasks = tasksJson
-          .map((json) => Task.fromJson(json as Map<String, dynamic>))
-          .toList();
-      notifyListeners();
-      await saveTasks();
-    } on Exception {
-      _error = 'Invalid password or corrupted backup data';
-      notifyListeners();
-      rethrow;
-    } catch (e) {
-      _error = 'Failed to restore backup: ${e.toString()}';
-      notifyListeners();
-      rethrow;
-    }
-  }
-
-  /// Decrypts [encryptedData] and computes what would change if it were
-  /// applied, without modifying local state (item 25).
-  Future<BackupPreview> previewBackup(String encryptedData) async {
-    if (!EncryptionService.isUnlocked) {
-      throw Exception('Session locked. Cannot preview backup.');
-    }
-    final decryptedJson = await EncryptionService.decryptData(encryptedData);
-    final List<dynamic> tasksJson =
-        jsonDecode(decryptedJson) as List<dynamic>;
-    final backupTasks = tasksJson
-        .map((json) => Task.fromJson(json as Map<String, dynamic>))
-        .toList();
-
-    final localIds = {for (final t in _tasks) t.id: t};
-    final backupIds = {for (final t in backupTasks) t.id: t};
-
-    int toAdd = 0;
-    int toUpdate = 0;
-    for (final bt in backupTasks) {
-      final local = localIds[bt.id];
-      if (local == null) {
+  /// What importing [incoming] would change, without changing anything.
+  BackupPreview previewImport(List<Task> incoming) {
+    final local = {for (final t in _tasks) t.id: t};
+    var toAdd = 0;
+    var toUpdate = 0;
+    for (final t in incoming) {
+      final existing = local[t.id];
+      if (existing == null) {
         toAdd++;
-      } else if (local.updatedAt != bt.updatedAt ||
-          local.title != bt.title ||
-          local.isCompleted != bt.isCompleted) {
+      } else if (t.updatedAt.isAfter(existing.updatedAt)) {
         toUpdate++;
       }
     }
-    final toRemove = _tasks.where((t) => !backupIds.containsKey(t.id)).length;
-
     return BackupPreview(
-      backupTaskCount: backupTasks.length,
+      backupTaskCount: incoming.length,
       toAdd: toAdd,
       toUpdate: toUpdate,
-      toRemove: toRemove,
+      toRemove: 0,
     );
   }
 
+  /// Adds [incoming] tasks; existing ones are replaced only by a newer copy.
+  /// Nothing local is removed. Returns how many were written.
+  Future<int> importTasks(List<Task> incoming) async {
+    final local = {for (final t in _tasks) t.id: t};
+    final changed = [
+      for (final t in incoming)
+        if (local[t.id] == null || t.updatedAt.isAfter(local[t.id]!.updatedAt)) t,
+    ];
+    if (changed.isNotEmpty) await _put(changed);
+    for (final t in changed) {
+      if (t.deletedAt == null && !t.isCompleted) _remind(t);
+    }
+    return changed.length;
+  }
+
   Future<void> bulkComplete(Set<String> taskIds, {required bool complete}) async {
-    for (final id in taskIds) {
-      final index = _tasks.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(
-          isCompleted: complete,
-          updatedAt: DateTime.now(),
-        );
-      }
-    }
-    notifyListeners();
-    await saveTasks();
-    for (final id in taskIds) {
-      _scheduleRemotePush(id);
-    }
+    final now = DateTime.now();
+    await _put([
+      for (final id in taskIds)
+        if (_find(id) case final t?)
+          t.copyWith(
+            isCompleted: complete,
+            completedAt: complete ? now : null,
+            clearCompletedAt: !complete,
+            updatedAt: now,
+          ),
+    ]);
   }
 
   Future<void> bulkDelete(Set<String> taskIds) async {
     final now = DateTime.now();
+    await _put([
+      for (final id in taskIds)
+        if (_find(id) case final t?) t.copyWith(deletedAt: now, updatedAt: now),
+    ]);
     for (final id in taskIds) {
-      final index = _tasks.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(deletedAt: now);
-        unawaited(NotificationService.instance.cancelReminder(id));
-      }
-    }
-    notifyListeners();
-    await saveTasks();
-    for (final id in taskIds) {
-      _scheduleRemotePush(id);
+      _cancelReminder(id);
     }
   }
 
   Future<void> bulkSetCategory(Set<String> taskIds, String? category) async {
-    for (final id in taskIds) {
-      final index = _tasks.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(
-          category: category,
-          updatedAt: DateTime.now(),
-        );
-      }
-    }
-    notifyListeners();
-    await saveTasks();
-    for (final id in taskIds) {
-      _scheduleRemotePush(id);
-    }
+    final now = DateTime.now();
+    await _put([
+      for (final id in taskIds)
+        if (_find(id) case final t?)
+          Task.fromJson({...t.toJson(), 'category': category, 'updatedAt': now.toIso8601String()}),
+    ]);
   }
 
   Future<void> bulkSetPriority(Set<String> taskIds, TaskPriority priority) async {
-    for (final id in taskIds) {
-      final index = _tasks.indexWhere((t) => t.id == id);
-      if (index != -1) {
-        _tasks[index] = _tasks[index].copyWith(
-          priority: priority,
-          updatedAt: DateTime.now(),
-        );
-      }
-    }
-    notifyListeners();
-    await saveTasks();
-    for (final id in taskIds) {
-      _scheduleRemotePush(id);
-    }
+    final now = DateTime.now();
+    await _put([
+      for (final id in taskIds)
+        if (_find(id) case final t?) t.copyWith(priority: priority, updatedAt: now),
+    ]);
   }
 
-  /// Performs a conflict-safe per-task merge with the cloud (items 27 & 36).
-  ///
-  /// When [lastSyncedAt] is provided, tasks where both the local copy and the
-  /// remote copy were modified after that timestamp are treated as true
-  /// conflicts and returned in [SyncResult.conflicts] instead of being
-  /// auto-resolved.  Without [lastSyncedAt], falls back to last-writer-wins.
-  Future<SyncResult> syncTasks({DateTime? lastSyncedAt}) async {
-    final supabase = SupabaseService.instance;
-    if (supabase.currentUser == null) {
-      throw StateError('Cannot sync: no authenticated user.');
-    }
-
-    // 1. Fetch all remote task items (including tombstones).
-    final remoteItems = await supabase.fetchEncryptedTaskItemsForCurrentUser();
-    final remoteMap = <String, Map<String, dynamic>>{
-      for (final r in remoteItems) r['id'] as String: r,
-    };
-
-    int uploaded = 0;
-    int downloaded = 0;
-    final conflicts = <SyncConflict>[];
-
-    // 2. Apply remote → local (download newer / tombstoned items).
-    for (final entry in remoteMap.entries) {
-      final id = entry.key;
-      final remote = entry.value;
-      final remoteUpdatedAt = DateTime.parse(remote['updated_at'] as String);
-      final isDeleted = remote['deleted'] as bool? ?? false;
-      final localIndex = _tasks.indexWhere((t) => t.id == id);
-
-      if (isDeleted) {
-        // Propagate remote deletion only if local version isn't newer.
-        if (localIndex != -1 &&
-            !_tasks[localIndex].updatedAt.isAfter(remoteUpdatedAt)) {
-          _tasks.removeAt(localIndex);
-        }
-      } else {
-        final blob = remote['data_blob'] as String?;
-        if (blob == null) continue;
-
-        Task remoteTask;
-        try {
-          final decrypted = await EncryptionService.decryptData(blob);
-          remoteTask = Task.fromJson(
-            jsonDecode(decrypted) as Map<String, dynamic>,
-          );
-        } catch (_) {
-          continue; // Skip any corrupted remote item.
-        }
-
-        if (localIndex == -1) {
-          _tasks.add(remoteTask);
-          downloaded++;
-        } else {
-          final localTask = _tasks[localIndex];
-          // True conflict: both sides changed after the last known sync point.
-          if (lastSyncedAt != null &&
-              localTask.updatedAt.isAfter(lastSyncedAt) &&
-              remoteUpdatedAt.isAfter(lastSyncedAt)) {
-            conflicts.add(SyncConflict(local: localTask, remote: remoteTask));
-          } else if (remoteUpdatedAt.isAfter(localTask.updatedAt)) {
-            _tasks[localIndex] = remoteTask;
-            downloaded++;
-          }
-        }
-      }
-    }
-
-    // 3. Upload local tasks that are absent from remote or newer than remote.
-    //    Skip tasks that are in conflict — the user must resolve them first.
-    final conflictIds = {for (final c in conflicts) c.local.id};
-    for (final task in List.of(_tasks)) {
-      if (conflictIds.contains(task.id)) continue;
-      final remote = remoteMap[task.id];
-      final remoteUpdatedAt = remote != null
-          ? DateTime.parse(remote['updated_at'] as String)
-          : null;
-      final needsUpload =
-          remoteUpdatedAt == null || task.updatedAt.isAfter(remoteUpdatedAt);
-      if (!needsUpload) continue;
-
-      if (task.deletedAt != null && remote != null) {
-        // Soft-deleted and already known to remote: promote to tombstone.
-        await supabase.markEncryptedTaskItemDeleted(task.id);
-      } else if (task.deletedAt == null) {
-        final encrypted = await EncryptionService.encryptData(
-          jsonEncode(task.toJson()),
-        );
-        await supabase.upsertEncryptedTaskItem(
-          id: task.id,
-          dataBlob: encrypted,
-          updatedAt: task.updatedAt,
-        );
-      }
-      uploaded++;
-    }
-
-    if (downloaded > 0) {
-      notifyListeners();
-      await saveTasks();
-    }
-
-    return SyncResult(
-      uploaded: uploaded,
-      downloaded: downloaded,
-      conflicts: conflicts,
-    );
-  }
-
-  /// Applies a single incoming Realtime change to in-memory state. Lightweight
-  /// counterpart to [syncTasks] — no conflict detection, since a lone realtime
-  /// event carries no [lastSyncedAt] context to compare against.
-  Future<void> applyRemoteTaskItem({
-    required String id,
-    required bool deleted,
-    String? dataBlob,
-    required DateTime updatedAt,
-  }) async {
-    if (!EncryptionService.isUnlocked) return;
-    final index = _tasks.indexWhere((t) => t.id == id);
-
-    if (deleted) {
-      if (index != -1 && !_tasks[index].updatedAt.isAfter(updatedAt)) {
-        _tasks.removeAt(index);
-        notifyListeners();
-        await saveTasks();
-      }
-      return;
-    }
-    if (dataBlob == null) return;
-
-    Task remoteTask;
-    try {
-      final decrypted = await EncryptionService.decryptData(dataBlob);
-      remoteTask = Task.fromJson(jsonDecode(decrypted) as Map<String, dynamic>);
-    } catch (_) {
-      return; // Corrupted/undecryptable — ignore; next syncTasks() will retry.
-    }
-
-    if (index == -1) {
-      _tasks.add(remoteTask);
-    } else if (updatedAt.isAfter(_tasks[index].updatedAt)) {
-      _tasks[index] = remoteTask;
-    } else {
-      return; // Local is newer/equal — keep local (also ignores our own echo).
-    }
-    notifyListeners();
-    await saveTasks();
-  }
-
-  /// Resolves a single sync conflict as directed by the user (item 36).
-  Future<void> resolveConflict(
-    SyncConflict conflict,
-    ConflictResolution resolution,
-  ) async {
-    switch (resolution) {
-      case ConflictResolution.keepLocal:
-        // Bump updatedAt so local wins during the next sync upload.
-        final index = _tasks.indexWhere((t) => t.id == conflict.local.id);
-        if (index == -1) return;
-        _tasks[index] = _tasks[index].copyWith(updatedAt: DateTime.now());
-        notifyListeners();
-        await saveTasks();
-
-      case ConflictResolution.keepRemote:
-        final index = _tasks.indexWhere((t) => t.id == conflict.remote.id);
-        if (index != -1) {
-          _tasks[index] = conflict.remote;
-        } else {
-          _tasks.add(conflict.remote);
-        }
-        notifyListeners();
-        await saveTasks();
-
-      case ConflictResolution.keepBoth:
-        // Keep local as-is; add the remote version as a new task.
-        final now = DateTime.now();
-        final remoteCopy = Task(
-          id: const Uuid().v4(),
-          title: '${conflict.remote.title} (Remote copy)',
-          description: conflict.remote.description,
-          category: conflict.remote.category,
-          priority: conflict.remote.priority,
-          startDate: conflict.remote.startDate,
-          dueDate: conflict.remote.dueDate,
-          recurrence: conflict.remote.recurrence,
-          tags: List.of(conflict.remote.tags),
-          notes: conflict.remote.notes,
-          links: List.of(conflict.remote.links),
-          isCompleted: conflict.remote.isCompleted,
-          subTasks: conflict.remote.subTasks
-              .map((s) => s.copyWith(isCompleted: s.isCompleted))
-              .toList(),
-          createdAt: now,
-          updatedAt: now,
-        );
-        _tasks.add(remoteCopy);
-        notifyListeners();
-        await saveTasks();
-    }
-  }
-
-  /// Returns a list of (date, completionCount) entries for the last [days] days,
-  /// oldest-first, based on [Task.completedAt].
+  /// (date, completions) for the last [days] days, oldest first.
   List<MapEntry<DateTime, int>> getCompletionTrend(int days) {
     final now = DateTime.now();
     return List.generate(days, (i) {
       final day = DateTime(now.year, now.month, now.day - (days - 1 - i));
       final count = _tasks.where((t) {
         final c = t.completedAt;
-        if (c == null) return false;
-        return c.year == day.year && c.month == day.month && c.day == day.day;
+        return c != null && c.year == day.year && c.month == day.month && c.day == day.day;
       }).length;
       return MapEntry(day, count);
     });
   }
 
-  /// Priority breakdown limited to active (non-trashed, non-archived) tasks.
+  /// Priority breakdown of active (not trashed, not archived) tasks.
   Map<TaskPriority, int> get activePriorityBreakdown {
-    final active = _tasks.where(
-      (t) => t.deletedAt == null && !t.isArchived,
-    );
-    return {
-      for (final p in TaskPriority.values)
-        p: active.where((t) => t.priority == p).length,
-    };
+    final active = _tasks.where((t) => t.deletedAt == null && !t.isArchived);
+    return {for (final p in TaskPriority.values) p: active.where((t) => t.priority == p).length};
   }
+}
 
-  Future<void> clearAllTasks() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove('encrypted_tasks');
-    _tasks = [];
-    _error = null;
-    notifyListeners();
-  }
+/// [TaskWriter] over the core: [tasksCollection] in the account's store.
+class CoreTaskWriter implements TaskWriter {
+  CoreTaskWriter({required this.store, required this.sync});
+
+  final LocalItemStore store;
+
+  /// Waits for the sync engine, which opens just after the store.
+  final Future<SyncController> Function() sync;
+
+  @override
+  Future<void> save(Task task) async => tasksCollection.save(await sync(), store, task);
+
+  @override
+  Future<void> delete(String taskId) async => tasksCollection.delete(await sync(), taskId);
 }

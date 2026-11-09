@@ -25,7 +25,7 @@ concurrency:
 
 env:
   APP_SLUG: zero-trust-tasks
-  APP_TITLE: Zero Trust Tasks
+  APP_TITLE: Zero-Trust Tasks
 
 jobs:
   apk:

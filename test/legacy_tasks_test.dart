@@ -80,6 +80,16 @@ void main() {
       expect(await data.findKey(pepper: pepper, params: fast, password: 'wrong'), isNull);
       expect(await data.findKey(pepper: pepper, params: fast, password: password), key);
     });
+
+    test('a damaged local copy does not hide the cloud copy', () async {
+      final data = LegacyTasksData(
+        localTasksBlob: base64.encode(utf8.encode('{"nonce":"","ciphertext":"","mac":""}')),
+        cloudTasksBlob: blob,
+        salts: [salt],
+      );
+      expect(await data.findKey(pepper: pepper, params: fast, password: password), key);
+      expect((await data.records(key)).single.itemId, 'a');
+    });
   });
 
   test('merges device, cloud backup and per-task rows; newest copy wins', () async {

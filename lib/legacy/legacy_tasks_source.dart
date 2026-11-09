@@ -61,15 +61,21 @@ class LegacyTasksData {
       cloudTasksBlob != null ||
       cloudRows.any((r) => !r.deleted && r.blob != null);
 
-  /// A blob to test a candidate key against.
-  String? get sample =>
-      localTasksBlob ??
-      cloudTasksBlob ??
-      localTemplatesBlob ??
-      cloudRows
-          .where((r) => !r.deleted && r.blob != null)
-          .map((r) => r.blob)
-          .firstOrNull;
+  /// Blobs to test a candidate key against. Several, so one damaged copy
+  /// can't make the right key look wrong.
+  List<String> get samples => [
+        ?localTasksBlob,
+        ?cloudTasksBlob,
+        ?localTemplatesBlob,
+        ...cloudRows.where((r) => !r.deleted && r.blob != null).map((r) => r.blob!).take(3),
+      ];
+
+  static Future<bool> _opensAny(List<String> blobs, List<int> key) async {
+    for (final blob in blobs) {
+      if (await LegacyTasksCrypto.opens(blob, key)) return true;
+    }
+    return false;
+  }
 
   /// The first of [candidates] (the device's stored key, the core's legacy
   /// key, keys derived from [password] with each salt) that opens the old
@@ -80,11 +86,11 @@ class LegacyTasksData {
     required String pepper,
     KdfParams params = KdfParams.current,
   }) async {
-    final sample = this.sample;
-    if (sample == null) return null;
+    final samples = this.samples;
+    if (samples.isEmpty) return null;
     final candidates = <List<int>?>[storedKey, coreLegacyKey];
     for (final key in candidates) {
-      if (key != null && key.length == 32 && await LegacyTasksCrypto.opens(sample, key)) {
+      if (key != null && key.length == 32 && await _opensAny(samples, key)) {
         return Uint8List.fromList(key);
       }
     }
@@ -101,7 +107,7 @@ class LegacyTasksData {
       } on Object {
         continue; // a malformed salt
       }
-      if (await LegacyTasksCrypto.opens(sample, key)) return key;
+      if (await _opensAny(samples, key)) return key;
       key.fillRange(0, key.length, 0);
     }
     return null;

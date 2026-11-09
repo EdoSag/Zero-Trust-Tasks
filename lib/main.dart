@@ -37,13 +37,13 @@ Future<void> main() async {
   }
 }
 
-class ZeroTrustTasksApp extends StatelessWidget {
+class ZeroTrustTasksApp extends ConsumerWidget {
   const ZeroTrustTasksApp({super.key, this.home = const AppGate()});
 
   final Widget home;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return ZtThemeBuilder(
       builder: (context, theme, darkTheme, mode) => MaterialApp(
         title: 'ZT Tasks', // on-device task switcher label
@@ -52,6 +52,13 @@ class ZeroTrustTasksApp extends StatelessWidget {
         themeMode: mode,
         debugShowCheckedModeBanner: false,
         home: home,
+        // Any touch on any screen, pushed routes and dialogs included,
+        // counts as activity for auto-lock.
+        builder: (context, child) => Listener(
+          behavior: HitTestBehavior.translucent,
+          onPointerDown: (_) => ref.read(vaultControllerProvider.notifier).touch(),
+          child: child,
+        ),
       ),
     );
   }

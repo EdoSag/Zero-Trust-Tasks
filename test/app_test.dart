@@ -189,6 +189,41 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('touches on pushed screens keep auto-lock from firing', (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Create a Zero-Trust account'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), email);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), password);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm password'), password);
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+    await settle(tester);
+    await confirmRecoveryKey(tester);
+    await tester.runAsync(() => container.read(ztAutoLockProvider.notifier).set(const Duration(minutes: 1)));
+
+    // An editor-like screen pushed over the app.
+    tester.state<NavigatorState>(find.byType(Navigator).first).push(
+      MaterialPageRoute<void>(
+        builder: (_) => Scaffold(body: Center(child: TextButton(onPressed: () {}, child: const Text('Edit')))),
+      ),
+    );
+    await tester.pumpAndSettle();
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.text('Edit'));
+      await tester.pump(const Duration(seconds: 40));
+    }
+    expect(container.read(vaultControllerProvider), isA<VaultUnlocked>());
+
+    // Idle for the full minute: it locks, and the pushed screen is gone.
+    await tester.pump(const Duration(seconds: 30));
+    await tester.pumpAndSettle();
+    expect(container.read(vaultControllerProvider), isA<VaultLocked>());
+    expect(find.text('Edit'), findsNothing);
+    expect(find.text('Zero-Trust Tasks is locked'), findsOneWidget);
+    await finish(tester);
+    await tester.pump(const Duration(seconds: 10)); // a sync retry timer
+  });
+
   testWidgets('pre-core user on the same phone: signs in and sees their tasks, synced', (
     tester,
   ) async {

@@ -230,15 +230,23 @@ void main() {
 
     await tester.tap(find.text('New Task'));
     await settle(tester);
+    // Quick add: one line, the date and time are read from it.
     expect(find.text('List: Groceries'), findsOneWidget);
-    await tester.enterText(find.widgetWithText(TextFormField, 'Title *'), 'Milk');
+    await tester.enterText(find.widgetWithText(TextField, 'New task'), 'Milk tomorrow 6pm');
+    await tester.pump();
+    expect(find.text('Tomorrow 18:00'), findsOneWidget);
+    expect(find.text('Title: Milk'), findsOneWidget);
     await tester.tap(find.byTooltip('Star'));
     await tester.pump();
-    await tester.tap(find.text('Save Task'));
+    await tester.tap(find.widgetWithText(FilledButton, 'Add'));
     await settle(tester);
 
     expect(find.text('Groceries 1'), findsOneWidget);
     expect(find.text('Milk'), findsOneWidget);
+    final added = container.read(taskManagerProvider).tasks.single;
+    final tomorrow = DateTime.now().add(const Duration(days: 1));
+    expect(added.dueDate, DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 18));
+    expect(added.reminderAt, added.dueDate);
     await tester.tap(find.text('My Tasks 0'));
     await settle(tester);
     expect(find.text('Milk'), findsNothing);
@@ -253,6 +261,21 @@ void main() {
     expect(milk.listId, groceries.id);
     expect(milk.starred, isTrue);
     expect(server.rows.keys, contains('tasks/${groceries.id}'));
+
+    // "More options" carries what was typed into the full editor, which is
+    // also where a note or contact can be linked.
+    await tester.pump(const Duration(seconds: 3));
+    await settle(tester);
+    await tester.tap(find.text('New Task'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'New task'), 'Report every week !high');
+    await tester.pump();
+    await tester.tap(find.text('More options'));
+    await settle(tester);
+    expect(find.widgetWithText(TextFormField, 'Report'), findsOneWidget);
+    expect(find.text('Save Task'), findsOneWidget);
+    await tester.scrollUntilVisible(find.text('Link a note'), 300, scrollable: find.byType(Scrollable).first);
+    expect(find.text('Link a contact'), findsOneWidget);
     await finish(tester);
   });
 

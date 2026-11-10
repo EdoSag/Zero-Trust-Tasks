@@ -81,5 +81,8 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="http"/>
         </intent>
+        <!-- "Open ZT Notes / ZT Contacts" from a task's linked note or contact. -->
+        <package android:name="dev.sagron.zerotrustnotes"/>
+        <package android:name="dev.sagron.zerotrustcontacts"/>
     </queries>
 </manifest>

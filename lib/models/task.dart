@@ -25,6 +25,8 @@ class Task {
     this.listId,
     this.starred = false,
     this.position,
+    this.noteIds = const [],
+    this.contactIds = const [],
     this.extra = const {},
     required this.createdAt,
     required this.updatedAt,
@@ -36,7 +38,7 @@ class Task {
     'id', 'title', 'description', 'category', 'priority', 'startDate', 'dueDate',
     'reminderAt', 'recurrence', 'tags', 'notes', 'links', 'isCompleted', 'isArchived',
     'deletedAt', 'completedAt', 'subTasks', 'createdAt', 'updatedAt', 'listId', 'starred',
-    'position',
+    'position', 'noteIds', 'contactIds',
   };
 
   factory Task.create({
@@ -55,6 +57,8 @@ class Task {
     String? listId,
     bool starred = false,
     double? position,
+    List<String> noteIds = const [],
+    List<String> contactIds = const [],
   }) {
     final now = DateTime.now();
     return Task(
@@ -75,6 +79,8 @@ class Task {
       listId: listId,
       starred: starred,
       position: position,
+      noteIds: noteIds,
+      contactIds: contactIds,
       createdAt: now,
       updatedAt: now,
     );
@@ -127,12 +133,20 @@ class Task {
       listId: json['listId'] as String?,
       starred: json['starred'] as bool? ?? false,
       position: (json['position'] as num?)?.toDouble(),
+      noteIds: _ids(json['noteIds']),
+      contactIds: _ids(json['contactIds']),
       extra: {
         for (final e in json.entries)
           if (!_knownKeys.contains(e.key)) e.key: e.value,
       },
     );
   }
+
+  static List<String> _ids(Object? raw) => [
+        if (raw is List)
+          for (final e in raw)
+            if (e is String && e.isNotEmpty) e,
+      ];
 
   final String id;
 
@@ -180,6 +194,13 @@ class Task {
   /// user drags tasks; such tasks follow, oldest first.
   final double? position;
 
+  /// ZT Notes notes linked to this task, by their item id. The same key
+  /// name ZT Calendar uses on events.
+  final List<String> noteIds;
+
+  /// ZT Contacts contacts linked to this task, by their item id.
+  final List<String> contactIds;
+
   /// JSON keys from newer app versions, kept as they are.
   final Map<String, dynamic> extra;
 
@@ -225,6 +246,8 @@ class Task {
       if (listId != null) 'listId': listId,
       if (starred) 'starred': true,
       if (position != null) 'position': position,
+      if (noteIds.isNotEmpty) 'noteIds': noteIds,
+      if (contactIds.isNotEmpty) 'contactIds': contactIds,
     };
   }
 
@@ -258,6 +281,8 @@ class Task {
     bool? starred,
     double? position,
     bool clearPosition = false,
+    List<String>? noteIds,
+    List<String>? contactIds,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -282,6 +307,8 @@ class Task {
       listId: clearListId ? null : (listId ?? this.listId),
       starred: starred ?? this.starred,
       position: clearPosition ? null : (position ?? this.position),
+      noteIds: noteIds ?? this.noteIds,
+      contactIds: contactIds ?? this.contactIds,
       extra: extra,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,

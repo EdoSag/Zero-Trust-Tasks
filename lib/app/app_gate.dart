@@ -8,6 +8,7 @@ import 'package:zero_trust_tasks/app/tasks_hooks.dart';
 import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/suite/linked_apps.dart';
 
 /// Routes between the shared account screens and the app.
 ///
@@ -57,7 +58,11 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
     }
   }
 
-  void _onUnlocked(UnlockResult result) {
+  Future<void> _onUnlocked(UnlockResult result) async {
+    // Tasks can link to notes and contacts from the same account, so it
+    // also derives those apps' keys while it holds the account key.
+    await ref.read(linkedKeysProvider.notifier).deriveFrom(result.dek);
+    if (!mounted) return;
     if (result.newRecoveryKey != null) {
       setState(() {
         _signingIn = false;

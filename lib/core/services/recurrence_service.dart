@@ -42,10 +42,11 @@ class RecurrenceService {
         int year = base.year + (month - 1) ~/ 12;
         month = ((month - 1) % 12) + 1;
         final lastDayOfMonth = DateTime(year, month + 1, 0).day;
-        return DateTime(year, month, base.day.clamp(1, lastDayOfMonth).toInt());
+        // Keeps the time of day.
+        return DateTime(year, month, base.day.clamp(1, lastDayOfMonth).toInt(), base.hour, base.minute);
 
       case RecurrenceFrequency.yearly:
-        return DateTime(base.year + interval, base.month, base.day);
+        return DateTime(base.year + interval, base.month, base.day, base.hour, base.minute);
     }
   }
 

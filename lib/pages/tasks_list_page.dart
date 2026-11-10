@@ -19,7 +19,7 @@ import 'package:zero_trust_tasks/core/services/task_filter_service.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/models/task_status_filter.dart';
-import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 
@@ -157,16 +157,10 @@ class _TasksListPageState extends State<TasksListPage> {
     if (_persistFilter) context.settings.setTaskListScope(scope.key);
   }
 
+  /// Quick add: one line, dates read as you type. "More options" in the
+  /// sheet opens the full editor.
   void _openAddTask() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddTaskScreen(
-          initialListId: _scope.listId,
-          initialStarred: _scope.isStarred,
-        ),
-      ),
-    );
+    showQuickAdd(context, listId: _scope.listId, starred: _scope.isStarred);
   }
 
   Future<void> _bulkMove(BuildContext ctx) async {

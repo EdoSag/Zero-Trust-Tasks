@@ -269,6 +269,8 @@ class TaskManager extends ChangeNotifier {
         subTasks: original.subTasks.map((s) => s.copyWith(isCompleted: false)).toList(),
         listId: original.listId,
         starred: original.starred,
+        noteIds: List.of(original.noteIds),
+        contactIds: List.of(original.contactIds),
         createdAt: now,
         updatedAt: now,
       ),

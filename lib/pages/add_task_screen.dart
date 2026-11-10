@@ -1,5 +1,6 @@
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/components/linked_items_section.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
@@ -18,7 +19,12 @@ class AddTaskScreen extends StatefulWidget {
     this.template,
     this.initialListId,
     this.initialStarred = false,
+    this.draft,
   });
+
+  /// A task that isn't saved yet (from quick add): fills the form, and
+  /// saving creates it.
+  final Task? draft;
 
   final Task? taskToEdit;
 
@@ -68,6 +74,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   final _linkUrlController = TextEditingController();
 
   List<String> _links = [];
+  List<String> _noteIds = [];
+  List<String> _contactIds = [];
 
   RecurrenceFrequency? _recurrenceFrequency;
   int _recurrenceInterval = 1;
@@ -84,10 +92,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   @override
   void initState() {
     super.initState();
-    _listId = widget.taskToEdit?.listId ?? widget.initialListId;
-    _starred = widget.taskToEdit?.starred ?? widget.initialStarred;
-    if (widget.taskToEdit != null) {
-      final task = widget.taskToEdit!;
+    final source = widget.taskToEdit ?? widget.draft;
+    _listId = source?.listId ?? widget.initialListId;
+    _starred = source?.starred ?? widget.initialStarred;
+    if (source != null) {
+      final task = source;
       _titleController.text = task.title;
       _descriptionController.text = task.description ?? '';
       _categoryController.text = task.category ?? '';
@@ -101,6 +110,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _tags = List.of(task.tags);
       _notesController.text = task.notes ?? '';
       _links = List.of(task.links);
+      _noteIds = List.of(task.noteIds);
+      _contactIds = List.of(task.contactIds);
       if (task.recurrence != null) {
         _recurrenceFrequency = task.recurrence!.frequency;
         _recurrenceInterval = task.recurrence!.interval;
@@ -209,6 +220,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         notes: effectiveNotes,
         clearNotes: effectiveNotes == null,
         links: _links,
+        noteIds: _noteIds,
+        contactIds: _contactIds,
         subTasks: finalSubTasks,
         starred: _starred,
         listId: _listId == TaskList.defaultId ? null : _listId,
@@ -234,6 +247,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         tags: _tags,
         notes: effectiveNotes,
         links: _links,
+        noteIds: _noteIds,
+        contactIds: _contactIds,
         subTasks: finalSubTasks,
         listId: _listId == TaskList.defaultId ? null : _listId,
         starred: _starred,
@@ -295,7 +310,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             tooltip: _starred ? 'Remove star' : 'Star',
             onPressed: () => setState(() => _starred = !_starred),
           ),
-          if (widget.taskToEdit == null && widget.template == null)
+          if (widget.taskToEdit == null && widget.template == null && widget.draft == null)
             IconButton(
               icon: const Icon(Icons.article_outlined),
               tooltip: 'Use a template',
@@ -796,6 +811,15 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   ),
                 ),
               ],
+            ),
+            const SizedBox(height: 16),
+            LinkedItemsSection(
+              noteIds: _noteIds,
+              contactIds: _contactIds,
+              onChanged: (notes, contacts) => setState(() {
+                _noteIds = notes;
+                _contactIds = contacts;
+              }),
             ),
             const SizedBox(height: 24),
             Row(

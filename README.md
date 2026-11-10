@@ -21,6 +21,22 @@ and backup files.
   written only when set, and keys a newer version adds are kept as they are,
   so tasks still open in earlier builds.
 
+## Quick add
+
+The "New Task" button opens one line (`QuickAddSheet`). `QuickAddParser`
+reads dates, times, repeats, `!priority` and `#tags` from it, in English
+and Hebrew ("call mum tomorrow 6pm", "להתקשר לאמא מחר ב-18:00"), all on
+the device. A time of day also sets the reminder. "Keep as typed" turns
+the reading off; "More options" opens the full editor.
+
+## Links to ZT Notes and ZT Contacts
+
+A task can link to notes and contacts from the same account (`noteIds`,
+`contactIds`, the key names ZT Calendar uses). At unlock the app derives
+the Notes and Contacts keys from the account key (`lib/suite/linked_apps.dart`)
+and keeps its own encrypted, read-only copy of those items; it never
+writes to the other apps. The keys are zeroed when the vault locks.
+
 ## Outside the vault
 
 Three things work while the vault is locked, and keep as little as possible

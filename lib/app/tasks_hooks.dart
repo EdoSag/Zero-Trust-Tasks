@@ -7,7 +7,7 @@ import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
-import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
@@ -121,7 +121,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     if (uri == null) return;
     final navigator = Navigator.of(context);
     if (uri.host == 'new-task') {
-      navigator.push(MaterialPageRoute<void>(builder: (_) => const AddTaskScreen()));
+      showQuickAdd(context);
     } else if (uri.host == 'task') {
       final id = uri.queryParameters['id'];
       final task = ref.read(taskManagerProvider).tasks.where((t) => t.id == id).firstOrNull;

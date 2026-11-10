@@ -97,6 +97,8 @@ class QuickAddParser {
     'חודש': RecurrenceFrequency.monthly, 'שנה': RecurrenceFrequency.yearly,
   };
 
+  static final _leadIn = RegExp(r'(?<![\p{L}\p{N}])(by|until|till|עד)\s+$', caseSensitive: false, unicode: true);
+
   static String _alt(Iterable<String> words) =>
       (words.toList()..sort((a, b) => b.length - a.length)).map(RegExp.escape).join('|');
 
@@ -111,12 +113,17 @@ class QuickAddParser {
     RecurrenceRule? recurrence;
     TaskPriority? priority;
     final tags = <String>[];
+    // "every monday" typed on a Monday starts today, unless a time was
+    // given and it has already passed.
+    var repeatStartsToday = false;
 
     /// Runs [pattern]; when [use] accepts the first match, removes it.
     void take(RegExp pattern, bool Function(RegExpMatch m) use) {
       for (final m in pattern.allMatches(text)) {
         if (use(m)) {
-          text = '${text.substring(0, m.start)} ${text.substring(m.end)}';
+          // "by friday", "until 6pm": the word leading into it goes too.
+          final before = text.substring(0, m.start).replaceFirst(_leadIn, '');
+          text = '$before ${text.substring(m.end)}';
           return;
         }
       }
@@ -178,7 +185,9 @@ class QuickAddParser {
       take(_re('every\\s+(${_alt(_weekdaysEn.keys)})'), (m) {
         final weekday = _weekdaysEn[m.group(1)!.toLowerCase()]!;
         recurrence = RecurrenceRule(frequency: RecurrenceFrequency.weekly, weekdays: [weekday]);
-        setDate(today.weekday == weekday ? today : nextWeekday(weekday));
+        if (setDate(today.weekday == weekday ? today : nextWeekday(weekday))) {
+          repeatStartsToday = today.weekday == weekday;
+        }
         return true;
       });
     }
@@ -186,7 +195,9 @@ class QuickAddParser {
       take(_re('כל\\s+יום\\s+(${_alt(_weekdaysHe.keys)})|כל\\s+(שבת)'), (m) {
         final weekday = _weekdaysHe[m.group(1) ?? m.group(2)!]!;
         recurrence = RecurrenceRule(frequency: RecurrenceFrequency.weekly, weekdays: [weekday]);
-        setDate(today.weekday == weekday ? today : nextWeekday(weekday));
+        if (setDate(today.weekday == weekday ? today : nextWeekday(weekday))) {
+          repeatStartsToday = today.weekday == weekday;
+        }
         return true;
       });
     }
@@ -212,8 +223,8 @@ class QuickAddParser {
     // "tomorrow morning": a part of the day only counts next to a day (or
     // with "in the" / "this", below), so "morning run" keeps its title.
     const parts = {'morning': 9, 'afternoon': 15, 'evening': 19, 'night': 21};
-    take(_re('(today|tomorrow)\\s+(morning|afternoon|evening|night)'), (m) {
-      final ok = setDate(inDays(m.group(1)!.toLowerCase() == 'today' ? 0 : 1));
+    take(_re('(day after tomorrow|today|tomorrow)\\s+(morning|afternoon|evening|night)'), (m) {
+      final ok = setDate(inDays(const {'today': 0, 'tomorrow': 1}[m.group(1)!.toLowerCase()] ?? 2));
       if (ok) setTime(parts[m.group(2)!.toLowerCase()]!, 0);
       return ok;
     });
@@ -314,6 +325,8 @@ class QuickAddParser {
       due = DateTime(day.year, day.month, day.day, hour!, minute!);
       // "at 6pm" said at 8pm means tomorrow.
       if (date == null && !due.isAfter(clock)) due = due.add(const Duration(days: 1));
+      // "every monday 10:00" said on Monday at 10:30 starts next Monday.
+      if (repeatStartsToday && !due.isAfter(clock)) due = DateTime(day.year, day.month, day.day + 7, hour!, minute!);
       hasTime = true;
     } else if (date != null) {
       due = date;
@@ -321,9 +334,12 @@ class QuickAddParser {
       due = today;
     }
 
-    // Tidy what is left: spaces, and a dangling "at", "on", "by" or ב.
+    // Nothing was read from it: the title is exactly what was typed.
+    if (due == null && recurrence == null && priority == null && tags.isEmpty) {
+      return QuickAdd(title: input.trim());
+    }
+    // Tidy the gaps left behind.
     var title = text.replaceAll(RegExp(r'\s+'), ' ').trim();
-    title = title.replaceAll(RegExp(r'\s+(at|on|by|in|ב|עד)$', caseSensitive: false, unicode: true), '');
     title = title.replaceAll(RegExp(r'^[\s,;:-]+|[\s,;:-]+$'), '');
     if (title.isEmpty && (due != null || tags.isNotEmpty)) {
       // Only a date was typed ("tomorrow"): keep it as the title.

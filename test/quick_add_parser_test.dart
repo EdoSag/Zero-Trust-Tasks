@@ -116,4 +116,27 @@ void main() {
     expect(r.title, 'tomorrow');
     expect(r.due, isNull);
   });
+
+  test('review cases: titles ending in a preposition, long day names, repeats today', () {
+    final now = DateTime(2026, 11, 10, 10, 30); // a Tuesday
+    for (final plain in ['Check in', 'Log in', 'Turn monitoring on', 'Stand by']) {
+      expect(QuickAddParser.parse(plain, now: now).title, plain);
+      expect(QuickAddParser.parse(plain, now: now).due, isNull);
+    }
+    expect(QuickAddParser.parse('Check in tomorrow', now: now).title, 'Check in');
+    final by = QuickAddParser.parse('Send report by friday', now: now);
+    expect(by.title, 'Send report');
+    expect(by.due, DateTime(2026, 11, 13));
+
+    final after = QuickAddParser.parse('Call mum day after tomorrow morning', now: now);
+    expect(after.title, 'Call mum');
+    expect(after.due, DateTime(2026, 11, 12, 9));
+
+    final passed = QuickAddParser.parse('team sync every tuesday 10:00', now: now);
+    expect(passed.title, 'team sync');
+    expect(passed.due, DateTime(2026, 11, 17, 10));
+    final later = QuickAddParser.parse('team sync every tuesday 14:00', now: now);
+    expect(later.due, DateTime(2026, 11, 10, 14));
+    expect(QuickAddParser.parse('team sync every tuesday', now: now).due, DateTime(2026, 11, 10));
+  });
 }

@@ -46,3 +46,11 @@ app.*.map.json
 
 # Nowa related
 .nowa/temp
+
+# Local config and signing material: never commit
+.env
+.env.*
+!.env.example
+*.jks
+*.keystore
+/android/key.properties

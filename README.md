@@ -33,7 +33,15 @@ core's legacy key (which has no prefix), so Tasks reads it itself
 3. The tasks go into the synced store through the core's `LegacyImporter`,
    once per device. The old data is only read, never changed.
 
-`APP_INTERNAL_SALT` must stay in `.env` until the old tables are retired.
+The old pepper (`APP_INTERNAL_SALT`) is a constant in
+`lib/legacy/legacy_tasks_import.dart`, so it no longer has to live in `.env`.
+
+## Configuration
+
+`.env` is not committed. Copy `.env.example` to `.env` for local builds. CI
+writes the same public Supabase values itself, or uses an `ENV_FILE` secret if
+one is set. Never put a service-role key or any other server secret in `.env`:
+it is bundled into the APK.
 
 ## Development
 

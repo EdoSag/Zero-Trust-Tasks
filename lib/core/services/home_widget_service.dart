@@ -11,7 +11,7 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 /// The widget lives outside the vault, so whatever is written here is
 /// stored unencrypted on the phone. By default that is only counts ("4 open
 /// · 1 due today"). Task titles, due dates and the list name are written
-/// only when the user turns on "Show tasks on the home-screen widget", and
+/// only when the user turns on "Show details on the home screen", and
 /// are removed again when it is turned off or the account signs out.
 class HomeWidgetService {
   const HomeWidgetService();
@@ -46,7 +46,7 @@ class HomeWidgetService {
       if (overdue > 0) '$overdue overdue',
     ];
     if (!showTasks) {
-      return WidgetContent(title: 'ZT Tasks', summary: parts.join(' · '), rows: const []);
+      return WidgetContent(title: 'All tasks', summary: parts.join(' · '), rows: const []);
     }
     inScope.sort((a, b) {
       final ad = a.dueDate, bd = b.dueDate;
@@ -78,6 +78,7 @@ class HomeWidgetService {
   Future<void> write(WidgetContent content) async {
     if (!isSupported) return;
     try {
+      await HomeWidget.saveWidgetData<bool>('tasks_widget_locked', content.locked);
       await HomeWidget.saveWidgetData<String>('tasks_widget_title', content.title);
       await HomeWidget.saveWidgetData<String>('tasks_widget_summary', content.summary);
       await HomeWidget.saveWidgetData<int>('tasks_widget_count', content.rows.length);
@@ -93,19 +94,23 @@ class HomeWidgetService {
     }
   }
 
-  /// Back to the signed-out look: no counts, no titles.
+  /// Back to the signed-out look: no counts, no titles, a lock.
   Future<void> clear() => write(const WidgetContent(
-        title: 'ZT Tasks',
-        summary: 'Open the app to see your tasks',
+        title: 'Your tasks',
+        summary: 'Signed out',
         rows: [],
+        locked: true,
       ));
 }
 
 class WidgetContent {
-  const WidgetContent({required this.title, required this.summary, required this.rows});
+  const WidgetContent({required this.title, required this.summary, required this.rows, this.locked = false});
   final String title;
   final String summary;
   final List<WidgetRow> rows;
+
+  /// Signed out: the widget shows a lock instead of rows.
+  final bool locked;
 }
 
 class WidgetRow {

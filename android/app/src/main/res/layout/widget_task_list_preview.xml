@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  What the Widgets menu shows (Android 12+): sample tasks, never real ones.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_preview_root"
+    style="@style/ZtWidget.Root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <LinearLayout
+            android:id="@+id/header"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+            <LinearLayout
+                android:id="@+id/app_row"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+                <ImageView
+                    android:layout_width="@dimen/zt_widget_header_icon"
+                    android:layout_height="@dimen/zt_widget_header_icon"
+                    android:src="@mipmap/ic_launcher"
+                    android:importantForAccessibility="no"/>
+                <TextView
+                    style="@style/ZtWidget.AppName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:text="ZT Tasks"/>
+            </LinearLayout>
+            <TextView
+                android:id="@+id/list_name"
+                style="@style/ZtWidget.Title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:text="Personal"/>
+            <TextView
+                android:id="@+id/summary"
+                style="@style/ZtWidget.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="3 open · 1 due today"/>
+        </LinearLayout>
+        <ImageView
+            android:id="@+id/add_button"
+            style="@style/ZtWidget.Action"
+            android:layout_marginStart="8dp"
+            android:src="@drawable/ic_zt_widget_add"
+            android:contentDescription="Add a task"/>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="vertical">
+
+    <LinearLayout
+        android:id="@+id/row_0"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:minHeight="40dp">
+        <ImageView
+            android:id="@+id/row_0_check"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/zt_widget_check_ring"
+            android:contentDescription="Complete task"/>
+        <LinearLayout
+            android:id="@+id/row_0_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="6dp">
+            <TextView
+                android:id="@+id/row_0_title"
+                style="@style/ZtWidget.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Call the dentist"/>
+            <TextView
+                android:id="@+id/row_0_due"
+                style="@style/ZtWidget.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Today"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:minHeight="40dp">
+        <ImageView
+            android:id="@+id/row_1_check"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/zt_widget_check_ring"
+            android:contentDescription="Complete task"/>
+        <LinearLayout
+            android:id="@+id/row_1_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="6dp">
+            <TextView
+                android:id="@+id/row_1_title"
+                style="@style/ZtWidget.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Buy birthday present"/>
+            <TextView
+                android:id="@+id/row_1_due"
+                style="@style/ZtWidget.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Tomorrow"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/row_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:minHeight="40dp">
+        <ImageView
+            android:id="@+id/row_2_check"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:padding="8dp"
+            android:src="@drawable/zt_widget_check_ring"
+            android:contentDescription="Complete task"/>
+        <LinearLayout
+            android:id="@+id/row_2_text"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingStart="6dp">
+            <TextView
+                android:id="@+id/row_2_title"
+                style="@style/ZtWidget.Body"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Renew passport"/>
+            <TextView
+                android:id="@+id/row_2_due"
+                style="@style/ZtWidget.Caption"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone"/>
+        </LinearLayout>
+    </LinearLayout>
+    </LinearLayout>
+</LinearLayout>

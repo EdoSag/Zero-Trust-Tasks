@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
 import android.net.Uri
+import android.os.Bundle
 import android.view.View
 import android.widget.RemoteViews
 import dev.sagron.zerotrusttasks.MainActivity
@@ -23,6 +24,10 @@ import es.antonborri.home_widget.HomeWidgetProvider
  * A tick works without the vault: the task id is queued under
  * `widget_pending_ticks` and the row disappears; the app completes the task
  * the next time it is unlocked.
+ *
+ * Shared Zero-Trust widget look (Zero-Trust-Core/android-widget-kit). The
+ * number of rows follows the widget's height; at one cell high it is just the
+ * title, the counts and +.
  */
 class TaskListWidgetProvider : HomeWidgetProvider() {
 
@@ -44,8 +49,24 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
         widgetData: SharedPreferences,
     ) {
         appWidgetIds.forEach { widgetId ->
-            appWidgetManager.updateAppWidget(widgetId, buildViews(context, widgetData))
+            appWidgetManager.updateAppWidget(
+                widgetId,
+                buildViews(context, widgetData, appWidgetManager.getAppWidgetOptions(widgetId)),
+            )
         }
+    }
+
+    /** Resized: redraw with as many rows as now fit. */
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle,
+    ) {
+        appWidgetManager.updateAppWidget(
+            appWidgetId,
+            buildViews(context, HomeWidgetPlugin.getData(context), newOptions),
+        )
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -88,12 +109,22 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
 
         val manager = AppWidgetManager.getInstance(context)
         val ids = manager.getAppWidgetIds(ComponentName(context, TaskListWidgetProvider::class.java))
-        ids.forEach { manager.updateAppWidget(it, buildViews(context, prefs)) }
+        ids.forEach { manager.updateAppWidget(it, buildViews(context, prefs, manager.getAppWidgetOptions(it))) }
     }
 
-    private fun buildViews(context: Context, prefs: SharedPreferences): RemoteViews {
+    private fun buildViews(context: Context, prefs: SharedPreferences, options: Bundle?): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_task_list)
-        views.setTextViewText(R.id.list_name, prefs.getString("tasks_widget_title", null) ?: "ZT Tasks")
+        // Portrait height; 0 when the launcher hasn't said yet.
+        val height = options?.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 0) ?: 0
+        val showAppRow = height == 0 || height >= 160
+        val maxRows = rowsFor(height, showAppRow)
+        val locked = prefs.getBoolean("tasks_widget_locked", false)
+        views.setViewVisibility(R.id.app_row, if (showAppRow) View.VISIBLE else View.GONE)
+        // Signed out: a lock and one line, unless only the header fits.
+        val roomForLock = height == 0 || height >= 100
+        views.setViewVisibility(R.id.locked, if (locked && roomForLock) View.VISIBLE else View.GONE)
+        views.setViewVisibility(R.id.rows, if (locked || maxRows == 0) View.GONE else View.VISIBLE)
+        views.setTextViewText(R.id.list_name, prefs.getString("tasks_widget_title", null) ?: "Your tasks")
         views.setTextViewText(
             R.id.summary,
             prefs.getString("tasks_widget_summary", null) ?: "Open the app to see your tasks",
@@ -107,7 +138,7 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse("zerotrusttasks://new-task")),
         )
 
-        val count = prefs.getInt("tasks_widget_count", 0).coerceIn(0, MAX_ROWS)
+        val count = prefs.getInt("tasks_widget_count", 0).coerceIn(0, maxRows)
         for (i in 0 until MAX_ROWS) {
             val id = if (i < count) prefs.getString("tasks_widget_row_${i}_id", null) else null
             val title = if (i < count) prefs.getString("tasks_widget_row_${i}_title", null) else null
@@ -149,5 +180,13 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             )
         }
         return views
+    }
+
+    /** Rows that fit under the header at [height] dp (0: unknown, all). */
+    private fun rowsFor(height: Int, showAppRow: Boolean): Int {
+        if (height == 0) return MAX_ROWS
+        // Padding 28, title and counts 44, gap 6, app name row 26; rows 40 each.
+        val free = height - 78 - (if (showAppRow) 26 else 0)
+        return (free / 40).coerceIn(0, MAX_ROWS)
     }
 }

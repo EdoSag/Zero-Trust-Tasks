@@ -46,8 +46,10 @@ unencrypted on the phone:
   queue the task id (`PendingActionsStore`); the app applies them at the
   next unlock.
 - **Home-screen widget** (`TaskListWidgetProvider.kt`): counts only by
-  default. Task titles are written for the launcher only when "Show tasks
-  on the home-screen widget" is on, and cleared on sign-out.
+  default. Task titles are written for the launcher only when "Show details
+  on the home screen" is on, and cleared on sign-out. It uses the shared
+  widget look from Zero-Trust-Core's `android-widget-kit` and shows more
+  rows as it is made taller.
 - **Reminder text** is generic unless "Show task details in notifications"
   is on.
 

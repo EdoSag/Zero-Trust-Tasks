@@ -386,6 +386,9 @@ class TaskCard extends StatelessWidget {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(wasCompleted ? 'Task marked incomplete' : 'Task completed'),
+        // Flutter keeps a snackbar with a button until dismissed unless told
+        // otherwise.
+        persist: false,
         action: SnackBarAction(
           label: 'Undo',
           onPressed: () {

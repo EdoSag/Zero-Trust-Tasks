@@ -13,6 +13,9 @@ class SnackbarHelper {
       SnackBar(
         content: Text(message),
         backgroundColor: Theme.of(context).colorScheme.error,
+        // Flutter keeps a snackbar with a button until dismissed unless told
+        // otherwise.
+        persist: false,
         action: onRetry == null
             ? null
             : SnackBarAction(
@@ -32,6 +35,9 @@ class SnackbarHelper {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
+        // Flutter keeps a snackbar with a button until dismissed unless told
+        // otherwise.
+        persist: false,
         action: actionLabel == null || onAction == null
             ? null
             : SnackBarAction(label: actionLabel, onPressed: onAction),

@@ -1,10 +1,105 @@
+import 'dart:async';
+import 'dart:convert';
+import 'dart:ui';
+
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
+import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
+import 'package:zero_trust_tasks/models/pending_task_action.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 
-/// Manages local notifications for task reminders (item 20).
+const _completeAction = 'complete';
+const _snoozeAction = 'snooze';
+const _iosCategory = 'task_reminder';
+
+/// How long Snooze on a reminder waits.
+const snoozeDuration = Duration(hours: 1);
+
+const _androidChannel = AndroidNotificationDetails(
+  'task_reminders',
+  'Task Reminders',
+  channelDescription: 'Reminders for your tasks',
+  importance: Importance.high,
+  priority: Priority.high,
+  actions: [
+    AndroidNotificationAction(_completeAction, 'Complete'),
+    AndroidNotificationAction(_snoozeAction, 'Snooze 1 hour'),
+  ],
+);
+
+const _details = NotificationDetails(
+  android: _androidChannel,
+  iOS: DarwinNotificationDetails(categoryIdentifier: _iosCategory),
+);
+
+/// Complete or Snooze tapped while the app isn't running. Runs in its own
+/// isolate without the vault: it only notes the task id (applied at the
+/// next unlock) and, for Snooze, shows the same reminder again later.
+@pragma('vm:entry-point')
+void notificationActionInBackground(NotificationResponse response) {
+  DartPluginRegistrant.ensureInitialized();
+  unawaited(_handleAction(response, FlutterLocalNotificationsPlugin()));
+}
+
+Future<bool> _handleAction(NotificationResponse response, FlutterLocalNotificationsPlugin plugin) async {
+  final actionId = response.actionId;
+  if (actionId != _completeAction && actionId != _snoozeAction) return false;
+  final payload = _ReminderPayload.tryParse(response.payload);
+  if (payload == null) return false;
+  final now = DateTime.now();
+  if (actionId == _completeAction) {
+    await const PendingActionsStore().add(
+      PendingTaskAction(type: PendingTaskActionType.complete, taskId: payload.taskId, at: now),
+    );
+    await plugin.cancel(payload.notificationId);
+  } else {
+    final until = now.add(snoozeDuration);
+    await const PendingActionsStore().add(
+      PendingTaskAction(type: PendingTaskActionType.snooze, taskId: payload.taskId, until: until, at: now),
+    );
+    tz.initializeTimeZones();
+    await plugin.zonedSchedule(
+      payload.notificationId,
+      payload.title,
+      payload.body,
+      tz.TZDateTime.from(until, tz.UTC),
+      _details,
+      payload: response.payload,
+      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
+    );
+  }
+  return true;
+}
+
+/// What a reminder carries so its buttons work without the vault: the task
+/// id and the text already on screen.
+class _ReminderPayload {
+  const _ReminderPayload(this.taskId, this.title, this.body);
+
+  final String taskId;
+  final String title;
+  final String body;
+
+  int get notificationId => taskId.hashCode;
+
+  static _ReminderPayload? tryParse(String? raw) {
+    if (raw == null) return null;
+    try {
+      final json = jsonDecode(raw) as Map<String, dynamic>;
+      return _ReminderPayload(json['id'] as String, json['t'] as String? ?? '', json['b'] as String? ?? '');
+    } on Object {
+      return null;
+    }
+  }
+
+  String encode() => jsonEncode({'id': taskId, 't': title, 'b': body});
+}
+
+/// Manages local notifications for task reminders, with Complete and
+/// Snooze buttons.
 class NotificationService {
   NotificationService._();
 
@@ -12,6 +107,11 @@ class NotificationService {
 
   final _plugin = FlutterLocalNotificationsPlugin();
   bool _initialized = false;
+  final _actions = StreamController<void>.broadcast();
+
+  /// Fires when a reminder button was tapped while the app is open, so the
+  /// queued action can be applied at once.
+  Stream<void> get actionQueued => _actions.stream;
 
   /// Whether task title/description should appear in notifications.
   /// Default false = privacy-preserving generic text.
@@ -24,13 +124,26 @@ class NotificationService {
     tz.setLocalLocation(tz.getLocation(localTz));
 
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const ios = DarwinInitializationSettings(
+    final ios = DarwinInitializationSettings(
       requestAlertPermission: false,
       requestBadgePermission: false,
       requestSoundPermission: false,
+      notificationCategories: [
+        DarwinNotificationCategory(
+          _iosCategory,
+          actions: [
+            DarwinNotificationAction.plain(_completeAction, 'Complete'),
+            DarwinNotificationAction.plain(_snoozeAction, 'Snooze 1 hour'),
+          ],
+        ),
+      ],
     );
     await _plugin.initialize(
-      const InitializationSettings(android: android, iOS: ios),
+      InitializationSettings(android: android, iOS: ios),
+      onDidReceiveNotificationResponse: (response) async {
+        if (await _handleAction(response, _plugin)) _actions.add(null);
+      },
+      onDidReceiveBackgroundNotificationResponse: notificationActionInBackground,
     );
     _initialized = true;
   }
@@ -75,16 +188,8 @@ class NotificationService {
       title,
       body,
       scheduledTime,
-      const NotificationDetails(
-        android: AndroidNotificationDetails(
-          'task_reminders',
-          'Task Reminders',
-          channelDescription: 'Reminders for your tasks',
-          importance: Importance.high,
-          priority: Priority.high,
-        ),
-        iOS: DarwinNotificationDetails(),
-      ),
+      _details,
+      payload: _ReminderPayload(task.id, title, body).encode(),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,

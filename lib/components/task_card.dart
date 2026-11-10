@@ -146,6 +146,16 @@ class TaskCard extends StatelessWidget {
                               ],
                             ),
                           ),
+                          if (!selectionMode)
+                            IconButton(
+                              icon: Icon(
+                                task.starred ? Icons.star : Icons.star_border,
+                                color: task.starred ? Colors.amber.shade700 : null,
+                              ),
+                              tooltip: task.starred ? 'Remove star from "${task.title}"' : 'Star "${task.title}"',
+                              visualDensity: VisualDensity.compact,
+                              onPressed: () => context.taskManager.toggleStar(task.id),
+                            ),
                         ],
                       ),
                       if (task.dueDate != null ||

@@ -10,6 +10,9 @@ class PreferenceKeys {
   static const String autoBackupFrequency = 'sync_auto_backup_frequency';
   static const String autoSyncEnabled = 'sync_auto_sync_enabled';
   static const String autoLockDuration = 'security_auto_lock_duration';
+  static const String taskListScope = 'settings_task_list_scope';
+  static const String widgetShowTasks = 'widget_show_tasks';
+  static const String widgetListId = 'widget_list_id';
   static const String showTaskDetailsInNotifications =
       'security_show_task_details_in_notifications';
 }

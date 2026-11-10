@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -51,6 +52,13 @@ class ZeroTrustTasksApp extends ConsumerWidget {
         darkTheme: darkTheme,
         themeMode: mode,
         debugShowCheckedModeBanner: false,
+        localizationsDelegates: const [
+          ZtL10n.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [Locale('en')],
         home: home,
         // Any touch on any screen, pushed routes and dialogs included,
         // counts as activity for auto-lock.

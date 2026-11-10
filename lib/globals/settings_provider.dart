@@ -22,6 +22,35 @@ class SettingsProvider extends ChangeNotifier {
 
   final SharedPreferences _prefs;
 
+  /// Which tasks the Tasks tab shows: `all`, `starred` or `list:<id>`.
+  String get taskListScope => _prefs.getString(PreferenceKeys.taskListScope) ?? 'all';
+
+  Future<void> setTaskListScope(String value) async {
+    await _prefs.setString(PreferenceKeys.taskListScope, value);
+    notifyListeners();
+  }
+
+  /// Whether the home-screen widget shows task titles (stored unencrypted
+  /// by the launcher). Off: counts only.
+  bool get widgetShowTasks => _prefs.getBool(PreferenceKeys.widgetShowTasks) ?? false;
+
+  Future<void> setWidgetShowTasks(bool value) async {
+    await _prefs.setBool(PreferenceKeys.widgetShowTasks, value);
+    notifyListeners();
+  }
+
+  /// The list the widget shows; null shows every list.
+  String? get widgetListId => _prefs.getString(PreferenceKeys.widgetListId);
+
+  Future<void> setWidgetListId(String? id) async {
+    if (id == null) {
+      await _prefs.remove(PreferenceKeys.widgetListId);
+    } else {
+      await _prefs.setString(PreferenceKeys.widgetListId, id);
+    }
+    notifyListeners();
+  }
+
   late int _lastSelectedTab;
   late bool _taskSectionsCollapsed;
   String? _taskFilterStateJson;

@@ -16,7 +16,12 @@ class TaskSectionList extends StatelessWidget {
     this.selectedTaskIds = const {},
     this.onLongPress,
     this.onToggleSelection,
+    this.onReorder,
   });
+
+  /// Set: a flat list the user can drag into their own order. Called with
+  /// the old index and the new one counted after the task is removed.
+  final void Function(int oldIndex, int newIndex)? onReorder;
 
   final List<Task> tasks;
   final bool sectioned;
@@ -36,6 +41,18 @@ class TaskSectionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final reorder = onReorder;
+    if (!sectioned && reorder != null) {
+      return ReorderableListView.builder(
+        padding: padding,
+        itemCount: tasks.length,
+        onReorderItem: reorder,
+        itemBuilder: (context, index) => KeyedSubtree(
+          key: ValueKey(tasks[index].id),
+          child: _buildCard(tasks[index]),
+        ),
+      );
+    }
     if (!sectioned) {
       return ListView.builder(
         padding: padding,

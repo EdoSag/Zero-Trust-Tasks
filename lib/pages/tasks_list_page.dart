@@ -8,6 +8,10 @@ import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
 import 'package:zero_trust_tasks/components/error_state_widget.dart';
 import 'package:zero_trust_tasks/components/skeleton_task_card.dart';
 import 'package:zero_trust_tasks/components/task_filter_sheet.dart';
+import 'package:zero_trust_tasks/components/task_list_bar.dart';
+import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
+import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/models/task_sort_option.dart';
 import 'package:zero_trust_tasks/components/task_search_bar.dart';
 import 'package:zero_trust_tasks/components/task_calendar_view.dart';
 import 'package:zero_trust_tasks/components/task_section_list.dart';
@@ -44,11 +48,13 @@ class _TasksListPageState extends State<TasksListPage> {
   bool _selectionMode = false;
   Set<String> _selectedTaskIds = {};
   SmartFilter? _activeSmartFilter;
+  TaskListScope _scope = const TaskListScope.all();
 
   @override
   void initState() {
     super.initState();
     _persistFilter = widget.initialFilter == null;
+    if (_persistFilter) _scope = TaskListScope.parse(context.settings.taskListScope);
     if (widget.initialFilter != null) {
       _filterState = widget.initialFilter!;
       _sectioned = true;
@@ -146,11 +152,34 @@ class _TasksListPageState extends State<TasksListPage> {
     }
   }
 
+  void _setScope(TaskListScope scope) {
+    setState(() => _scope = scope);
+    if (_persistFilter) context.settings.setTaskListScope(scope.key);
+  }
+
   void _openAddTask() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const AddTaskScreen()),
+      MaterialPageRoute(
+        builder: (context) => AddTaskScreen(
+          initialListId: _scope.listId,
+          initialStarred: _scope.isStarred,
+        ),
+      ),
     );
+  }
+
+  Future<void> _bulkMove(BuildContext ctx) async {
+    final listId = await TaskListDialogs.pick(ctx);
+    if (listId == null || !ctx.mounted) return;
+    final count = _selectedTaskIds.length;
+    await ctx.taskManager.moveToList(_selectedTaskIds, listId);
+    if (ctx.mounted) {
+      ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
+        content: Text('Moved $count ${count == 1 ? 'task' : 'tasks'} to ${ctx.taskLists.byId(listId).name}'),
+      ));
+    }
+    _exitSelectionMode();
   }
 
   void _enterSelectionMode(String taskId) {
@@ -293,6 +322,17 @@ class _TasksListPageState extends State<TasksListPage> {
     return Consumer(
       builder: (context, ref, child) {
         final taskManager = ref.watch(taskManagerProvider);
+        final taskLists = ref.watch(taskListProvider);
+        // A list that was deleted on another device falls back to All.
+        if (_scope.isList && taskLists.byId(_scope.listId).id != _scope.listId) {
+          _scope = const TaskListScope.all();
+        }
+        final scopedTasks = switch (_scope) {
+          TaskListScope(isStarred: true) => taskManager.tasks.where((t) => t.starred).toList(),
+          TaskListScope(isList: true) =>
+            taskManager.tasks.where((t) => (t.listId ?? TaskList.defaultId) == _scope.listId).toList(),
+          _ => taskManager.tasks,
+        };
         final categories =
             taskManager.getCategories().whereType<String>().toList();
 
@@ -316,7 +356,7 @@ class _TasksListPageState extends State<TasksListPage> {
           );
         } else {
           final filtered = TaskFilterService.applyFilters(
-            taskManager.tasks,
+            scopedTasks,
             _filterState,
           );
           sorted = TaskFilterService.sortTasks(
@@ -331,9 +371,18 @@ class _TasksListPageState extends State<TasksListPage> {
           } else if (_calendarView) {
             body = TaskCalendarView(tasks: sorted);
           } else {
+            // Drag to reorder: one list, "My order", no search or sections.
+            final canReorder = _scope.isList &&
+                _filterState.sortOption == TaskSortOption.manual &&
+                !_sectioned &&
+                !_selectionMode &&
+                _filterState.searchQuery.trim().isEmpty;
             body = TaskSectionList(
               tasks: sorted,
               sectioned: _sectioned,
+              onReorder: canReorder
+                  ? (oldIndex, newIndex) => taskManager.reorder(sorted, oldIndex, newIndex)
+                  : null,
               selectionMode: _selectionMode,
               selectedTaskIds: _selectedTaskIds,
               onLongPress: _enterSelectionMode,
@@ -435,6 +484,8 @@ class _TasksListPageState extends State<TasksListPage> {
                     ],
                   ),
                 ),
+              if (!_selectionMode && widget.initialFilter == null)
+                TaskListBar(scope: _scope, onChanged: _setScope),
               Consumer(
                 builder: (context, ref, _) {
                   final sfp = ref.watch(smartFilterProvider);
@@ -489,6 +540,7 @@ class _TasksListPageState extends State<TasksListPage> {
                   onComplete: () => _bulkComplete(context),
                   onDelete: () => _bulkDelete(context),
                   onCategory: () => _bulkSetCategory(context, categories),
+                  onMove: () => _bulkMove(context),
                   onPriority: () => _bulkSetPriority(context),
                 )
               : null,
@@ -512,8 +564,10 @@ class _BulkActionBar extends StatelessWidget {
     required this.onDelete,
     required this.onCategory,
     required this.onPriority,
+    required this.onMove,
   });
 
+  final VoidCallback onMove;
   final bool enabled;
   final VoidCallback onComplete;
   final VoidCallback onDelete;
@@ -538,6 +592,12 @@ class _BulkActionBar extends StatelessWidget {
             enabled: enabled,
             onTap: onDelete,
             destructive: true,
+          ),
+          _BulkButton(
+            icon: Icons.drive_file_move_outline,
+            label: 'Move',
+            enabled: enabled,
+            onTap: onMove,
           ),
           _BulkButton(
             icon: Icons.label_outline,

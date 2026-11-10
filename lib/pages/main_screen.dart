@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
+import 'package:zero_trust_tasks/app/tasks_hooks.dart';
 import 'package:zero_trust_tasks/components/dashboard_page.dart';
 import 'package:zero_trust_tasks/components/legacy_import_banner.dart';
 import 'package:zero_trust_tasks/components/settings_page.dart';
@@ -15,7 +16,10 @@ class MainScreen extends ConsumerStatefulWidget {
 }
 
 class _MainScreenState extends ConsumerState<MainScreen> {
-  late int _selectedIndex = ref.read(settingsProvider).lastSelectedTab.clamp(0, 2);
+  late int _selectedIndex = ref
+      .read(settingsProvider)
+      .lastSelectedTab
+      .clamp(0, 2);
 
   void _onDestinationSelected(int index) {
     setState(() => _selectedIndex = index);
@@ -23,63 +27,73 @@ class _MainScreenState extends ConsumerState<MainScreen> {
   }
 
   void _showDataProtection() {
-    Navigator.of(
-      context,
-    ).push(MaterialPageRoute<void>(builder: (_) => const ZtDataProtectionScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(builder: (_) => const ZtDataProtectionScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     const pages = [DashboardPage(), TasksListPage(), SettingsPage()];
-    return Scaffold(
-      // Settings brings its own app bar.
-      appBar: _selectedIndex == 2
-          ? null
-          : AppBar(
-              titleSpacing: 16,
-              title: const Row(
-                children: [
-                  ZtBrandMark(app: ZtSuite.tasks, size: 32),
-                  SizedBox(width: 12),
-                  Flexible(child: Text('Zero-Trust Tasks', overflow: TextOverflow.ellipsis)),
+    return TasksHooks(
+      child: Scaffold(
+        // Settings brings its own app bar.
+        appBar: _selectedIndex == 2
+            ? null
+            : AppBar(
+                titleSpacing: 16,
+                title: const Row(
+                  children: [
+                    ZtBrandMark(app: ZtSuite.tasks, size: 32),
+                    SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        'Zero-Trust Tasks',
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+                actions: [
+                  IconButton(
+                    tooltip: 'Encrypted: how your data is protected',
+                    icon: Icon(
+                      Icons.verified_user,
+                      color: theme.colorScheme.primary,
+                    ),
+                    onPressed: _showDataProtection,
+                  ),
+                  const SizedBox(width: 4),
                 ],
               ),
-              actions: [
-                IconButton(
-                  tooltip: 'Encrypted: how your data is protected',
-                  icon: Icon(Icons.verified_user, color: theme.colorScheme.primary),
-                  onPressed: _showDataProtection,
-                ),
-                const SizedBox(width: 4),
-              ],
+        body: Column(
+          children: [
+            const LegacyImportBanner(),
+            Expanded(child: pages[_selectedIndex]),
+          ],
+        ),
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _onDestinationSelected,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.dashboard_outlined),
+              selectedIcon: Icon(Icons.dashboard),
+              label: 'Dashboard',
             ),
-      body: Column(
-        children: [
-          const LegacyImportBanner(),
-          Expanded(child: pages[_selectedIndex]),
-        ],
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.list_outlined),
-            selectedIcon: Icon(Icons.list),
-            label: 'Tasks',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
-        ],
+            NavigationDestination(
+              icon: Icon(Icons.list_outlined),
+              selectedIcon: Icon(Icons.list),
+              label: 'Tasks',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings),
+              label: 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }

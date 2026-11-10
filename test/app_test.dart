@@ -7,6 +7,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' show AuthState, User;
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/app/auth_providers.dart';
+import 'package:zero_trust_tasks/app/tasks_hooks.dart';
+import 'package:zero_trust_tasks/components/task_list_bar.dart';
 import 'package:zero_trust_tasks/data/task_collections.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_crypto.dart';
@@ -66,8 +68,12 @@ void main() {
   late FakeSyncBackend server;
   late FakeLegacySource legacy;
 
+  late InMemoryPreferencesStore prefsStore;
+
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
+    // The intro pages have been seen; one test clears this.
+    prefsStore = InMemoryPreferencesStore()..values['onboarding_seen'] = 'true';
     final prefs = await SharedPreferences.getInstance();
     server = FakeSyncBackend();
     legacy = FakeLegacySource();
@@ -78,7 +84,8 @@ void main() {
         remindersEnabledProvider.overrideWithValue(false),
         ztSyncBackendProvider.overrideWithValue(server),
         ztDeviceIdStoreProvider.overrideWithValue(InMemoryDeviceIdStore()..id = 'test-device'),
-        ztPreferencesStoreProvider.overrideWithValue(InMemoryPreferencesStore()),
+        ztPreferencesStoreProvider.overrideWithValue(prefsStore),
+        platformHooksEnabledProvider.overrideWithValue(false),
         ztLocalStoreProvider.overrideWith((ref) async {
           final appKey = ref.watch(
             vaultControllerProvider.select((v) => v is VaultUnlocked ? v.appKey : null),
@@ -127,6 +134,8 @@ void main() {
     await tester.pumpWidget(
       UncontrolledProviderScope(container: container, child: const ZeroTrustTasksApp()),
     );
+    // Reads whether the intro pages were seen.
+    await settle(tester);
   }
 
   Future<void> signIn(WidgetTester tester) async {
@@ -186,6 +195,64 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Unlock'));
     await settle(tester);
     expect(find.text('Zero-Trust Tasks'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('first launch shows the intro pages once, then sign-in', (tester) async {
+    prefsStore.values.remove('onboarding_seen');
+    await start(tester);
+    expect(find.text('Create a Zero-Trust account'), findsNothing);
+    await tester.tap(find.text('Skip'));
+    await settle(tester);
+    expect(find.text('Create a Zero-Trust account'), findsOneWidget);
+    expect(prefsStore.values['onboarding_seen'], 'true');
+    await finish(tester);
+  });
+
+  testWidgets('lists: make one, add a task to it, star it, see it under Starred', (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Create a Zero-Trust account'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), email);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), password);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm password'), password);
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+    await settle(tester);
+    await confirmRecoveryKey(tester);
+    await openTasksTab(tester);
+    await tester.dragUntilVisible(find.text('New list'), find.byType(TaskListBar), const Offset(-200, 0));
+    await tester.tap(find.text('New list'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'List name'), 'Groceries');
+    await tester.tap(find.widgetWithText(FilledButton, 'Save'));
+    await settle(tester);
+    expect(find.text('Groceries 0'), findsOneWidget);
+
+    await tester.tap(find.text('New Task'));
+    await settle(tester);
+    expect(find.text('List: Groceries'), findsOneWidget);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Title *'), 'Milk');
+    await tester.tap(find.byTooltip('Star'));
+    await tester.pump();
+    await tester.tap(find.text('Save Task'));
+    await settle(tester);
+
+    expect(find.text('Groceries 1'), findsOneWidget);
+    expect(find.text('Milk'), findsOneWidget);
+    await tester.tap(find.text('My Tasks 0'));
+    await settle(tester);
+    expect(find.text('Milk'), findsNothing);
+    await tester.dragUntilVisible(find.text('Starred 1'), find.byType(TaskListBar), const Offset(200, 0));
+    await tester.tap(find.text('Starred 1'));
+    await settle(tester);
+    expect(find.text('Milk'), findsOneWidget);
+
+    // Stored encrypted and pushed like any task.
+    final milk = container.read(taskManagerProvider).tasks.single;
+    final groceries = container.read(taskListProvider).lists.last;
+    expect(milk.listId, groceries.id);
+    expect(milk.starred, isTrue);
+    expect(server.rows.keys, contains('tasks/${groceries.id}'));
     await finish(tester);
   });
 

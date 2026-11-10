@@ -5,13 +5,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 
-enum _TaskAction { duplicate, saveAsTemplate, archive, delete }
+enum _TaskAction { moveToList, makeSubtask, duplicate, saveAsTemplate, archive, delete }
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
   const TaskDetailsScreen({required this.task, super.key});
@@ -40,6 +41,14 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
         title: const Text('Task Details'),
         actions: [
           IconButton(
+            icon: Icon(
+              currentTask.starred ? Icons.star : Icons.star_border,
+              color: currentTask.starred ? Colors.amber.shade700 : null,
+            ),
+            tooltip: currentTask.starred ? 'Remove star' : 'Star',
+            onPressed: () => context.taskManager.toggleStar(currentTask.id),
+          ),
+          IconButton(
             icon: const Icon(Icons.edit),
             tooltip: 'Edit task',
             onPressed: () {
@@ -54,6 +63,10 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
           PopupMenuButton<_TaskAction>(
             onSelected: (action) {
               switch (action) {
+                case _TaskAction.moveToList:
+                  _moveToList(context, currentTask);
+                case _TaskAction.makeSubtask:
+                  _makeSubtask(context, currentTask);
                 case _TaskAction.duplicate:
                   _duplicateTask(context, currentTask);
                 case _TaskAction.saveAsTemplate:
@@ -65,6 +78,22 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
               }
             },
             itemBuilder: (_) => [
+              const PopupMenuItem(
+                value: _TaskAction.moveToList,
+                child: ListTile(
+                  leading: Icon(Icons.drive_file_move_outline),
+                  title: Text('Move to list'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              const PopupMenuItem(
+                value: _TaskAction.makeSubtask,
+                child: ListTile(
+                  leading: Icon(Icons.format_indent_increase),
+                  title: Text('Make a subtask of…'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               const PopupMenuItem(
                 value: _TaskAction.duplicate,
                 child: ListTile(
@@ -388,6 +417,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                 margin: const EdgeInsets.only(bottom: 8.0),
                 child: CheckboxListTile(
                   value: subTask.isCompleted,
+                  controlAffinity: ListTileControlAffinity.leading,
+                  secondary: IconButton(
+                    icon: const Icon(Icons.format_indent_decrease),
+                    tooltip: 'Make "${subTask.title}" a task of its own',
+                    onPressed: () => _promoteSubTask(context, currentTask, subTask.id),
+                  ),
                   onChanged: (value) {
                     context.taskManager.toggleSubTaskComplete(currentTask.id, subTask.id);
                   },
@@ -426,6 +461,47 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
         ],
       ),
     );
+  }
+
+  Future<void> _moveToList(BuildContext context, Task task) async {
+    final listId = await TaskListDialogs.pick(context, currentId: task.listId);
+    if (listId == null || !context.mounted) return;
+    await context.taskManager.moveToList({task.id}, listId);
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Moved to ${context.taskLists.byId(listId).name}')),
+      );
+    }
+  }
+
+  Future<void> _makeSubtask(BuildContext context, Task task) async {
+    final parent = await TaskListDialogs.pickParent(context, task);
+    if (parent == null || !context.mounted) return;
+    final manager = context.taskManager;
+    await manager.makeSubtaskOf(task.id, parent.id);
+    if (!context.mounted) return;
+    final messenger = ScaffoldMessenger.of(context);
+    Navigator.pop(context);
+    messenger.showSnackBar(SnackBar(
+      content: Text('Now a subtask of "${parent.title}"'),
+      action: SnackBarAction(
+        label: 'Undo',
+        onPressed: () async {
+          final current = manager.tasks.where((t) => t.id == parent.id).firstOrNull;
+          if (current != null) await manager.updateTask(parent.copyWith(subTasks: current.subTasks.take(parent.subTasks.length).toList()));
+          await manager.restoreFromTrash(task.id);
+        },
+      ),
+    ));
+  }
+
+  Future<void> _promoteSubTask(BuildContext context, Task task, String subTaskId) async {
+    final promoted = await context.taskManager.promoteSubTask(task.id, subTaskId);
+    if (promoted != null && context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('"${promoted.title}" is now a task of its own')),
+      );
+    }
   }
 
   Future<void> _duplicateTask(BuildContext context, Task task) async {

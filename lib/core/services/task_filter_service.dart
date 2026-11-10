@@ -101,8 +101,21 @@ class TaskFilterService {
         sorted.sort(
           (a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()),
         );
+      case TaskSortOption.manual:
+        sorted.sort(compareManual);
     }
     return sorted;
+  }
+
+  /// "My order": dragged tasks by position, then the rest oldest first
+  /// (new tasks land at the bottom, like Google Tasks' default).
+  static int compareManual(Task a, Task b) {
+    final pa = a.position;
+    final pb = b.position;
+    if (pa != null && pb != null && pa != pb) return pa.compareTo(pb);
+    if (pa != null && pb == null) return -1;
+    if (pa == null && pb != null) return 1;
+    return a.createdAt.compareTo(b.createdAt);
   }
 
   static int _compareDueDate(Task a, Task b, {required bool ascending}) {

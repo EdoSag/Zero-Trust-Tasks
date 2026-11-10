@@ -40,9 +40,19 @@ class LegacyImportFailed extends LegacyImportState {
 
 final legacyTasksSourceProvider = Provider<LegacyTasksSource>((ref) => DeviceLegacyTasksSource());
 
-/// `APP_INTERNAL_SALT` from `.env`: the old Tasks app mixed it into the
-/// password. Needed only to read pre-core data.
-final legacyTasksPepperProvider = Provider<String>((ref) => dotenv.env['APP_INTERNAL_SALT'] ?? '');
+/// `APP_INTERNAL_SALT` the old Tasks app mixed into the password. Needed only
+/// to read pre-core data.
+///
+/// Not a secret: every pre-core build shipped it inside the APK and it sits in
+/// this public repo's history, and it cannot change without making old data
+/// unreadable. It lives here (as in Contacts) so `.env` no longer has to be
+/// committed. An `APP_INTERNAL_SALT` in `.env` still wins.
+const legacyTasksPepper = '6f8d2b3e9a1c4f5b7d9e0a2c4b6d8f0a1b2c';
+
+final legacyTasksPepperProvider = Provider<String>((ref) {
+  final fromEnv = dotenv.isInitialized ? dotenv.env['APP_INTERNAL_SALT'] : null;
+  return (fromEnv == null || fromEnv.isEmpty) ? legacyTasksPepper : fromEnv;
+});
 
 /// KDF settings of the old app. Tests lower them.
 final legacyTasksKdfParamsProvider = Provider<KdfParams>((ref) => KdfParams.current);

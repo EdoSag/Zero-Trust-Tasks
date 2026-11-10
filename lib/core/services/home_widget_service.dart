@@ -27,12 +27,15 @@ class HomeWidgetService {
     required TaskList? list,
     required bool showTasks,
     DateTime? now,
+    String Function(String? listId)? resolveList,
   }) {
+    // Tasks whose list is gone belong to the default list.
+    final listOf = resolveList ?? (String? id) => id ?? TaskList.defaultId;
     final today = now ?? DateTime.now();
     final open = tasks.where((t) => t.deletedAt == null && !t.isArchived && !t.isCompleted).toList();
     final inScope = list == null
         ? open
-        : open.where((t) => (t.listId ?? TaskList.defaultId) == list.id).toList();
+        : open.where((t) => listOf(t.listId) == list.id).toList();
     bool isToday(DateTime d) => d.year == today.year && d.month == today.month && d.day == today.day;
     final dueToday = open.where((t) => t.dueDate != null && isToday(t.dueDate!)).length;
     final overdue = open.where((t) => t.isOverdue && !isToday(t.dueDate!)).length;

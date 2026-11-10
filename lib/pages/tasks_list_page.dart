@@ -323,14 +323,16 @@ class _TasksListPageState extends State<TasksListPage> {
       builder: (context, ref, child) {
         final taskManager = ref.watch(taskManagerProvider);
         final taskLists = ref.watch(taskListProvider);
-        // A list that was deleted on another device falls back to All.
-        if (_scope.isList && taskLists.byId(_scope.listId).id != _scope.listId) {
+        // A list that was deleted (here or on another device) falls back to
+        // All, once the lists have been read.
+        if (taskLists.isLoaded && _scope.isList && taskLists.byId(_scope.listId).id != _scope.listId) {
           _scope = const TaskListScope.all();
         }
         final scopedTasks = switch (_scope) {
           TaskListScope(isStarred: true) => taskManager.tasks.where((t) => t.starred).toList(),
           TaskListScope(isList: true) =>
-            taskManager.tasks.where((t) => (t.listId ?? TaskList.defaultId) == _scope.listId).toList(),
+            // Through byId: a task whose list is gone shows in the default list.
+            taskManager.tasks.where((t) => taskLists.byId(t.listId).id == _scope.listId).toList(),
           _ => taskManager.tasks,
         };
         final categories =

@@ -6,7 +6,16 @@ enum PendingTaskActionType { complete, snooze }
 /// tick, made while the vault may be locked. Only the task's id (and the
 /// snooze time) is kept, unencrypted, until the next unlock applies it.
 class PendingTaskAction {
-  const PendingTaskAction({required this.type, required this.taskId, this.until, required this.at});
+  const PendingTaskAction({
+    required this.type,
+    required this.taskId,
+    this.until,
+    required this.at,
+    this.fromWidget = false,
+  });
+
+  /// A widget tick (kept by the widget's own code, not in this queue).
+  final bool fromWidget;
 
   final PendingTaskActionType type;
   final String taskId;

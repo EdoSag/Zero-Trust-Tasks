@@ -13,6 +13,11 @@ class TaskListProvider extends ChangeNotifier {
   Future<void> Function(TaskList)? _save;
   Future<void> Function(String)? _delete;
   bool _disposed = false;
+  bool _loaded = false;
+
+  /// Whether the stored lists have been read since the vault opened. Until
+  /// then only the default list is known.
+  bool get isLoaded => _loaded;
 
   /// Every list, default first, then by position and name.
   List<TaskList> get lists {
@@ -46,9 +51,11 @@ class TaskListProvider extends ChangeNotifier {
     _save = save;
     _delete = delete;
     _stored = [];
+    _loaded = false;
     _notify();
     _subscription = source?.listen((lists) {
       _stored = lists;
+      _loaded = true;
       _notify();
     }, onError: (Object _) {});
   }

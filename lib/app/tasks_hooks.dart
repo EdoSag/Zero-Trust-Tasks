@@ -74,9 +74,13 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     if (manager.isLoading) return;
     _applying = true;
     try {
-      final actions = await const PendingActionsStore().takeAll();
-      if (actions.isEmpty || !mounted) return;
+      const store = PendingActionsStore();
+      final actions = await store.pending();
+      if (actions.isEmpty || !mounted || manager.isLoading) return;
       final changed = await manager.applyPendingActions(actions);
+      // Removed only once saved: a lock or a failed write keeps them for
+      // the next unlock.
+      await store.acknowledge(actions);
       if (changed > 0 && mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
           content: Text(changed == 1
@@ -103,6 +107,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
         tasks: ref.read(taskManagerProvider).tasks,
         list: listId == null ? null : lists.byId(listId),
         showTasks: settings.widgetShowTasks,
+        resolveList: (id) => lists.byId(id).id,
       );
       unawaited(const HomeWidgetService().write(content));
     });

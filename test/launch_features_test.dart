@@ -144,13 +144,18 @@ void main() {
       until: DateTime(2026, 1, 1, 10),
       at: DateTime(2026, 1, 2),
     ));
-    final taken = await store.takeAll();
+    final taken = await store.pending();
     expect(taken.map((a) => (a.type, a.taskId)), [
       (PendingTaskActionType.complete, 'a'),
       (PendingTaskActionType.snooze, 'b'),
     ]);
     expect(taken.last.until, DateTime(2026, 1, 1, 10));
-    expect(await store.takeAll(), isEmpty);
+    // Not applied yet (say the vault locked): still there.
+    expect(await store.pending(), hasLength(2));
+    // A tap arriving meanwhile survives the acknowledgement of the others.
+    await store.add(PendingTaskAction(type: PendingTaskActionType.complete, taskId: 'c', at: DateTime(2026, 1, 3)));
+    await store.acknowledge(taken);
+    expect((await store.pending()).map((a) => a.taskId), ['c']);
   });
 
   test('the default list is always there and can be renamed', () async {
@@ -158,6 +163,7 @@ void main() {
     final saved = <TaskList>[];
     lists.attach(source: const Stream.empty(), save: (l) async => saved.add(l), delete: (_) async {});
     expect(lists.lists.single.name, 'My Tasks');
+    expect(lists.isLoaded, isFalse, reason: 'nothing read yet');
     await lists.save(lists.byId(null).copyWith(name: 'Inbox'));
     final work = await lists.create('Work');
     expect(lists.lists.map((l) => l.name), ['Inbox', 'Work']);
@@ -269,6 +275,16 @@ void main() {
       );
       expect(scoped.title, 'Work');
       expect(scoped.rows.map((r) => r.title), ['Other work']);
+
+      // A task whose list was deleted shows in the default list.
+      final mine = HomeWidgetService.contentFor(
+        tasks: [task('Orphan', listId: 'deleted')],
+        list: TaskList.fallbackDefault,
+        showTasks: true,
+        now: now,
+        resolveList: (id) => id == null || id == 'deleted' ? TaskList.defaultId : id,
+      );
+      expect(mine.rows.map((r) => r.title), ['Orphan']);
     });
   });
 

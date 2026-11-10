@@ -22,9 +22,22 @@ class Task {
     this.deletedAt,
     this.completedAt,
     this.subTasks = const [],
+    this.listId,
+    this.starred = false,
+    this.position,
+    this.extra = const {},
     required this.createdAt,
     required this.updatedAt,
   });
+
+  /// Keys this version reads. Anything else in a task's JSON (written by a
+  /// newer version) is kept in [extra] and written back unchanged.
+  static const _knownKeys = {
+    'id', 'title', 'description', 'category', 'priority', 'startDate', 'dueDate',
+    'reminderAt', 'recurrence', 'tags', 'notes', 'links', 'isCompleted', 'isArchived',
+    'deletedAt', 'completedAt', 'subTasks', 'createdAt', 'updatedAt', 'listId', 'starred',
+    'position',
+  };
 
   factory Task.create({
     required String title,
@@ -39,6 +52,9 @@ class Task {
     String? notes,
     List<String> links = const [],
     List<SubTask> subTasks = const [],
+    String? listId,
+    bool starred = false,
+    double? position,
   }) {
     final now = DateTime.now();
     return Task(
@@ -56,6 +72,9 @@ class Task {
       links: links,
       isCompleted: false,
       subTasks: subTasks,
+      listId: listId,
+      starred: starred,
+      position: position,
       createdAt: now,
       updatedAt: now,
     );
@@ -105,6 +124,13 @@ class Task {
       updatedAt: json['updatedAt'] != null
           ? DateTime.parse(json['updatedAt'] as String)
           : DateTime.now(),
+      listId: json['listId'] as String?,
+      starred: json['starred'] as bool? ?? false,
+      position: (json['position'] as num?)?.toDouble(),
+      extra: {
+        for (final e in json.entries)
+          if (!_knownKeys.contains(e.key)) e.key: e.value,
+      },
     );
   }
 
@@ -144,6 +170,19 @@ class Task {
 
   final List<SubTask> subTasks;
 
+  /// The [TaskList] this task is in; null is the default list ("My Tasks").
+  final String? listId;
+
+  /// Starred tasks also show in the Starred view.
+  final bool starred;
+
+  /// Place in "My order" within its list (smaller first). Null until the
+  /// user drags tasks; such tasks follow, oldest first.
+  final double? position;
+
+  /// JSON keys from newer app versions, kept as they are.
+  final Map<String, dynamic> extra;
+
   final DateTime createdAt;
 
   final DateTime updatedAt;
@@ -161,6 +200,7 @@ class Task {
 
   Map<String, dynamic> toJson() {
     return {
+      ...extra,
       'id': id,
       'title': title,
       'description': description,
@@ -180,6 +220,11 @@ class Task {
       'subTasks': subTasks.map((e) => e.toJson()).toList(),
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
+      // Written only when set, so tasks that don't use them look exactly as
+      // they did to earlier versions.
+      if (listId != null) 'listId': listId,
+      if (starred) 'starred': true,
+      if (position != null) 'position': position,
     };
   }
 
@@ -208,6 +253,11 @@ class Task {
     DateTime? completedAt,
     bool clearCompletedAt = false,
     List<SubTask>? subTasks,
+    String? listId,
+    bool clearListId = false,
+    bool? starred,
+    double? position,
+    bool clearPosition = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -229,6 +279,10 @@ class Task {
       deletedAt: clearDeletedAt ? null : (deletedAt ?? this.deletedAt),
       completedAt: clearCompletedAt ? null : (completedAt ?? this.completedAt),
       subTasks: subTasks ?? this.subTasks,
+      listId: clearListId ? null : (listId ?? this.listId),
+      starred: starred ?? this.starred,
+      position: clearPosition ? null : (position ?? this.position),
+      extra: extra,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

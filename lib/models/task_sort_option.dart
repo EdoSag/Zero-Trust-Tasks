@@ -1,4 +1,4 @@
-enum TaskSortOption { dueDateAsc, dueDateDesc, priority, createdDate, alphabetical }
+enum TaskSortOption { dueDateAsc, dueDateDesc, priority, createdDate, alphabetical, manual }
 
 extension TaskSortOptionExtension on TaskSortOption {
   String get displayName {
@@ -13,6 +13,8 @@ extension TaskSortOptionExtension on TaskSortOption {
         return 'Date created';
       case TaskSortOption.alphabetical:
         return 'Alphabetical';
+      case TaskSortOption.manual:
+        return 'My order (drag to reorder)';
     }
   }
 }

@@ -8,7 +8,11 @@ import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/recurrence_service.dart';
 import 'package:zero_trust_tasks/data/task_collections.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
+import 'package:zero_trust_tasks/core/services/task_filter_service.dart';
+import 'package:zero_trust_tasks/models/pending_task_action.dart';
+import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 
 /// Saves and deletes go through the core's sync, so every edit is encrypted,
@@ -263,6 +267,8 @@ class TaskManager extends ChangeNotifier {
         isCompleted: false,
         isArchived: false,
         subTasks: original.subTasks.map((s) => s.copyWith(isCompleted: false)).toList(),
+        listId: original.listId,
+        starred: original.starred,
         createdAt: now,
         updatedAt: now,
       ),
@@ -413,6 +419,134 @@ class TaskManager extends ChangeNotifier {
         if (_find(id) case final t?) t.copyWith(priority: priority, updatedAt: now),
     ]);
   }
+
+  Future<void> toggleStar(String taskId) async {
+    final task = _find(taskId);
+    if (task == null) return;
+    await _put([task.copyWith(starred: !task.starred, updatedAt: DateTime.now())]);
+  }
+
+  /// Moves tasks to the list [listId] (null or [TaskList.defaultId]: the
+  /// default list). They go to the bottom of that list's "My order".
+  Future<void> moveToList(Set<String> taskIds, String? listId) async {
+    final target = listId == TaskList.defaultId ? null : listId;
+    final now = DateTime.now();
+    await _put([
+      for (final id in taskIds)
+        if (_find(id) case final t? when t.listId != target)
+          t.copyWith(listId: target, clearListId: target == null, clearPosition: true, updatedAt: now),
+    ]);
+  }
+
+  /// Puts the task at [oldIndex] of [ordered] (one list in "My order") at
+  /// [newIndex], counted after it is removed. Tasks that have never been
+  /// dragged get positions too, so the whole list keeps its order.
+  Future<void> reorder(List<Task> ordered, int oldIndex, int newIndex) async {
+    if (oldIndex == newIndex || oldIndex < 0 || oldIndex >= ordered.length) return;
+    final list = List.of(ordered);
+    final moved = list.removeAt(oldIndex);
+    list.insert(newIndex.clamp(0, list.length), moved);
+    final now = DateTime.now();
+    final changed = <Task>[];
+    for (var i = 0; i < list.length; i++) {
+      final position = (i + 1) * 1024.0;
+      if (list[i].position != position) {
+        changed.add(list[i].copyWith(position: position, updatedAt: now));
+      }
+    }
+    if (changed.isNotEmpty) await _put(changed);
+  }
+
+  /// Turns [taskId] into a subtask at the end of [parentId] (Google Tasks'
+  /// "indent"). The task itself goes to trash, so it can be restored.
+  Future<void> makeSubtaskOf(String taskId, String parentId) async {
+    final task = _find(taskId);
+    final parent = _find(parentId);
+    if (task == null || parent == null || taskId == parentId) return;
+    final now = DateTime.now();
+    await _put([
+      parent.copyWith(
+        subTasks: [
+          ...parent.subTasks,
+          SubTask(id: const Uuid().v4(), title: task.title, isCompleted: task.isCompleted),
+          // A task's own subtasks come along, one level up.
+          ...task.subTasks.map((s) => s.copyWith(id: const Uuid().v4())),
+        ],
+        updatedAt: now,
+      ),
+      task.copyWith(deletedAt: now, updatedAt: now),
+    ]);
+    _cancelReminder(taskId);
+  }
+
+  /// Turns a subtask into a task of its own in the same list, just below
+  /// its parent ("outdent").
+  Future<Task?> promoteSubTask(String taskId, String subTaskId) async {
+    final parent = _find(taskId);
+    if (parent == null) return null;
+    final sub = parent.subTasks.where((s) => s.id == subTaskId).firstOrNull;
+    if (sub == null) return null;
+    final now = DateTime.now();
+    final promoted = Task.create(title: sub.title, listId: parent.listId).copyWith(
+      isCompleted: sub.isCompleted,
+      completedAt: sub.isCompleted ? now : null,
+      position: parent.position == null ? null : parent.position! + 0.5,
+    );
+    await _put([
+      parent.copyWith(subTasks: parent.subTasks.where((s) => s.id != subTaskId).toList(), updatedAt: now),
+      promoted,
+    ]);
+    return promoted;
+  }
+
+  /// Moves every task of list [listId] to trash (when the list is deleted).
+  Future<int> trashList(String listId) async {
+    final now = DateTime.now();
+    final inList = _tasks
+        .where((t) => t.deletedAt == null && (t.listId ?? TaskList.defaultId) == listId)
+        .toList();
+    if (inList.isEmpty) return 0;
+    await _put([for (final t in inList) t.copyWith(deletedAt: now, updatedAt: now)]);
+    for (final t in inList) {
+      _cancelReminder(t.id);
+    }
+    return inList.length;
+  }
+
+  /// Applies taps made while the vault was locked: Complete and Snooze on a
+  /// reminder, ticks on the home-screen widget. Unknown or already-done
+  /// tasks are skipped. Returns how many tasks changed.
+  Future<int> applyPendingActions(List<PendingTaskAction> actions) async {
+    var changed = 0;
+    for (final action in actions) {
+      final task = _find(action.taskId);
+      if (task == null || task.deletedAt != null) continue;
+      switch (action.type) {
+        case PendingTaskActionType.complete:
+          if (task.isCompleted) continue;
+          await toggleTaskComplete(task.id);
+        case PendingTaskActionType.snooze:
+          final until = action.until;
+          if (until == null || task.isCompleted) continue;
+          final snoozed = task.copyWith(reminderAt: until, updatedAt: DateTime.now());
+          await _put([snoozed]);
+          // The notification for the new time is already scheduled.
+      }
+      changed++;
+    }
+    return changed;
+  }
+
+  /// Tasks of one list in "My order", open ones only (what the widget and
+  /// a dragged list show).
+  List<Task> openTasksInOrder({String? listId}) => _tasks
+      .where((t) =>
+          t.deletedAt == null &&
+          !t.isArchived &&
+          !t.isCompleted &&
+          (listId == null || (t.listId ?? TaskList.defaultId) == listId))
+      .toList()
+    ..sort(TaskFilterService.compareManual);
 
   /// (date, completions) for the last [days] days, oldest first.
   List<MapEntry<DateTime, int>> getCompletionTrend(int days) {

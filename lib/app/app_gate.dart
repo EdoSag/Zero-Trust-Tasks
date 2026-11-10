@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/app/auth_providers.dart';
+import 'package:zero_trust_tasks/app/tasks_hooks.dart';
+import 'package:zero_trust_tasks/app/widget_launch.dart';
+import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
 
 /// Routes between the shared account screens and the app.
@@ -22,16 +27,19 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
   /// Supabase reports the session a moment earlier.
   late bool _signingIn = ref.read(currentUserProvider) == null;
   UnlockResult? _awaitingRecoveryKey;
+  late final WidgetLaunchListener _widgetLaunches = WidgetLaunchListener(ref);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    if (ref.read(platformHooksEnabledProvider)) unawaited(_widgetLaunches.start());
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _widgetLaunches.dispose();
     super.dispose();
   }
 
@@ -73,6 +81,7 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
     ref.listen(currentUserProvider, (_, user) {
       if (user == null) {
         ref.read(vaultControllerProvider.notifier).lock();
+        if (ref.read(platformHooksEnabledProvider)) unawaited(const HomeWidgetService().clear());
         setState(() => _signingIn = true);
       }
     });
@@ -99,7 +108,19 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
 
     final user = ref.watch(currentUserProvider);
     if (user == null || _signingIn) {
-      return ZtSignInScreen(onUnlocked: _onUnlocked, onForgotPassword: _forgotPassword);
+      // First launch: the three shared intro pages, once per install.
+      final seen = ref.watch(ztOnboardingSeenProvider);
+      if (user == null && seen == null) {
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      }
+      if (user == null && seen == false) {
+        return ZtOnboardingScreen(onDone: () {});
+      }
+      return ZtSignInScreen(
+        onUnlocked: _onUnlocked,
+        onForgotPassword: _forgotPassword,
+        offerBiometrics: true,
+      );
     }
 
     if (ref.watch(vaultControllerProvider) is VaultLocked) {

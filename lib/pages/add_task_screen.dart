@@ -2,7 +2,9 @@ import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
+import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
@@ -10,9 +12,21 @@ import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/pages/templates_page.dart';
 
 class AddTaskScreen extends StatefulWidget {
-  const AddTaskScreen({super.key, this.taskToEdit, this.template});
+  const AddTaskScreen({
+    super.key,
+    this.taskToEdit,
+    this.template,
+    this.initialListId,
+    this.initialStarred = false,
+  });
 
   final Task? taskToEdit;
+
+  /// The list a new task goes into (null: the default list).
+  final String? initialListId;
+
+  /// Whether a new task starts starred (adding from the Starred view).
+  final bool initialStarred;
 
   /// When provided (and [taskToEdit] is null), pre-fills all form fields from
   /// this template blueprint (item 32).
@@ -62,11 +76,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   List<SubTask> _subTasks = [];
 
+  String? _listId;
+  bool _starred = false;
+
   final Map<String, TextEditingController> _subTaskControllers = {};
 
   @override
   void initState() {
     super.initState();
+    _listId = widget.taskToEdit?.listId ?? widget.initialListId;
+    _starred = widget.taskToEdit?.starred ?? widget.initialStarred;
     if (widget.taskToEdit != null) {
       final task = widget.taskToEdit!;
       _titleController.text = task.title;
@@ -191,6 +210,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         clearNotes: effectiveNotes == null,
         links: _links,
         subTasks: finalSubTasks,
+        starred: _starred,
+        listId: _listId == TaskList.defaultId ? null : _listId,
+        clearListId: _listId == null || _listId == TaskList.defaultId,
+        // A task moved to another list goes to the bottom of its order.
+        clearPosition: (widget.taskToEdit!.listId ?? TaskList.defaultId) != (_listId ?? TaskList.defaultId),
       );
       await taskManager.updateTask(updatedTask);
     } else {
@@ -211,6 +235,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         notes: effectiveNotes,
         links: _links,
         subTasks: finalSubTasks,
+        listId: _listId == TaskList.defaultId ? null : _listId,
+        starred: _starred,
       );
       await taskManager.addTask(newTask);
     }
@@ -250,9 +276,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   void _reorderSubTasks(int oldIndex, int newIndex) {
     setState(() {
-      if (newIndex > oldIndex) {
-        newIndex -= 1;
-      }
+      // onReorderItem: newIndex already counts without the moved item.
       final subTask = _subTasks.removeAt(oldIndex);
       _subTasks.insert(newIndex, subTask);
     });
@@ -266,6 +290,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       appBar: AppBar(
         title: Text(widget.taskToEdit != null ? 'Edit Task' : 'New Task'),
         actions: [
+          IconButton(
+            icon: Icon(_starred ? Icons.star : Icons.star_border, color: _starred ? Colors.amber.shade700 : null),
+            tooltip: _starred ? 'Remove star' : 'Star',
+            onPressed: () => setState(() => _starred = !_starred),
+          ),
           if (widget.taskToEdit == null && widget.template == null)
             IconButton(
               icon: const Icon(Icons.article_outlined),
@@ -295,6 +324,22 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 }
                 return null;
               },
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Builder(builder: (context) {
+                final list = context.taskLists.byId(_listId);
+                return ActionChip(
+                  avatar: Icon(Icons.circle, size: 12, color: list.colorValue ?? Theme.of(context).colorScheme.primary),
+                  label: Text('List: ${list.name}'),
+                  tooltip: 'Choose a list',
+                  onPressed: () async {
+                    final picked = await TaskListDialogs.pick(context, currentId: _listId, title: 'Save in list');
+                    if (picked != null) setState(() => _listId = picked);
+                  },
+                );
+              }),
             ),
             const SizedBox(height: 16),
             TextFormField(
@@ -787,7 +832,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
                 itemCount: _subTasks.length,
-                onReorder: _reorderSubTasks,
+                onReorderItem: _reorderSubTasks,
                 itemBuilder: (context, index) {
                   final subTask = _subTasks[index];
                   return Card(

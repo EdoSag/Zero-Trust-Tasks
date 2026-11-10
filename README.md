@@ -15,8 +15,25 @@ and backup files.
 - Every task (and template) is its own encrypted, signed item in the
   shared `vault_items` table, synced by the core. On the device the core's
   encrypted SQLite store holds them; nothing readable is written to disk.
-- `lib/data/task_collections.dart` defines the two collections: tasks
-  (items with no `kind`) and templates (`kind: template`).
+- `lib/data/task_collections.dart` defines the collections: tasks (items
+  with no `kind`), templates (`kind: template`) and task lists
+  (`kind: task_list`). A task's `listId`, `starred` and `position` keys are
+  written only when set, and keys a newer version adds are kept as they are,
+  so tasks still open in earlier builds.
+
+## Outside the vault
+
+Three things work while the vault is locked, and keep as little as possible
+unencrypted on the phone:
+
+- **Reminder buttons** (Complete, Snooze 1 hour) and **widget ticks** only
+  queue the task id (`PendingActionsStore`); the app applies them at the
+  next unlock.
+- **Home-screen widget** (`TaskListWidgetProvider.kt`): counts only by
+  default. Task titles are written for the launcher only when "Show tasks
+  on the home-screen widget" is on, and cleared on sign-out.
+- **Reminder text** is generic unless "Show task details in notifications"
+  is on.
 
 ## Data from before the core
 

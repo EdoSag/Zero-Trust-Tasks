@@ -6,6 +6,7 @@ import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/data/task_collections.dart';
 import 'package:zero_trust_tasks/globals/settings_provider.dart';
 import 'package:zero_trust_tasks/globals/smart_filter_provider.dart';
+import 'package:zero_trust_tasks/globals/task_list_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/template_provider.dart';
 
@@ -58,6 +59,22 @@ final templateProvider = ChangeNotifierProvider<TemplateProvider>((ref) {
   return provider;
 });
 
+final taskListProvider = ChangeNotifierProvider<TaskListProvider>((ref) {
+  final provider = TaskListProvider();
+  ref.listen<ZtLocalStore?>(tasksStoreProvider, (_, store) {
+    provider.attach(
+      source: store == null ? null : taskListsCollection.watch(store),
+      save: store == null
+          ? null
+          : (l) async => taskListsCollection.save(await _syncController(ref), store, l),
+      delete: store == null
+          ? null
+          : (id) async => taskListsCollection.delete(await _syncController(ref), id),
+    );
+  }, fireImmediately: true);
+  return provider;
+});
+
 final settingsProvider = ChangeNotifierProvider<SettingsProvider>(
   (ref) => SettingsProvider(ref.watch(sharedPreferencesProvider)),
 );
@@ -72,6 +89,7 @@ extension TasksProviders on BuildContext {
   ProviderContainer get _container => ProviderScope.containerOf(this, listen: false);
   TaskManager get taskManager => _container.read(taskManagerProvider);
   TemplateProvider get templates => _container.read(templateProvider);
+  TaskListProvider get taskLists => _container.read(taskListProvider);
   SettingsProvider get settings => _container.read(settingsProvider);
   SmartFilterProvider get smartFilters => _container.read(smartFilterProvider);
 }

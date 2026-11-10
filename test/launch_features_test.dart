@@ -12,6 +12,7 @@ import 'package:zero_trust_tasks/core/services/task_filter_service.dart';
 import 'package:zero_trust_tasks/globals/task_list_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/pending_task_action.dart';
+import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
@@ -118,6 +119,30 @@ void main() {
     test('deleting a list sends its tasks to trash', () async {
       expect(await manager.trashList('work'), 1);
       expect(writer.saved['other']!.deletedAt, isNotNull);
+    });
+
+    test('a failed save keeps later actions; done ones are not replayed', () async {
+      final repeating = task('Daily').copyWith(
+        dueDate: DateTime(2026, 1, 1),
+        recurrence: RecurrenceRule(frequency: RecurrenceFrequency.daily),
+      );
+      source.add([...manager.tasks, repeating]);
+      await pumpEventQueue();
+      final done = <String>[];
+      final actions = [
+        PendingTaskAction(type: PendingTaskActionType.complete, taskId: 'daily', at: DateTime.now()),
+        PendingTaskAction(type: PendingTaskActionType.complete, taskId: 'one', at: DateTime.now()),
+      ];
+      var calls = 0;
+      await expectLater(
+        manager.applyPendingActions(actions, onDone: (a) async {
+          if (++calls == 2) throw StateError('locked');
+          done.add(a.taskId);
+        }),
+        throwsStateError,
+      );
+      expect(done, ['daily'], reason: 'the repeating task is acknowledged before the next action');
+      expect(writer.saved['daily']!.dueDate, DateTime(2026, 1, 2));
     });
 
     test('applies Complete and Snooze taps made while locked', () async {

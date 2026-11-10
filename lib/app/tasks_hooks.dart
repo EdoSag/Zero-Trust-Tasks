@@ -77,10 +77,12 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       const store = PendingActionsStore();
       final actions = await store.pending();
       if (actions.isEmpty || !mounted || manager.isLoading) return;
-      final changed = await manager.applyPendingActions(actions);
-      // Removed only once saved: a lock or a failed write keeps them for
-      // the next unlock.
-      await store.acknowledge(actions);
+      // Each one leaves the queue as soon as it is saved: a lock or failed
+      // write keeps the rest for the next unlock, and nothing is replayed.
+      final changed = await manager.applyPendingActions(
+        actions,
+        onDone: (action) => store.acknowledge([action]),
+      );
       if (changed > 0 && mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
           content: Text(changed == 1

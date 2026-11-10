@@ -320,6 +320,15 @@ void main() {
     expect(find.text('Archive me'), findsNothing);
     expect(manager.totalTasks, 1);
     expect(manager.pendingTasksCount, 1);
+
+    // Archiving finished work keeps it in the Insights history.
+    final keep = manager.tasks.firstWhere((t) => t.title == 'Keep me').id;
+    unawaited(manager.toggleTaskComplete(keep));
+    await settle(tester);
+    unawaited(manager.archiveTask(keep));
+    await settle(tester);
+    expect(manager.completedTasksCount, 0);
+    expect(manager.completedEverCount, 1);
     await finish(tester);
   });
 

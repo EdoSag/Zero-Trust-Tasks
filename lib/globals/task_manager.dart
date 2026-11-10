@@ -141,6 +141,9 @@ class TaskManager extends ChangeNotifier {
 
   int get totalTasks => _active.length;
   int get completedTasksCount => _active.where((t) => t.isCompleted).length;
+  /// Every completed task still stored, archived ones included: the
+  /// history Insights shows next to its completion chart.
+  int get completedEverCount => _tasks.where((t) => t.isCompleted).length;
   int get pendingTasksCount => _active.where((t) => !t.isCompleted).length;
   int get overdueTasksCount => _active.where((t) => t.isOverdue).length;
 

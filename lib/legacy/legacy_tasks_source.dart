@@ -243,16 +243,31 @@ class DeviceLegacyTasksSource implements LegacyTasksSource {
     if (userId == null) throw StateError('Not signed in');
 
     final profile = await client.from('profiles').select('salt').eq('id', userId).maybeSingle();
-    final blobRows = await client
-        .from('encrypted_tasks')
-        .select('data_blob')
-        .eq('user_id', userId)
-        .order('updated_at', ascending: false)
-        .limit(1);
-    final itemRows = await client
-        .from('encrypted_task_items')
-        .select('id, data_blob, updated_at, deleted')
-        .eq('user_id', userId);
+    Future<List<Map<String, dynamic>>> rowsOrNone(
+      Future<List<Map<String, dynamic>>> query,
+    ) async {
+      try {
+        return await query;
+      } on PostgrestException catch (e) {
+        if (isMissingLegacyTable(e)) return const [];
+        rethrow;
+      }
+    }
+
+    final blobRows = await rowsOrNone(
+      client
+          .from('encrypted_tasks')
+          .select('data_blob')
+          .eq('user_id', userId)
+          .order('updated_at', ascending: false)
+          .limit(1),
+    );
+    final itemRows = await rowsOrNone(
+      client
+          .from('encrypted_task_items')
+          .select('id, data_blob, updated_at, deleted')
+          .eq('user_id', userId),
+    );
 
     return LegacyTasksData(
       localTasksBlob: nonEmpty(prefs.getString(localTasksKey)),
@@ -275,3 +290,8 @@ class DeviceLegacyTasksSource implements LegacyTasksSource {
     );
   }
 }
+
+/// The pre-core tables were dropped from the database on 2026-11-10. A
+/// missing table means there is nothing left to import.
+bool isMissingLegacyTable(PostgrestException e) =>
+    e.code == 'PGRST205' || e.code == '42P01';

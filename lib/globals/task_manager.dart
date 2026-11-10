@@ -129,10 +129,23 @@ class TaskManager extends ChangeNotifier {
     super.dispose();
   }
 
-  int get totalTasks => _tasks.length;
-  int get completedTasksCount => _tasks.where((t) => t.isCompleted).length;
-  int get pendingTasksCount => _tasks.where((t) => !t.isCompleted).length;
-  int get overdueTasksCount => _tasks.where((t) => t.isOverdue).length;
+  /// Tasks that aren't in the trash or the archive: what the dashboard
+  /// counts and shows.
+  Iterable<Task> get _active => _tasks.where((t) => t.deletedAt == null && !t.isArchived);
+
+  List<Task> get activeTasks => _active.toList();
+
+  /// The [count] most recently changed active tasks, newest first.
+  List<Task> recentTasks([int count = 5]) =>
+      (_active.toList()..sort((a, b) => b.updatedAt.compareTo(a.updatedAt))).take(count).toList();
+
+  int get totalTasks => _active.length;
+  int get completedTasksCount => _active.where((t) => t.isCompleted).length;
+  /// Every completed task still stored, archived ones included: the
+  /// history Insights shows next to its completion chart.
+  int get completedEverCount => _tasks.where((t) => t.isCompleted).length;
+  int get pendingTasksCount => _active.where((t) => !t.isCompleted).length;
+  int get overdueTasksCount => _active.where((t) => t.isOverdue).length;
 
   Map<TaskPriority, int> get tasksByPriorityCount => {
         for (final p in [
@@ -141,7 +154,7 @@ class TaskManager extends ChangeNotifier {
           TaskPriority.medium,
           TaskPriority.low,
         ])
-          p: _tasks.where((t) => t.priority == p).length,
+          p: _active.where((t) => t.priority == p).length,
       };
 
   TaskWriter get _requireWriter =>
@@ -328,18 +341,18 @@ class TaskManager extends ChangeNotifier {
   }
 
   List<Task> getTasksByCategory(String? category) =>
-      category == null ? _tasks : _tasks.where((t) => t.category == category).toList();
+      category == null ? activeTasks : _active.where((t) => t.category == category).toList();
 
   List<Task> getTasksByPriority(TaskPriority priority) =>
-      _tasks.where((t) => t.priority == priority).toList();
+      _active.where((t) => t.priority == priority).toList();
 
-  List<Task> getOverdueTasks() => _tasks.where((t) => t.isOverdue).toList();
-  List<Task> getCompletedTasks() => _tasks.where((t) => t.isCompleted).toList();
-  List<Task> getPendingTasks() => _tasks.where((t) => !t.isCompleted).toList();
+  List<Task> getOverdueTasks() => _active.where((t) => t.isOverdue).toList();
+  List<Task> getCompletedTasks() => _active.where((t) => t.isCompleted).toList();
+  List<Task> getPendingTasks() => _active.where((t) => !t.isCompleted).toList();
 
   List<String?> getCategories() {
     final categories =
-        _tasks.where((t) => t.category != null).map((t) => t.category).toSet().toList();
+        _active.where((t) => t.category != null).map((t) => t.category).toSet().toList();
     categories.sort();
     return categories;
   }

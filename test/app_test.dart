@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ import 'package:zero_trust_tasks/legacy/legacy_tasks_crypto.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_import.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_source.dart';
 import 'package:zero_trust_tasks/main.dart';
+import 'package:zero_trust_tasks/models/task.dart';
 
 import 'support/fake_account_backend.dart';
 import 'support/fake_sync_backend.dart';
@@ -276,6 +278,57 @@ void main() {
     expect(find.text('Save Task'), findsOneWidget);
     await tester.scrollUntilVisible(find.text('Link a note'), 300, scrollable: find.byType(Scrollable).first);
     expect(find.text('Link a contact'), findsOneWidget);
+    await finish(tester);
+  });
+
+  testWidgets('dashboard: a deleted task leaves Recent Tasks and the counts; the snackbar goes away', (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Create a Zero-Trust account'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), email);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), password);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm password'), password);
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+    await settle(tester);
+    await confirmRecoveryKey(tester);
+    final manager = container.read(taskManagerProvider);
+    for (final title in ['Keep me', 'Delete me', 'Archive me']) {
+      unawaited(manager.addTask(Task.create(title: title)));
+      await settle(tester);
+    }
+    await tester.scrollUntilVisible(find.text('Delete me'), 300, scrollable: find.byType(Scrollable).first);
+    expect(manager.totalTasks, 3);
+
+    // Delete from the task's own page, as on the phone.
+    await tester.tap(find.text('Delete me'));
+    await settle(tester);
+    await tester.tap(find.byIcon(Icons.more_vert));
+    await settle(tester);
+    await tester.tap(find.text('Delete').last);
+    await settle(tester);
+    expect(find.text('Task deleted'), findsOneWidget);
+    expect(find.text('Delete me'), findsNothing);
+    expect(find.text('Keep me'), findsOneWidget);
+
+    // The snackbar has an Undo button and still times out.
+    await tester.pump(const Duration(seconds: 5));
+    await settle(tester);
+    expect(find.text('Task deleted'), findsNothing);
+
+    unawaited(manager.archiveTask(manager.tasks.firstWhere((t) => t.title == 'Archive me').id));
+    await settle(tester);
+    expect(find.text('Archive me'), findsNothing);
+    expect(manager.totalTasks, 1);
+    expect(manager.pendingTasksCount, 1);
+
+    // Archiving finished work keeps it in the Insights history.
+    final keep = manager.tasks.firstWhere((t) => t.title == 'Keep me').id;
+    unawaited(manager.toggleTaskComplete(keep));
+    await settle(tester);
+    unawaited(manager.archiveTask(keep));
+    await settle(tester);
+    expect(manager.completedTasksCount, 0);
+    expect(manager.completedEverCount, 1);
     await finish(tester);
   });
 

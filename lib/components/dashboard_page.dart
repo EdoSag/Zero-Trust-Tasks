@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/components/dashboard_card.dart';
 import 'package:zero_trust_tasks/components/priority_breakdown.dart';
 import 'package:zero_trust_tasks/components/empty_tasks_widget.dart';
@@ -9,7 +10,6 @@ import 'package:zero_trust_tasks/components/skeleton_task_card.dart';
 import 'package:zero_trust_tasks/components/task_card.dart';
 import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/models/task_status_filter.dart';
-import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/pages/insights_page.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
 
@@ -146,27 +146,13 @@ class DashboardPage extends StatelessWidget {
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              if (taskManager.tasks.isEmpty)
+              if (taskManager.totalTasks == 0)
                 EmptyTasksWidget(
-                  onCreateTask: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const AddTaskScreen(),
-                    ),
-                  ),
+                  onCreateTask: () => showQuickAdd(context),
                 )
               else
-                ListView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: taskManager.tasks.length > 5
-                      ? 5
-                      : taskManager.tasks.length,
-                  itemBuilder: (context, index) {
-                    final task = taskManager.tasks[index];
-                    return TaskCard(task: task);
-                  },
-                ),
+                // Newest first; deleted and archived tasks don't show.
+                for (final task in taskManager.recentTasks()) TaskCard(key: ValueKey(task.id), task: task),
             ],
           ),
         );

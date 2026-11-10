@@ -21,7 +21,7 @@ class InsightsPage extends StatelessWidget {
         final priorities = taskManager.activePriorityBreakdown;
         final totalActive =
             priorities.values.fold(0, (sum, c) => sum + c);
-        final totalCompleted = taskManager.completedTasksCount;
+        final totalCompleted = taskManager.completedEverCount;
         final trendTotal = trend.fold(0, (sum, e) => sum + e.value);
         final avgPerDay =
             trendTotal == 0 ? 0.0 : trendTotal / _trendDays;

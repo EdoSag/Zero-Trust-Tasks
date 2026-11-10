@@ -281,7 +281,7 @@ void main() {
     test('shows only counts unless titles are turned on', () {
       final content = HomeWidgetService.contentFor(tasks: tasks, list: null, showTasks: false, now: now);
       expect(content.rows, isEmpty);
-      expect(content.title, 'ZT Tasks');
+      expect(content.title, 'All tasks');
       expect(content.summary, '4 open · 1 due today · 1 overdue');
     });
 

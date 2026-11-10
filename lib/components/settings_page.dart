@@ -64,10 +64,11 @@ class SettingsPage extends ConsumerWidget {
         ),
         SwitchListTile(
           secondary: const Icon(Icons.widgets_outlined),
-          title: const Text('Show tasks on the home-screen widget'),
+          title: const Text('Show details on the home screen'),
           subtitle: const Text(
-            'Off: the widget shows counts only. On: titles of your next tasks are '
-            'stored unencrypted for the launcher, so anyone holding the unlocked phone can see them',
+            'Off: the widget shows counts only. On: the titles of your next tasks are '
+            'stored unencrypted on this phone for the home screen, so anyone holding '
+            'the unlocked phone can see them',
           ),
           value: settings.widgetShowTasks,
           onChanged: settings.setWidgetShowTasks,

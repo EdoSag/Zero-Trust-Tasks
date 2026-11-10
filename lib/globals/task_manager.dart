@@ -516,25 +516,37 @@ class TaskManager extends ChangeNotifier {
   /// Applies taps made while the vault was locked: Complete and Snooze on a
   /// reminder, ticks on the home-screen widget. Unknown or already-done
   /// tasks are skipped. Returns how many tasks changed.
-  Future<int> applyPendingActions(List<PendingTaskAction> actions) async {
+  ///
+  /// [onDone] runs after each action is saved (or skipped), before the next
+  /// one, so the caller can drop it from its queue at once. A failure part
+  /// way then never replays an action that already took effect, which for
+  /// a repeating task would skip another occurrence.
+  Future<int> applyPendingActions(
+    List<PendingTaskAction> actions, {
+    Future<void> Function(PendingTaskAction action)? onDone,
+  }) async {
     var changed = 0;
     for (final action in actions) {
-      final task = _find(action.taskId);
-      if (task == null || task.deletedAt != null) continue;
-      switch (action.type) {
-        case PendingTaskActionType.complete:
-          if (task.isCompleted) continue;
-          await toggleTaskComplete(task.id);
-        case PendingTaskActionType.snooze:
-          final until = action.until;
-          if (until == null || task.isCompleted) continue;
-          final snoozed = task.copyWith(reminderAt: until, updatedAt: DateTime.now());
-          await _put([snoozed]);
-          // The notification for the new time is already scheduled.
-      }
-      changed++;
+      if (await _applyPending(action)) changed++;
+      await onDone?.call(action);
     }
     return changed;
+  }
+
+  Future<bool> _applyPending(PendingTaskAction action) async {
+    final task = _find(action.taskId);
+    if (task == null || task.deletedAt != null) return false;
+    switch (action.type) {
+      case PendingTaskActionType.complete:
+        if (task.isCompleted) return false;
+        await toggleTaskComplete(task.id);
+      case PendingTaskActionType.snooze:
+        final until = action.until;
+        if (until == null || task.isCompleted) return false;
+        // The notification for the new time is already scheduled.
+        await _put([task.copyWith(reminderAt: until, updatedAt: DateTime.now())]);
+    }
+    return true;
   }
 
   /// Tasks of one list in "My order", open ones only (what the widget and

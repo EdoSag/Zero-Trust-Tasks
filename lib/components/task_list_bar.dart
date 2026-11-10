@@ -14,10 +14,11 @@ class TaskListBar extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final lists = ref.watch(taskListProvider).lists;
+    final provider = ref.watch(taskListProvider);
+    final lists = provider.lists;
     final tasks = ref.watch(taskManagerProvider).tasks;
     final open = tasks.where((t) => t.deletedAt == null && !t.isArchived && !t.isCompleted);
-    int countFor(TaskList l) => open.where((t) => (t.listId ?? TaskList.defaultId) == l.id).length;
+    int countFor(TaskList l) => open.where((t) => provider.byId(t.listId).id == l.id).length;
     final starred = open.where((t) => t.starred).length;
     final scheme = Theme.of(context).colorScheme;
 

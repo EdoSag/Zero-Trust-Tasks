@@ -28,30 +28,62 @@ class PendingActionsStore {
     await prefs.setStringList(_key, [...list, action.encode()]);
   }
 
-  /// Everything queued, oldest first, and clears the queue.
-  Future<List<PendingTaskAction>> takeAll() async {
+  /// Everything queued, oldest first. The queue keeps them until
+  /// [acknowledge], so a lock or failed save mid-way loses nothing.
+  Future<List<PendingTaskAction>> pending() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.reload();
-    final raw = prefs.getStringList(_key) ?? const [];
-    if (raw.isNotEmpty) await prefs.remove(_key);
     final actions = [
-      for (final r in raw)
+      for (final r in prefs.getStringList(_key) ?? const <String>[])
         if (PendingTaskAction.tryParse(r) case final a?) a,
     ];
-    if (_widgetsSupported) {
-      try {
-        final ticks = await HomeWidget.getWidgetData<String>(widgetTicksKey);
-        if (ticks != null && ticks.trim().isNotEmpty) {
-          await HomeWidget.saveWidgetData<String>(widgetTicksKey, null);
-          for (final id in ticks.split('\n').map((s) => s.trim()).where((s) => s.isNotEmpty)) {
-            actions.add(PendingTaskAction(type: PendingTaskActionType.complete, taskId: id, at: DateTime.now()));
-          }
-        }
-      } on Object {
-        // No widget support on this device: nothing to read.
-      }
+    for (final id in await _widgetTicks()) {
+      actions.add(PendingTaskAction(
+        type: PendingTaskActionType.complete,
+        taskId: id,
+        at: DateTime.now(),
+        fromWidget: true,
+      ));
     }
     actions.sort((a, b) => a.at.compareTo(b.at));
     return actions;
+  }
+
+  /// Removes [done] from the queue. Taps added since [pending] stay.
+  Future<void> acknowledge(List<PendingTaskAction> done) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.reload();
+    final doneQueued = {for (final a in done) if (!a.fromWidget) a.encode()};
+    final remaining = [
+      for (final r in prefs.getStringList(_key) ?? const <String>[])
+        if (!doneQueued.contains(PendingTaskAction.tryParse(r)?.encode())) r,
+    ];
+    if (remaining.isEmpty) {
+      await prefs.remove(_key);
+    } else {
+      await prefs.setStringList(_key, remaining);
+    }
+    final doneTicks = {for (final a in done) if (a.fromWidget) a.taskId};
+    if (doneTicks.isNotEmpty && _widgetsSupported) {
+      try {
+        final left = (await _widgetTicks()).where((id) => !doneTicks.contains(id)).toList();
+        await HomeWidget.saveWidgetData<String>(widgetTicksKey, left.isEmpty ? null : left.join('\n'));
+      } on Object {
+        // No widget support on this device.
+      }
+    }
+  }
+
+  Future<List<String>> _widgetTicks() async {
+    if (!_widgetsSupported) return const [];
+    try {
+      final ticks = await HomeWidget.getWidgetData<String>(widgetTicksKey);
+      return [
+        for (final id in (ticks ?? '').split('\n').map((s) => s.trim()))
+          if (id.isNotEmpty) id,
+      ];
+    } on Object {
+      return const [];
+    }
   }
 }

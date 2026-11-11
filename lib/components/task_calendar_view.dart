@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:zero_trust_tasks/components/task_card.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Month-calendar view with due-date markers and a day-agenda list (item 34).
 class TaskCalendarView extends StatefulWidget {
@@ -64,7 +65,7 @@ class _TaskCalendarViewState extends State<TaskCalendarView> {
           selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
           eventLoader: _tasksForDay,
           calendarFormat: CalendarFormat.month,
-          availableCalendarFormats: const {CalendarFormat.month: 'Month'},
+          availableCalendarFormats: {CalendarFormat.month: context.l10n.month},
           onDaySelected: (selectedDay, focusedDay) {
             setState(() {
               _selectedDay = _normalise(selectedDay);
@@ -106,7 +107,7 @@ class _TaskCalendarViewState extends State<TaskCalendarView> {
           child: selectedTasks.isEmpty
               ? Center(
                   child: Text(
-                    'No tasks due on this day',
+                    context.l10n.noTasksDueOnThis,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurface.withValues(alpha: 0.5),
                     ),

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Productivity insights: completion trend + priority distribution (item 35).
 class InsightsPage extends StatelessWidget {
@@ -27,7 +28,7 @@ class InsightsPage extends StatelessWidget {
             trendTotal == 0 ? 0.0 : trendTotal / _trendDays;
 
         return Scaffold(
-          appBar: AppBar(title: const Text('Insights')),
+          appBar: AppBar(title: Text(context.l10n.insights)),
           body: ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -39,15 +40,15 @@ class InsightsPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               _SectionTitle(
-                'Completions – Last $_trendDays Days',
-                subtitle: '$trendTotal completed',
+                context.l10n.completionsLastDays(_trendDays),
+                subtitle: context.l10n.nCompleted(trendTotal),
               ),
               const SizedBox(height: 12),
               _CompletionBarChart(trend: trend),
               const SizedBox(height: 24),
               _SectionTitle(
-                'Active Tasks by Priority',
-                subtitle: '$totalActive tasks',
+                context.l10n.activeTasksByPriority,
+                subtitle: context.l10n.nTasks(totalActive),
               ),
               const SizedBox(height: 12),
               _PriorityPieChart(
@@ -80,25 +81,25 @@ class _StatsRow extends StatelessWidget {
     return Row(
       children: [
         _StatCard(
-          label: 'Active',
+          label: context.l10n.active,
           value: '$totalActive',
           color: Theme.of(context).colorScheme.primary,
         ),
         const SizedBox(width: 8),
         _StatCard(
-          label: 'Done',
+          label: context.l10n.doneStat,
           value: '$totalCompleted',
           color: Colors.green,
         ),
         const SizedBox(width: 8),
         _StatCard(
-          label: 'Overdue',
+          label: context.l10n.overdue,
           value: '$overdueCount',
           color: Colors.red,
         ),
         const SizedBox(width: 8),
         _StatCard(
-          label: 'Avg/day',
+          label: context.l10n.avgDay,
           value: avgPerDay.toStringAsFixed(1),
           color: Colors.orange,
         ),
@@ -201,7 +202,7 @@ class _CompletionBarChart extends StatelessWidget {
               getTooltipItem: (group, groupIndex, rod, rodIndex) {
                 final day = trend[groupIndex].key;
                 return BarTooltipItem(
-                  '${labelFormat.format(day)}\n${rod.toY.toInt()} done',
+                  context.l10n.dayDone(labelFormat.format(day), rod.toY.toInt()),
                   const TextStyle(fontSize: 12),
                 );
               },
@@ -287,7 +288,7 @@ class _PriorityPieChartState extends State<_PriorityPieChart> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No active tasks',
+            context.l10n.noActiveTasks,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(
                 context,

@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- English (default). Hebrew is in values-iw. While the app has run, the
+     widget uses the language picked in the app's Settings instead (see
+     WidgetText.kt). -->
 <resources>
     <string name="task_list_widget_description">Your open tasks: tick them off or add a new one</string>
+    <string name="widget_all_tasks">All tasks</string>
+    <string name="widget_add_task">Add a task</string>
+    <string name="widget_complete_task">Complete task</string>
+    <string name="widget_open_to_see">Open ZT Tasks to see your tasks</string>
+    <string name="widget_your_tasks">Your tasks</string>
+    <string name="widget_open_app_summary">Open the app to see your tasks</string>
+    <string name="widget_done_saved">Done. Saved when you next open the app</string>
 </resources>

@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_crypto.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// A `.ztasks` backup file that needs the password it was made with:
 /// one written by the earlier app version (format 1).
@@ -52,7 +53,7 @@ abstract final class BackupFileHelper {
     try {
       file = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
     } on Object {
-      throw const InvalidBackupFile('This isn\'t a Zero-Trust Tasks backup file.');
+      throw InvalidBackupFile(currentL10n.thisIsntAZeroTrust);
     }
     final String json;
     switch (file['version']) {
@@ -64,13 +65,13 @@ abstract final class BackupFileHelper {
             aad: utf8.encode(_aad),
           );
         } on Object {
-          throw const InvalidBackupFile('This backup belongs to another account.');
+          throw InvalidBackupFile(currentL10n.thisBackupBelongsToAnother);
         }
       case 1:
         final salt = file['salt'] as String?;
         final payload = file['encrypted_payload'] as String?;
         if (salt == null || payload == null) {
-          throw const InvalidBackupFile('This backup file is damaged.');
+          throw InvalidBackupFile(currentL10n.thisBackupFileIsDamaged);
         }
         if (password == null) throw BackupNeedsPassword(salt);
         final key = await LegacyTasksCrypto.deriveKey(
@@ -82,15 +83,15 @@ abstract final class BackupFileHelper {
         try {
           json = await LegacyTasksCrypto.decrypt(payload, key);
         } on Object {
-          throw const InvalidBackupFile('That password doesn\'t open this backup.');
+          throw InvalidBackupFile(currentL10n.thatPasswordDoesntOpenThis);
         } finally {
           key.fillRange(0, key.length, 0);
         }
       default:
-        throw const InvalidBackupFile('This backup is from a newer version of the app.');
+        throw InvalidBackupFile(currentL10n.thisBackupIsFromA);
     }
     final list = jsonDecode(json);
-    if (list is! List) throw const InvalidBackupFile('This backup file is damaged.');
+    if (list is! List) throw InvalidBackupFile(currentL10n.thisBackupFileIsDamaged);
     return [
       for (final e in list)
         if (e is Map<String, dynamic>) Task.fromJson(e),

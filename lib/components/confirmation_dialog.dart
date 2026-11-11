@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// A dialog for high-impact destructive actions (cloud restore, permanent
 /// delete) that requires the user to type a confirmation phrase before the
@@ -9,7 +10,7 @@ class ConfirmationDialog extends StatefulWidget {
     required this.title,
     required this.message,
     required this.confirmPhrase,
-    this.confirmButtonLabel = 'Confirm',
+    this.confirmButtonLabel,
     this.isDestructive = true,
   });
 
@@ -18,7 +19,7 @@ class ConfirmationDialog extends StatefulWidget {
 
   /// The exact text the user must type to enable the confirm button.
   final String confirmPhrase;
-  final String confirmButtonLabel;
+  final String? confirmButtonLabel;
   final bool isDestructive;
 
   /// Shows the dialog and returns `true` if the user confirmed.
@@ -27,7 +28,7 @@ class ConfirmationDialog extends StatefulWidget {
     required String title,
     required String message,
     required String confirmPhrase,
-    String confirmButtonLabel = 'Confirm',
+    String? confirmButtonLabel,
     bool isDestructive = true,
   }) async {
     final result = await showDialog<bool>(
@@ -87,12 +88,12 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
             TextSpan(
               style: theme.textTheme.bodyMedium,
               children: [
-                const TextSpan(text: 'Type '),
+                TextSpan(text: context.l10n.typePrefix),
                 TextSpan(
                   text: widget.confirmPhrase,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
-                const TextSpan(text: ' to confirm.'),
+                TextSpan(text: context.l10n.toConfirmSuffix),
               ],
             ),
           ),
@@ -111,7 +112,7 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _isMatch ? () => Navigator.pop(context, true) : null,
@@ -121,7 +122,7 @@ class _ConfirmationDialogState extends State<ConfirmationDialog> {
                   foregroundColor: theme.colorScheme.onError,
                 )
               : null,
-          child: Text(widget.confirmButtonLabel),
+          child: Text(widget.confirmButtonLabel ?? context.l10n.confirm),
         ),
       ],
     );

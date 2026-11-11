@@ -1,16 +1,17 @@
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class TaskPriorityHelper {
   static String getDisplayName(TaskPriority priority) {
     if (priority == TaskPriority.critical) {
-      return 'Critical';
+      return currentL10n.critical;
     } else if (priority == TaskPriority.high) {
-      return 'High';
+      return currentL10n.high;
     } else if (priority == TaskPriority.medium) {
-      return 'Medium';
+      return currentL10n.medium;
     } else {
-      return 'Low';
+      return currentL10n.low;
     }
   }
 

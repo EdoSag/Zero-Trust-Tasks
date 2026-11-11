@@ -211,6 +211,44 @@ void main() {
     await finish(tester);
   });
 
+  testWidgets('Hebrew: Settings → Language turns the app right-to-left', (tester) async {
+    await start(tester);
+    await tester.tap(find.text('Create a Zero-Trust account'));
+    await tester.pump();
+    await tester.enterText(find.widgetWithText(TextFormField, 'Email'), email);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Password'), password);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Confirm password'), password);
+    await tester.tap(find.widgetWithText(FilledButton, 'Create account'));
+    await settle(tester);
+    await confirmRecoveryKey(tester);
+
+    await container.read(ztLanguageProvider.notifier).set(ZtLanguages.hebrew);
+    await settle(tester);
+    expect(prefsStore.values['language'], 'he');
+
+    // The bottom bar reads right to left: Dashboard, Tasks, Settings.
+    final dashboard = tester.getCenter(find.text('לוח בקרה').last);
+    final tasks = tester.getCenter(find.text('משימות').last);
+    final settings = tester.getCenter(find.text('הגדרות').last);
+    expect(dashboard.dx, greaterThan(tasks.dx));
+    expect(tasks.dx, greaterThan(settings.dx));
+
+    await tester.tap(find.text('משימות').last);
+    await settle(tester);
+    // "New task" sits bottom-left, the end side in Hebrew.
+    final fab = tester.getCenter(find.text('משימה חדשה'));
+    expect(fab.dx, lessThan(250));
+
+    // Quick add reads Hebrew dates and answers in Hebrew.
+    await tester.tap(find.text('משימה חדשה'));
+    await settle(tester);
+    await tester.enterText(find.widgetWithText(TextField, 'משימה חדשה'), 'חלב מחר ב-18');
+    await tester.pump();
+    expect(find.text('מחר 18:00'), findsOneWidget);
+    expect(find.text('כותרת: חלב'), findsOneWidget);
+    await finish(tester);
+  });
+
   testWidgets('lists: make one, add a task to it, star it, see it under Starred', (tester) async {
     await start(tester);
     await tester.tap(find.text('Create a Zero-Trust account'));

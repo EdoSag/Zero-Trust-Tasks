@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_import.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Shows how the one-time move of tasks from the earlier app version is
 /// going, and asks for the password on a device that doesn't have the old
@@ -34,8 +35,8 @@ class _LegacyImportBannerState extends ConsumerState<LegacyImportBanner> {
         _shownDoneFor = next.imported;
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
           content: Text(next.imported == 1
-              ? 'Moved 1 item from the previous version'
-              : 'Moved ${next.imported} items from the previous version'),
+              ? context.l10n.moved1ItemFromThe
+              : context.l10n.movedItems(next.imported)),
         ));
       }
     });
@@ -44,25 +45,24 @@ class _LegacyImportBannerState extends ConsumerState<LegacyImportBanner> {
       LegacyImportNeedsPassword(:final wrongPassword) => MaterialBanner(
           leading: const Icon(Icons.move_down),
           content: Text(wrongPassword
-              ? 'That password didn\'t open your earlier tasks. Use the password you had in the previous version of the app.'
-              : 'Your tasks from the previous version are ready to move over. Enter your password once to bring them here.'),
+              ? context.l10n.thatPasswordDidntOpenYour
+              : context.l10n.yourTasksFromThePrevious),
           actions: [
-            TextButton(onPressed: () => setState(() => _dismissed = true), child: const Text('Later')),
+            TextButton(onPressed: () => setState(() => _dismissed = true), child: Text(context.l10n.later)),
             FilledButton.tonal(
               onPressed: () => _askPassword(wrong: wrongPassword),
-              child: const Text('Enter password'),
+              child: Text(context.l10n.enterPassword),
             ),
           ],
         ),
       LegacyImportFailed(:final error) => MaterialBanner(
           leading: const Icon(Icons.cloud_off_outlined),
-          content: Text('Couldn\'t bring over your tasks from the previous version yet. '
-              '${ztErrorMessage(error)}'),
+          content: Text(context.l10n.legacyFailed(ztErrorMessage(error))),
           actions: [
-            TextButton(onPressed: () => setState(() => _dismissed = true), child: const Text('Later')),
+            TextButton(onPressed: () => setState(() => _dismissed = true), child: Text(context.l10n.later)),
             FilledButton.tonal(
               onPressed: () => ref.read(legacyTasksImportProvider.notifier).retry(),
-              child: const Text('Try again'),
+              child: Text(context.l10n.tryAgain),
             ),
           ],
         ),
@@ -92,13 +92,12 @@ class _PasswordDialogState extends State<_PasswordDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Bring over your tasks'),
+      title: Text(context.l10n.bringOverYourTasks),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Your earlier tasks were encrypted with your password. '
-              'It is used on this phone only, to open them once.'),
+          Text(context.l10n.legacyExplain),
           const SizedBox(height: 16),
           TextField(
             controller: _controller,
@@ -106,10 +105,10 @@ class _PasswordDialogState extends State<_PasswordDialog> {
             obscureText: _obscure,
             autofillHints: const [AutofillHints.password],
             decoration: InputDecoration(
-              labelText: 'Password',
-              errorText: widget.wrong ? 'Try the password from the previous version' : null,
+              labelText: context.l10n.password,
+              errorText: widget.wrong ? context.l10n.tryThePasswordFromThe : null,
               suffixIcon: IconButton(
-                tooltip: _obscure ? 'Show password' : 'Hide password',
+                tooltip: _obscure ? context.l10n.showPassword : context.l10n.hidePassword,
                 icon: Icon(_obscure ? Icons.visibility_outlined : Icons.visibility_off_outlined),
                 onPressed: () => setState(() => _obscure = !_obscure),
               ),
@@ -119,10 +118,10 @@ class _PasswordDialogState extends State<_PasswordDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
         FilledButton(
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: const Text('Continue'),
+          child: Text(context.l10n.continueLabel),
         ),
       ],
     );

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
-/// Invite links (https://zerotrust.bz/join#...) the app was opened with.
+/// Invite links (https://zerotrust.bz/join/tasks#...) the app was opened with.
 /// Android keeps them until the unlocked app takes them, so a link opened
 /// while signed out or locked still works after unlocking.
 class IncomingLinks {

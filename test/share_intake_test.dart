@@ -29,6 +29,13 @@ void main() {
     expect(t.title, 'Read this:');
   });
 
+  test('symbols and emoji in the shared text are kept', () {
+    final t = sharedTaskDraft(text: 'Revenue - expenses = profit\n🎉\nsee https://x.org/a .');
+    expect(t.title, 'Revenue - expenses = profit');
+    expect(t.description, '🎉\nsee');
+    expect(t.links, ['https://x.org/a']);
+  });
+
   test('brackets that belong to the address stay', () {
     final t = sharedTaskDraft(text: 'https://en.wikipedia.org/wiki/Tel_Aviv_(city)');
     expect(t.links, ['https://en.wikipedia.org/wiki/Tel_Aviv_(city)']);

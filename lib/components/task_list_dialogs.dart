@@ -172,9 +172,7 @@ class TaskListDialogs {
               title: Text(context.l10n.sharedListOptions),
               onTap: () async {
                 Navigator.pop(sheetContext);
-                await Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => SharedListPage(spaceId: info.spaceId)),
-                );
+                await openSharedList(context, info.spaceId);
                 if (context.mounted && !context.taskLists.lists.any((l) => l.id == list.id)) onDeleted?.call();
               },
             ),

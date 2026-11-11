@@ -7,6 +7,7 @@ import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zt_sharing_ui/zt_sharing_ui.dart';
 
 /// Shared lists (T12): a list shared with other Zero-Trust users lives in
 /// its own shared space (core Z24). The space holds the list's name and
@@ -22,9 +23,10 @@ const SpacePolicy tasksSpacePolicy = SpacePolicy(adminOnlyKinds: {'task_list'});
 /// The item that names the list inside its space.
 const String listItemId = 'list';
 
-/// The name other members see for this account, kept in the account's own
-/// encrypted vault so every phone of the account offers the same one.
-const String sharingNameItemId = 'tasks.sharing_name';
+/// Where Tasks 0.4.0 kept the name other members see. It now lives in
+/// Core's shared item (zt_sharing_ui's [ZtSharingName]); an old one is moved
+/// there once.
+const String legacySharingNameItemId = 'tasks.sharing_name';
 
 /// Tasks of all shared lists and the lists themselves, read from this
 /// phone's copy of each space (so they show offline too).
@@ -78,9 +80,10 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
     // whenever a sync or a membership change lands.
     ref.listen(ztSpacesProvider, (_, _) => reload());
     _anchors = store.changes.listen((ids) {
-      if (ids.any((id) => id.startsWith('zt.space-anchor/') || id == sharingNameItemId)) reload();
+      if (ids.any((id) => id.startsWith('zt.space-anchor/'))) reload();
     });
     scheduleMicrotask(reload);
+    scheduleMicrotask(_moveLegacySharingName);
     return const SharedListsState(available: true);
   }
 
@@ -247,39 +250,22 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
     await reload();
   }
 
-  /// The name this account showed last time it shared or joined a list.
-  Future<String> sharingName() async {
-    final item = await _private?.get(sharingNameItemId);
-    if (item == null || item.deleted) return '';
-    return (item.json?['name'] as String?) ?? '';
-  }
-
-  Future<void> saveSharingName(String name) async {
-    if (name == await sharingName()) return;
-    await ref.read(ztSyncControllerProvider.notifier).save(sharingNameItemId, {
-      'kind': sharingNameItemId,
-      'name': name,
-    });
+  /// Moves the name saved by Tasks 0.4.0 to Core's shared item, unless
+  /// that one is already set.
+  Future<void> _moveLegacySharingName() async {
+    final store = _private;
+    if (store == null || _disposed) return;
+    try {
+      final old = await store.get(legacySharingNameItemId);
+      if (old == null || old.deleted) return;
+      final name = (old.json?['name'] as String?) ?? '';
+      final names = ref.read(ztSharingNameProvider);
+      if (name.isNotEmpty && (await names.read()).isEmpty) await names.save(name);
+      await ref.read(ztSyncControllerProvider.notifier).delete(legacySharingNameItemId);
+    } on Object {
+      // Tried again on the next unlock.
+    }
   }
 }
 
 final sharedListsProvider = NotifierProvider<SharedListsController, SharedListsState>(SharedListsController.new);
-
-/// People waiting to join the shared lists this account owns. Needs the
-/// internet; empty while offline.
-final pendingJoinsProvider = FutureProvider<List<PendingJoin>>((ref) async {
-  final lists = ref.watch(sharedListsProvider.select((s) => s.lists));
-  ref.watch(ztSpacesProvider);
-  final controller = ref.read(ztSpacesProvider.notifier);
-  final out = <PendingJoin>[];
-  for (final l in lists) {
-    final info = l.shared!;
-    if (!info.isAdmin) continue;
-    try {
-      out.addAll(await controller.pendingJoins(info.spaceId));
-    } on Object {
-      // offline: shown on the next refresh
-    }
-  }
-  return out;
-});

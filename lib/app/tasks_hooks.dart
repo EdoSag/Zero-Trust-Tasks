@@ -164,9 +164,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     final links = await IncomingLinks.instance.take();
     for (final link in links) {
       if (!mounted) return;
-      await Navigator.of(context).push(
-        MaterialPageRoute<void>(builder: (_) => JoinListPage(initialLink: link)),
-      );
+      await joinSharedList(context, initialLink: link);
     }
   }
 

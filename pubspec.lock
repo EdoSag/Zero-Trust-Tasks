@@ -774,7 +774,7 @@ packages:
     source: hosted
     version: "3.0.3"
   qr_code_scanner_plus:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: qr_code_scanner_plus
       sha256: "2bcf9df32aa639fba07c183b1ab9c3f03eb6b1d688ab4f4f6bc868a75afd824d"
@@ -782,7 +782,7 @@ packages:
     source: hosted
     version: "2.1.2"
   qr_flutter:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: qr_flutter
       sha256: "5095f0fc6e3f71d08adef8feccc8cea4f12eec18a2e31c2e8d82cb6019f4b097"
@@ -830,7 +830,7 @@ packages:
     source: hosted
     version: "0.28.0"
   share_plus:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: share_plus
       sha256: db40767f130189d53f3ae8a6393c217ff4a492da1baff718a9873679c0c00224
@@ -1190,8 +1190,8 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/zero_trust_core"
-      ref: "5c8476ea033a30c097b2ac1d8803fe8ed7921110"
-      resolved-ref: "5c8476ea033a30c097b2ac1d8803fe8ed7921110"
+      ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
+      resolved-ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
       url: "https://github.com/EdoSag/Zero-Trust-Core.git"
     source: git
     version: "0.10.0"
@@ -1199,8 +1199,8 @@ packages:
     dependency: transitive
     description:
       path: "packages/zt_crypto"
-      ref: "5c8476ea033a30c097b2ac1d8803fe8ed7921110"
-      resolved-ref: "5c8476ea033a30c097b2ac1d8803fe8ed7921110"
+      ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
+      resolved-ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
       url: "https://github.com/EdoSag/Zero-Trust-Core.git"
     source: git
     version: "0.3.2"
@@ -1208,8 +1208,17 @@ packages:
     dependency: "direct main"
     description:
       path: "packages/zt_places"
-      ref: "7deeccb707ca6542e2ef17cf1b041a6716ff670f"
-      resolved-ref: "7deeccb707ca6542e2ef17cf1b041a6716ff670f"
+      ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
+      resolved-ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
+      url: "https://github.com/EdoSag/Zero-Trust-Core.git"
+    source: git
+    version: "0.1.0"
+  zt_sharing_ui:
+    dependency: "direct main"
+    description:
+      path: "packages/zt_sharing_ui"
+      ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
+      resolved-ref: f089904fa4f8b86d7c7057273fbb4e890e3a4185
       url: "https://github.com/EdoSag/Zero-Trust-Core.git"
     source: git
     version: "0.1.0"

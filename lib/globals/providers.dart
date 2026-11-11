@@ -9,6 +9,7 @@ import 'package:zero_trust_tasks/globals/smart_filter_provider.dart';
 import 'package:zero_trust_tasks/globals/task_list_provider.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/globals/template_provider.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 
 /// Loaded in `main` and overridden there (tests override it too).
 final sharedPreferencesProvider = Provider<SharedPreferences>(
@@ -38,6 +39,14 @@ final taskManagerProvider = ChangeNotifierProvider<TaskManager>((ref) {
     manager.attach(
       source: store == null ? null : () => tasksCollection.watch(store),
       writer: store == null ? null : CoreTaskWriter(store: store, sync: () => _syncController(ref)),
+    );
+  }, fireImmediately: true);
+  // Lists shared with other people come from their own spaces.
+  ref.listen<SharedListsState>(sharedListsProvider, (_, shared) {
+    manager.setShared(
+      shared.tasks,
+      writer: shared.available ? ref.read(sharedListsProvider.notifier) : null,
+      ready: shared.ready,
     );
   }, fireImmediately: true);
   return manager;
@@ -70,6 +79,13 @@ final taskListProvider = ChangeNotifierProvider<TaskListProvider>((ref) {
       delete: store == null
           ? null
           : (id) async => taskListsCollection.delete(await _syncController(ref), id),
+    );
+  }, fireImmediately: true);
+  ref.listen<SharedListsState>(sharedListsProvider, (_, shared) {
+    provider.setShared(
+      shared.lists,
+      save: shared.available ? ref.read(sharedListsProvider.notifier).saveList : null,
+      ready: shared.ready,
     );
   }, fireImmediately: true);
   return provider;

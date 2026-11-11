@@ -8,6 +8,7 @@ import 'package:zero_trust_tasks/app/tasks_hooks.dart';
 import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zero_trust_tasks/suite/linked_apps.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 
@@ -87,7 +88,11 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
     ref.listen(currentUserProvider, (_, user) {
       if (user == null) {
         ref.read(vaultControllerProvider.notifier).lock();
-        if (ref.read(platformHooksEnabledProvider)) unawaited(const HomeWidgetService().clear());
+        if (ref.read(platformHooksEnabledProvider)) {
+          unawaited(const HomeWidgetService().clear());
+          // Stop watching this account's places on the phone.
+          unawaited(ref.read(placeRemindersProvider.notifier).clearPhone());
+        }
         setState(() => _signingIn = true);
       }
     });

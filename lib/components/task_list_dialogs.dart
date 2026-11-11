@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 
 /// Dialogs shared by the Tasks tab, task details and the editor for
 /// creating, picking and managing task lists.
@@ -26,9 +29,41 @@ class TaskListDialogs {
     return updated;
   }
 
+  /// "New list": a list of the account's own, or (when sharing works) a
+  /// new shared list. Returns the new list's id.
+  static Future<String?> newList(BuildContext context, WidgetRef ref) async {
+    if (!ref.read(sharedListsProvider).available) return (await edit(context))?.id;
+    final shared = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: Text(context.l10n.newList),
+              onTap: () => Navigator.pop(sheetContext, false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_add_outlined),
+              title: Text(context.l10n.newSharedList),
+              subtitle: Text(context.l10n.sharedListE2e),
+              onTap: () => Navigator.pop(sheetContext, true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (shared == null || !context.mounted) return null;
+    if (!shared) return (await edit(context))?.id;
+    return newSharedList(context, ref);
+  }
+
   /// Picks a list (or makes a new one). Returns its id, or null if cancelled.
   static Future<String?> pick(BuildContext context, {String? currentId, String? title}) {
-    final lists = context.taskLists.lists;
+    // A list still waiting for its owner can't take tasks yet.
+    final lists = context.taskLists.lists.where((l) => l.shared?.waiting != true).toList();
     final current = currentId ?? TaskList.defaultId;
     return showModalBottomSheet<String>(
       context: context,
@@ -62,8 +97,10 @@ class TaskListDialogs {
     );
   }
 
-  /// Rename, recolour or delete [list].
+  /// Rename, recolour or delete [list]; share it, or manage a shared one.
   static Future<void> showOptions(BuildContext context, TaskList list, {VoidCallback? onDeleted}) {
+    if (list.isShared) return _sharedOptions(context, list, onDeleted: onDeleted);
+    final canShare = ProviderScope.containerOf(context, listen: false).read(sharedListsProvider).available;
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -83,6 +120,17 @@ class TaskListDialogs {
                 await edit(context, existing: list);
               },
             ),
+            if (canShare && !list.isDefault)
+              Consumer(
+                builder: (_, ref, _) => ListTile(
+                  leading: const Icon(Icons.group_add_outlined),
+                  title: Text(context.l10n.shareList),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await shareList(context, ref, list);
+                  },
+                ),
+              ),
             if (!list.isDefault)
               ListTile(
                 leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
@@ -98,6 +146,48 @@ class TaskListDialogs {
                 leading: Icon(Icons.info_outline),
                 title: Text(context.l10n.theDefaultListCantBe),
                 enabled: false,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _sharedOptions(BuildContext context, TaskList list, {VoidCallback? onDeleted}) {
+    final info = list.shared!;
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(info.waiting ? context.l10n.waitingToJoin : list.name,
+                  style: Theme.of(sheetContext).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_outlined),
+              title: Text(context.l10n.sharedListOptions),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                await Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => SharedListPage(spaceId: info.spaceId)),
+                );
+                if (context.mounted && !context.taskLists.lists.any((l) => l.id == list.id)) onDeleted?.call();
+              },
+            ),
+            if (!info.waiting)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(context.l10n.renameOrChangeColour),
+                subtitle: info.isAdmin ? null : Text(context.l10n.onlyOwnersRename),
+                enabled: info.isAdmin,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await edit(context, existing: list);
+                },
               ),
           ],
         ),

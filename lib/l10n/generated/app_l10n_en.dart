@@ -1262,4 +1262,291 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get widgetDoneSaved => 'Done. Saved when you next open the app';
+
+  @override
+  String get sharingExplain =>
+      'Shared lists are end-to-end encrypted: only the people in the list can read it. They see the name you give here.';
+
+  @override
+  String get yourName => 'Your name';
+
+  @override
+  String get yourNameHint => 'How the others in the list see you';
+
+  @override
+  String get nameRequired => 'Enter a name';
+
+  @override
+  String shareListQ(String name) {
+    return 'Share \"$name\"';
+  }
+
+  @override
+  String get shareList => 'Share list';
+
+  @override
+  String get newSharedList => 'New shared list';
+
+  @override
+  String get joinSharedList => 'Join a shared list';
+
+  @override
+  String get joinListChip => 'Join';
+
+  @override
+  String get sharingNeedsInternet =>
+      'Couldn\'t reach the server. Sharing needs an internet connection.';
+
+  @override
+  String get sharingUnavailable =>
+      'Sharing isn\'t available right now. Try again in a moment.';
+
+  @override
+  String get sharedListGone => 'You\'re no longer in this list.';
+
+  @override
+  String get waitingToJoin => 'Waiting to join';
+
+  @override
+  String get waitingExplain =>
+      'The owner has to let you in. Show them this code; it must match the one on their phone.';
+
+  @override
+  String get sharedListE2e =>
+      'End-to-end encrypted. Everyone here can add, edit and tick off tasks; owners can also rename the list and invite or remove people.';
+
+  @override
+  String peopleInList(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count people',
+      one: '1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String youName(String name) {
+    return '$name (you)';
+  }
+
+  @override
+  String get owner => 'Owner';
+
+  @override
+  String get member => 'Member';
+
+  @override
+  String get makeOwner => 'Make owner';
+
+  @override
+  String get makeMember => 'Make member (not owner)';
+
+  @override
+  String get removeFromList => 'Remove from list';
+
+  @override
+  String removeQ(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String removeExplain(String list) {
+    return 'They lose access to \"$list\". The list moves to a new key, so they can\'t read anything added from now on.';
+  }
+
+  @override
+  String get invitePeople => 'Invite people';
+
+  @override
+  String get leaveList => 'Leave list';
+
+  @override
+  String leaveListQ(String name) {
+    return 'Leave \"$name\"?';
+  }
+
+  @override
+  String get leaveListExplain =>
+      'The list and its tasks are removed from your phones. The others keep it.';
+
+  @override
+  String get deleteForEveryone => 'Delete for everyone';
+
+  @override
+  String deleteSharedListQ(String name) {
+    return 'Delete \"$name\" for everyone?';
+  }
+
+  @override
+  String get deleteSharedListExplain =>
+      'The list and all its tasks are deleted for every member. This can\'t be undone.';
+
+  @override
+  String get syncNow => 'Sync now';
+
+  @override
+  String inviteTo(String name) {
+    return 'Invite to $name';
+  }
+
+  @override
+  String get inviteIntro =>
+      'Make an invite for one person. They scan the QR code, or open the link you send them, in ZT Tasks. Then you compare a short code to be sure it\'s them.';
+
+  @override
+  String get inviteAsOwner => 'Invite as an owner';
+
+  @override
+  String get inviteAsOwnerHint =>
+      'Owners can rename the list, invite and remove people';
+
+  @override
+  String get createInvite => 'Create invite';
+
+  @override
+  String get inviteReady =>
+      'Scan this code on their phone in ZT Tasks, or send them the link.';
+
+  @override
+  String get inviteQr => 'Invite QR code';
+
+  @override
+  String get copyLink => 'Copy link';
+
+  @override
+  String get linkCopied => 'Link copied';
+
+  @override
+  String get shareLink => 'Send link';
+
+  @override
+  String inviteMessage(String list, String link) {
+    return 'Join my shared list \"$list\" in ZT Tasks: $link';
+  }
+
+  @override
+  String get inviteNextSteps =>
+      'The invite works once, for 7 days. When they answer, you\'ll see them here and on the tasks screen: compare the codes, then let them in.';
+
+  @override
+  String get checkForAnswers => 'Check for answers';
+
+  @override
+  String joinRequest(String name) {
+    return '$name wants to join';
+  }
+
+  @override
+  String joinRequestFor(String name, String list) {
+    return '$name wants to join \"$list\"';
+  }
+
+  @override
+  String get joinRequestHint => 'Tap to compare codes and let them in';
+
+  @override
+  String confirmJoinTitle(String name, String list) {
+    return 'Let $name into \"$list\"?';
+  }
+
+  @override
+  String get confirmJoinBody =>
+      'Check that their phone shows this same code. If it doesn\'t, someone else may have the invite.';
+
+  @override
+  String get codesMatch => 'Codes match';
+
+  @override
+  String get codesDiffer => 'Codes differ';
+
+  @override
+  String joined(String name) {
+    return '$name joined';
+  }
+
+  @override
+  String get joinIntro =>
+      'Paste the invite link you were sent, or scan the QR code on the other phone.';
+
+  @override
+  String get inviteLink => 'Invite link';
+
+  @override
+  String get scanQr => 'Scan QR code';
+
+  @override
+  String get inviteOtherApp => 'This invite is for another Zero-Trust app';
+
+  @override
+  String get inviteInvalid => 'That\'s not a ZT Tasks invite link';
+
+  @override
+  String get inviteUsed =>
+      'This invite was already used, withdrawn or has expired. Ask for a new one.';
+
+  @override
+  String get join => 'Join';
+
+  @override
+  String get joinCodeTitle => 'Compare this code';
+
+  @override
+  String get joinCodeBody =>
+      'The owner\'s phone shows a code too. When they match, the owner lets you in and the list appears.';
+
+  @override
+  String sharedWith(String names) {
+    return 'Shared with $names';
+  }
+
+  @override
+  String get sharedListOptions => 'People and sharing';
+
+  @override
+  String get onlyOwnersRename => 'Only owners can rename this list';
+
+  @override
+  String get locationReminder => 'Location reminder';
+
+  @override
+  String get noLocationReminder => 'No location reminder';
+
+  @override
+  String remindArriveAt(String place) {
+    return 'When I arrive at $place';
+  }
+
+  @override
+  String remindLeave(String place) {
+    return 'When I leave $place';
+  }
+
+  @override
+  String get clearLocationReminder => 'Remove location reminder';
+
+  @override
+  String arrivedAt(String place) {
+    return 'You arrived at $place';
+  }
+
+  @override
+  String leftPlace(String place) {
+    return 'You left $place';
+  }
+
+  @override
+  String get placeRemindersChannel => 'Location reminders';
+
+  @override
+  String get placeRemindersChannelHint =>
+      'Task reminders when you arrive at or leave a place';
+
+  @override
+  String get locationStaysOnPhone =>
+      'Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.';
+
+  @override
+  String get aPlace => 'a place';
 }

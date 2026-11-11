@@ -1257,4 +1257,289 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get widgetDoneSaved => 'בוצע. יישמר בפתיחה הבאה של האפליקציה';
+
+  @override
+  String get sharingExplain =>
+      'רשימות משותפות מוצפנות מקצה לקצה: רק האנשים ברשימה יכולים לקרוא אותה. הם יראו את השם שתכתבו כאן.';
+
+  @override
+  String get yourName => 'השם שלך';
+
+  @override
+  String get yourNameHint => 'כך יראו אותך האחרים ברשימה';
+
+  @override
+  String get nameRequired => 'נא להזין שם';
+
+  @override
+  String shareListQ(String name) {
+    return 'שיתוף \"$name\"';
+  }
+
+  @override
+  String get shareList => 'שיתוף הרשימה';
+
+  @override
+  String get newSharedList => 'רשימה משותפת חדשה';
+
+  @override
+  String get joinSharedList => 'הצטרפות לרשימה משותפת';
+
+  @override
+  String get joinListChip => 'הצטרפות';
+
+  @override
+  String get sharingNeedsInternet =>
+      'אין חיבור לשרת. שיתוף דורש חיבור לאינטרנט.';
+
+  @override
+  String get sharingUnavailable => 'השיתוף לא זמין כרגע. נסו שוב בעוד רגע.';
+
+  @override
+  String get sharedListGone => 'כבר אינכם ברשימה הזו.';
+
+  @override
+  String get waitingToJoin => 'ממתין להצטרפות';
+
+  @override
+  String get waitingExplain =>
+      'הבעלים צריכים לאשר אתכם. הראו להם את הקוד הזה; הוא צריך להיות זהה לקוד בטלפון שלהם.';
+
+  @override
+  String get sharedListE2e =>
+      'מוצפן מקצה לקצה. כל מי שכאן יכול להוסיף, לערוך ולסמן משימות; הבעלים יכולים גם לשנות את שם הרשימה ולהזמין או להסיר אנשים.';
+
+  @override
+  String peopleInList(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count אנשים',
+      one: 'אדם אחד',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String youName(String name) {
+    return '$name (את/ה)';
+  }
+
+  @override
+  String get owner => 'בעלים';
+
+  @override
+  String get member => 'חבר/ה';
+
+  @override
+  String get makeOwner => 'הפיכה לבעלים';
+
+  @override
+  String get makeMember => 'הפיכה לחבר/ה (לא בעלים)';
+
+  @override
+  String get removeFromList => 'הסרה מהרשימה';
+
+  @override
+  String removeQ(String name) {
+    return 'להסיר את $name?';
+  }
+
+  @override
+  String removeExplain(String list) {
+    return 'הגישה שלהם ל\"$list\" תבוטל. הרשימה עוברת למפתח חדש, כך שלא יוכלו לקרוא שום דבר שיתווסף מעכשיו.';
+  }
+
+  @override
+  String get invitePeople => 'הזמנת אנשים';
+
+  @override
+  String get leaveList => 'יציאה מהרשימה';
+
+  @override
+  String leaveListQ(String name) {
+    return 'לצאת מ\"$name\"?';
+  }
+
+  @override
+  String get leaveListExplain =>
+      'הרשימה והמשימות שבה יימחקו מהטלפונים שלכם. האחרים ימשיכו לראות אותה.';
+
+  @override
+  String get deleteForEveryone => 'מחיקה לכולם';
+
+  @override
+  String deleteSharedListQ(String name) {
+    return 'למחוק את \"$name\" לכולם?';
+  }
+
+  @override
+  String get deleteSharedListExplain =>
+      'הרשימה וכל המשימות שבה יימחקו לכל החברים. אי אפשר לבטל את זה.';
+
+  @override
+  String get syncNow => 'סנכרון עכשיו';
+
+  @override
+  String inviteTo(String name) {
+    return 'הזמנה ל$name';
+  }
+
+  @override
+  String get inviteIntro =>
+      'צרו הזמנה לאדם אחד. הם סורקים את קוד ה-QR, או פותחים את הקישור שתשלחו, ב-ZT Tasks. אחר כך משווים קוד קצר כדי לוודא שזה באמת הם.';
+
+  @override
+  String get inviteAsOwner => 'הזמנה כבעלים';
+
+  @override
+  String get inviteAsOwnerHint =>
+      'בעלים יכולים לשנות את שם הרשימה, להזמין ולהסיר אנשים';
+
+  @override
+  String get createInvite => 'יצירת הזמנה';
+
+  @override
+  String get inviteReady =>
+      'סרקו את הקוד בטלפון שלהם ב-ZT Tasks, או שלחו להם את הקישור.';
+
+  @override
+  String get inviteQr => 'קוד QR להזמנה';
+
+  @override
+  String get copyLink => 'העתקת הקישור';
+
+  @override
+  String get linkCopied => 'הקישור הועתק';
+
+  @override
+  String get shareLink => 'שליחת הקישור';
+
+  @override
+  String inviteMessage(String list, String link) {
+    return 'הצטרפו לרשימה המשותפת שלי \"$list\" ב-ZT Tasks: $link';
+  }
+
+  @override
+  String get inviteNextSteps =>
+      'ההזמנה תקפה פעם אחת, למשך 7 ימים. כשיענו, תראו אותם כאן ובמסך המשימות: השוו את הקודים ואז אשרו אותם.';
+
+  @override
+  String get checkForAnswers => 'בדיקת תשובות';
+
+  @override
+  String joinRequest(String name) {
+    return '$name רוצה להצטרף';
+  }
+
+  @override
+  String joinRequestFor(String name, String list) {
+    return '$name רוצה להצטרף ל\"$list\"';
+  }
+
+  @override
+  String get joinRequestHint => 'הקישו כדי להשוות קודים ולאשר';
+
+  @override
+  String confirmJoinTitle(String name, String list) {
+    return 'לאשר את $name ל\"$list\"?';
+  }
+
+  @override
+  String get confirmJoinBody =>
+      'ודאו שבטלפון שלהם מופיע אותו קוד. אם לא, ייתכן שמישהו אחר קיבל את ההזמנה.';
+
+  @override
+  String get codesMatch => 'הקודים זהים';
+
+  @override
+  String get codesDiffer => 'הקודים שונים';
+
+  @override
+  String joined(String name) {
+    return '$name הצטרף/ה';
+  }
+
+  @override
+  String get joinIntro =>
+      'הדביקו את קישור ההזמנה שקיבלתם, או סרקו את קוד ה-QR בטלפון השני.';
+
+  @override
+  String get inviteLink => 'קישור הזמנה';
+
+  @override
+  String get scanQr => 'סריקת קוד QR';
+
+  @override
+  String get inviteOtherApp => 'ההזמנה הזו מיועדת לאפליקציית Zero-Trust אחרת';
+
+  @override
+  String get inviteInvalid => 'זה לא קישור הזמנה של ZT Tasks';
+
+  @override
+  String get inviteUsed => 'ההזמנה כבר נוצלה, בוטלה או פגה. בקשו הזמנה חדשה.';
+
+  @override
+  String get join => 'הצטרפות';
+
+  @override
+  String get joinCodeTitle => 'השוו את הקוד הזה';
+
+  @override
+  String get joinCodeBody =>
+      'גם בטלפון של הבעלים מופיע קוד. כשהקודים זהים, הבעלים מאשרים אתכם והרשימה תופיע.';
+
+  @override
+  String sharedWith(String names) {
+    return 'משותף עם $names';
+  }
+
+  @override
+  String get sharedListOptions => 'אנשים ושיתוף';
+
+  @override
+  String get onlyOwnersRename => 'רק בעלים יכולים לשנות את שם הרשימה';
+
+  @override
+  String get locationReminder => 'תזכורת לפי מיקום';
+
+  @override
+  String get noLocationReminder => 'אין תזכורת לפי מיקום';
+
+  @override
+  String remindArriveAt(String place) {
+    return 'כשאגיע ל$place';
+  }
+
+  @override
+  String remindLeave(String place) {
+    return 'כשאצא מ$place';
+  }
+
+  @override
+  String get clearLocationReminder => 'הסרת התזכורת לפי מיקום';
+
+  @override
+  String arrivedAt(String place) {
+    return 'הגעת ל$place';
+  }
+
+  @override
+  String leftPlace(String place) {
+    return 'יצאת מ$place';
+  }
+
+  @override
+  String get placeRemindersChannel => 'תזכורות לפי מיקום';
+
+  @override
+  String get placeRemindersChannelHint =>
+      'תזכורות למשימות כשמגיעים למקום או יוצאים ממנו';
+
+  @override
+  String get locationStaysOnPhone =>
+      'הטלפון עצמו עוקב אחרי המקום. המיקום שלך לא נשלח לשום מקום, והמקום נשמר מוצפן בכספת שלך, לא ברשימות משותפות.';
+
+  @override
+  String get aPlace => 'מקום';
 }

@@ -23,6 +23,7 @@ import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
 
 class TasksListPage extends StatefulWidget {
   const TasksListPage({super.key, this.initialFilter, this.title});
@@ -483,6 +484,8 @@ class _TasksListPageState extends State<TasksListPage> {
                 ),
               if (!_selectionMode && widget.initialFilter == null)
                 TaskListBar(scope: _scope, onChanged: _setScope),
+              if (!_selectionMode && widget.initialFilter == null)
+                SharedListStrip(scope: _scope),
               Consumer(
                 builder: (context, ref, _) {
                   final sfp = ref.watch(smartFilterProvider);

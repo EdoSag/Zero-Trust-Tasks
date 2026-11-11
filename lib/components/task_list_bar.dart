@@ -3,7 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
 
 /// The row of lists above the tasks: Starred, All, each list, and New list.
 /// Long-press a list to rename, recolour or delete it.
@@ -60,9 +62,13 @@ class TaskListBar extends ConsumerWidget {
           chip(label: context.l10n.allLists, value: const TaskListScope.all()),
           for (final list in lists)
             chip(
-              label: '${list.name} ${countFor(list)}',
+              label: list.shared?.waiting == true
+                  ? context.l10n.waitingToJoin
+                  : '${list.name} ${countFor(list)}',
               value: TaskListScope.list(list.id),
-              avatar: Icon(Icons.circle, size: 12, color: list.colorValue ?? scheme.primary),
+              avatar: list.isShared
+                  ? Icon(Icons.group, size: 16, color: list.colorValue ?? scheme.primary)
+                  : Icon(Icons.circle, size: 12, color: list.colorValue ?? scheme.primary),
               onLongPress: () => TaskListDialogs.showOptions(
                 context,
                 list,
@@ -78,11 +84,24 @@ class TaskListBar extends ConsumerWidget {
               label: Text(context.l10n.newList),
               visualDensity: VisualDensity.compact,
               onPressed: () async {
-                final created = await TaskListDialogs.edit(context);
-                if (created != null) onChanged(TaskListScope.list(created.id));
+                final id = await TaskListDialogs.newList(context, ref);
+                if (id != null) onChanged(TaskListScope.list(id));
               },
             ),
           ),
+          if (ref.watch(sharedListsProvider.select((s) => s.available)))
+            Padding(
+              padding: const EdgeInsetsDirectional.only(end: 8),
+              child: ActionChip(
+                avatar: const Icon(Icons.group_add_outlined, size: 18),
+                label: Text(context.l10n.joinListChip),
+                tooltip: context.l10n.joinSharedList,
+                visualDensity: VisualDensity.compact,
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(builder: (_) => const JoinListPage()),
+                ),
+              ),
+            ),
         ],
       ),
     );

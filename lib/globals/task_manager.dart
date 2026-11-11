@@ -34,7 +34,19 @@ class TaskManager extends ChangeNotifier {
   /// Whether to schedule notifications (off in tests).
   final bool reminders;
 
-  List<Task> _tasks = [];
+  /// Tasks in the account's own vault, and tasks of lists shared with
+  /// other people (each list in its own shared space).
+  List<Task> _private = [];
+  List<Task> _shared = [];
+  SharedTaskStore? _sharedWriter;
+  bool _sharedReady = false;
+
+  List<Task> get _tasks => [..._private, ..._shared];
+  set _tasks(List<Task> all) {
+    _private = [for (final t in all) if (!t.isShared) t];
+    _shared = [for (final t in all) if (t.isShared) t];
+  }
+
   bool _isLoading = true;
   String? _error;
   Task? _lastDeletedTask;
@@ -46,6 +58,39 @@ class TaskManager extends ChangeNotifier {
 
   List<Task> get tasks => List.unmodifiable(_tasks);
   bool get isLoading => _isLoading;
+
+  /// Whether shared lists have been read since the vault opened (from this
+  /// phone's copy, so also offline). Taps queued while locked wait for it,
+  /// so a tick on a shared task isn't dropped as "unknown task".
+  bool get sharedReady => _sharedReady;
+
+  /// The shared lists' tasks as they are now, and where to save them.
+  /// Reminders follow tasks that arrive from other members.
+  void setShared(List<Task> tasks, {SharedTaskStore? writer, bool ready = true}) {
+    final before = {for (final t in _shared) t.id: t};
+    _shared = tasks;
+    _sharedWriter = writer;
+    final wasReady = _sharedReady;
+    _sharedReady = ready;
+    _notify();
+    if (!reminders) return;
+    final now = {for (final t in tasks) t.id: t};
+    for (final t in tasks) {
+      final old = before[t.id];
+      final due = t.deletedAt == null && !t.isCompleted;
+      if (old == null || !wasReady) {
+        if (due) _remind(t);
+      } else if (old.reminderAt != t.reminderAt ||
+          old.isCompleted != t.isCompleted ||
+          old.deletedAt != t.deletedAt ||
+          old.title != t.title) {
+        due ? _remind(t) : _cancelReminder(t.id);
+      }
+    }
+    for (final id in before.keys) {
+      if (!now.containsKey(id)) _cancelReminder(id);
+    }
+  }
   String? get error => _error;
 
   /// Connects to an open store, or (with nulls) disconnects when the vault
@@ -58,7 +103,10 @@ class TaskManager extends ChangeNotifier {
     _lastDeletedTask = null;
     _remindersScheduled = false;
     if (source == null) {
-      _tasks = [];
+      _private = [];
+      _shared = [];
+      _sharedWriter = null;
+      _sharedReady = false;
       _isLoading = true;
       _error = null;
       _notify();
@@ -81,7 +129,7 @@ class TaskManager extends ChangeNotifier {
   void _listen(Stream<List<Task>> Function() source) {
     _subscription = source().listen(
       (tasks) {
-        _tasks = tasks;
+        _private = tasks;
         _isLoading = false;
         _error = null;
         _notify();
@@ -161,21 +209,32 @@ class TaskManager extends ChangeNotifier {
   TaskWriter get _requireWriter =>
       _writer ?? (throw StateError('Your tasks are locked. Unlock to make changes.'));
 
+  _Store _writerFor(Task task) {
+    if (!task.isShared) {
+      final w = _requireWriter;
+      return _Store(w.save, (t) => w.delete(t.id));
+    }
+    final w = _sharedWriter ?? (throw StateError('Shared lists aren\'t open yet. Try again in a moment.'));
+    return _Store(w.saveTask, w.deleteTask);
+  }
+
   /// Shows [changed] at once, then saves them.
   Future<void> _put(List<Task> changed) async {
-    final writer = _requireWriter;
+    final writers = [for (final task in changed) _writerFor(task)];
+    var tasks = _tasks;
     for (final task in changed) {
-      final i = _tasks.indexWhere((t) => t.id == task.id);
+      final i = tasks.indexWhere((t) => t.id == task.id);
       if (i == -1) {
-        _tasks = [..._tasks, task];
+        tasks = [...tasks, task];
       } else {
-        _tasks = List.of(_tasks)..[i] = task;
+        tasks = List.of(tasks)..[i] = task;
       }
     }
+    _tasks = tasks;
     _notify();
     try {
-      for (final task in changed) {
-        await writer.save(task);
+      for (var i = 0; i < changed.length; i++) {
+        await writers[i].save(changed[i]);
       }
     } on Object {
       // The list shows the edit already; the next read puts it back as stored.
@@ -237,11 +296,29 @@ class TaskManager extends ChangeNotifier {
 
   /// Deletes for good, on every device.
   Future<void> permanentlyDeleteTask(String taskId) async {
-    final writer = _requireWriter;
+    final task = _find(taskId);
+    if (task == null) {
+      await _requireWriter.delete(taskId);
+      return;
+    }
+    final writer = _writerFor(task);
     _tasks = _tasks.where((t) => t.id != taskId).toList();
     _notify();
     _cancelReminder(taskId);
-    await writer.delete(taskId);
+    await writer.delete(task);
+  }
+
+  /// Deletes the account's own copies of [taskIds] after they were copied
+  /// into a shared list (same ids), leaving the shared copies and their
+  /// reminders alone.
+  Future<void> dropPrivateCopies(Iterable<String> taskIds) async {
+    final writer = _requireWriter;
+    final ids = taskIds.toSet();
+    _private = _private.where((t) => !ids.contains(t.id)).toList();
+    _notify();
+    for (final id in ids) {
+      await writer.delete(id);
+    }
   }
 
   Future<void> archiveTask(String taskId) async {
@@ -444,14 +521,30 @@ class TaskManager extends ChangeNotifier {
 
   /// Moves tasks to the list [listId] (null or [TaskList.defaultId]: the
   /// default list). They go to the bottom of that list's "My order".
+  ///
+  /// Moving between the account's own lists and a shared list (or between
+  /// two shared lists) moves the task to the other store: it is saved
+  /// there first, then deleted where it was.
   Future<void> moveToList(Set<String> taskIds, String? listId) async {
     final target = listId == TaskList.defaultId ? null : listId;
     final now = DateTime.now();
-    await _put([
-      for (final id in taskIds)
-        if (_find(id) case final t? when t.listId != target)
-          t.copyWith(listId: target, clearListId: target == null, clearPosition: true, updatedAt: now),
-    ]);
+    final moved = <Task>[];
+    final leaving = <Task>[];
+    for (final id in taskIds) {
+      final t = _find(id);
+      if (t == null || t.listId == target) continue;
+      moved.add(t.copyWith(listId: target, clearListId: target == null, clearPosition: true, updatedAt: now));
+      if (TaskList.spaceIdOf(t.listId) != TaskList.spaceIdOf(target)) leaving.add(t);
+    }
+    if (moved.isEmpty) return;
+    final oldWriters = {for (final t in leaving) t.id: _writerFor(t)};
+    await _put(moved);
+    for (final t in leaving) {
+      await oldWriters[t.id]!.delete(t);
+    }
+    for (final t in moved) {
+      if (oldWriters.containsKey(t.id) && t.deletedAt == null && !t.isCompleted) _remind(t);
+    }
   }
 
   /// Puts the task at [oldIndex] of [ordered] (one list in "My order") at
@@ -543,6 +636,8 @@ class TaskManager extends ChangeNotifier {
   }) async {
     var changed = 0;
     for (final action in actions) {
+      // Maybe a shared list's task that hasn't been read yet: kept queued.
+      if (!_sharedReady && _find(action.taskId) == null) continue;
       if (await _applyPending(action)) changed++;
       await onDone?.call(action);
     }
@@ -594,6 +689,26 @@ class TaskManager extends ChangeNotifier {
     final active = _tasks.where((t) => t.deletedAt == null && !t.isArchived);
     return {for (final p in TaskPriority.values) p: active.where((t) => t.priority == p).length};
   }
+}
+
+/// Where shared-list tasks are saved (see `SharedListsController`).
+abstract interface class SharedTaskStore {
+  Future<void> saveTask(Task task);
+
+  /// [task] as it was stored: its list id names the space it was in.
+  Future<void> deleteTask(Task task);
+}
+
+class _Store {
+  const _Store(this.save, this.delete);
+  final Future<void> Function(Task) save;
+  final Future<void> Function(Task) delete;
+}
+
+/// Shared-list tasks know their list by its id; see [TaskList.sharedId].
+extension SharedTask on Task {
+  bool get isShared => TaskList.spaceIdOf(listId) != null;
+  String? get spaceId => TaskList.spaceIdOf(listId);
 }
 
 /// [TaskWriter] over the core: [tasksCollection] in the account's store.

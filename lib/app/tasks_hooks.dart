@@ -10,6 +10,10 @@ import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/platform/links.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
+import 'package:zt_places/zt_places.dart';
+import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
 final platformHooksEnabledProvider = Provider<bool>((ref) => true);
@@ -28,6 +32,8 @@ class TasksHooks extends ConsumerStatefulWidget {
 
 class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObserver {
   StreamSubscription<void>? _actions;
+  StreamSubscription<void>? _links;
+  StreamSubscription<ZtPlaceEvent>? _places;
   Timer? _widgetDebounce;
   bool _applying = false;
   bool _loaded = false;
@@ -40,6 +46,13 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     WidgetsBinding.instance.addObserver(this);
     if (_platform) {
       _actions = NotificationService.instance.actionQueued.listen((_) => _applyPending());
+      // Shared-list invites opened from a message or a scanned QR code.
+      _links = IncomingLinks.instance.arrived.listen((_) => _takeLinks());
+      // Location reminders: fired, "Done" and taps, also those queued while
+      // the app was closed or locked.
+      _places = ref.read(ztPlaceRemindersProvider).events.listen(_onPlaceEvent);
+      WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlaces());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _takeLinks());
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _onTasksChanged());
   }
@@ -62,19 +75,31 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _actions?.cancel();
+    _links?.cancel();
+    _places?.cancel();
     _widgetDebounce?.cancel();
     super.dispose();
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) unawaited(_applyPending());
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_applyPending());
+      unawaited(_collectPlaces());
+    }
   }
+
+  bool _sharedApplied = false;
 
   void _onTasksChanged() {
     if (!mounted) return;
     final manager = ref.read(taskManagerProvider);
     if (manager.isLoading) return;
+    if (manager.sharedReady && !_sharedApplied) {
+      // Taps on shared-list tasks waited for those lists to be read.
+      _sharedApplied = true;
+      if (_loaded) unawaited(_applyPending());
+    }
     if (!_loaded) {
       _loaded = true;
       unawaited(_applyPending());
@@ -107,6 +132,36 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       debugPrint('Pending task actions not applied: $e');
     } finally {
       _applying = false;
+    }
+  }
+
+  Future<void> _collectPlaces() async {
+    if (!_platform || !mounted) return;
+    try {
+      await ref.read(placeRemindersProvider.notifier).forgetFiredWhileLocked();
+      await ref.read(ztPlaceRemindersProvider).collect();
+    } on Object catch (e) {
+      debugPrint('Place reminder events not read: $e');
+    }
+  }
+
+  Future<void> _onPlaceEvent(ZtPlaceEvent e) async {
+    if (!mounted) return;
+    await ref.read(placeRemindersProvider.notifier).handle(e);
+    if (!mounted) return;
+    if (e.type == ZtPlaceEventType.done) unawaited(_applyPending());
+    if (e.type == ZtPlaceEventType.tap && e.payload.isNotEmpty) {
+      ref.read(widgetLaunchProvider.notifier).set(Uri(scheme: 'zerotrusttasks', host: 'task', queryParameters: {'id': e.payload}));
+    }
+  }
+
+  Future<void> _takeLinks() async {
+    final links = await IncomingLinks.instance.take();
+    for (final link in links) {
+      if (!mounted) return;
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => JoinListPage(initialLink: link)),
+      );
     }
   }
 
@@ -147,6 +202,8 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     ref.listen(taskManagerProvider, (_, _) => _onTasksChanged());
+    // Keeps the phone's place alerts in step with the tasks.
+    ref.watch(placeRemindersProvider);
     ref.listen(taskListProvider, (_, _) => _scheduleWidgetWrite());
     ref.listen(settingsProvider, (_, _) => _scheduleWidgetWrite());
     ref.listen(widgetLaunchProvider, (_, uri) {

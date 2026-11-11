@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
+import 'package:zero_trust_core/zero_trust_core.dart';
 
 /// A named list of tasks, like "Groceries" or "Work". Synced as its own
 /// encrypted item (kind `task_list`); tasks point to it by [Task.listId].
@@ -16,6 +17,7 @@ class TaskList {
     this.extra = const {},
     required this.createdAt,
     required this.updatedAt,
+    this.shared,
   });
 
   factory TaskList.create({required String name, int? color, double position = 0}) {
@@ -71,7 +73,21 @@ class TaskList {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Set for a list shared with other Zero-Trust users (kept in its own
+  /// end-to-end encrypted shared space, not in the account's vault). Never
+  /// stored: it comes from the space each time the list is read.
+  final SharedListInfo? shared;
+
   bool get isDefault => id == defaultId;
+  bool get isShared => shared != null;
+
+  /// The list id of the shared list kept in space [spaceId].
+  static String sharedId(String spaceId) => '$sharedPrefix$spaceId';
+  static const sharedPrefix = 'space:';
+
+  /// The space of a shared list's id, or null for the account's own lists.
+  static String? spaceIdOf(String? listId) =>
+      listId != null && listId.startsWith(sharedPrefix) ? listId.substring(sharedPrefix.length) : null;
 
   Color? get colorValue => color == null ? null : Color(color!);
 
@@ -94,6 +110,19 @@ class TaskList {
         extra: extra,
         createdAt: createdAt,
         updatedAt: DateTime.now(),
+        shared: shared,
+      );
+
+  /// The same list, read from a shared space.
+  TaskList withShared(SharedListInfo info) => TaskList(
+        id: sharedId(info.spaceId),
+        name: name,
+        color: color,
+        position: position,
+        extra: extra,
+        createdAt: createdAt,
+        updatedAt: updatedAt,
+        shared: info,
       );
 
   /// The colours offered when creating or editing a list.
@@ -109,6 +138,35 @@ class TaskList {
     0xFF6D4C41, // brown
     0xFF546E7A, // grey
   ];
+}
+
+/// Who a shared list belongs to, as this device knows it.
+class SharedListInfo {
+  const SharedListInfo({
+    required this.spaceId,
+    this.isAdmin = false,
+    this.members = const [],
+    this.joinCode,
+    this.waiting = false,
+    this.myUserId = '',
+  });
+
+  final String spaceId;
+
+  /// This account, as the members list names it.
+  final String myUserId;
+
+  /// Owners can rename the list, invite, remove people and delete it.
+  final bool isAdmin;
+  final List<SpaceMember> members;
+
+  /// While an invite this account answered waits for the owner: the code
+  /// to compare with theirs.
+  final String? joinCode;
+
+  /// Joined, but the owner hasn't let this account in yet (or the list
+  /// hasn't arrived on this phone yet).
+  final bool waiting;
 }
 
 /// Which tasks the Tasks tab shows: every list, starred tasks, or one list.

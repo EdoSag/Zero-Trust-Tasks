@@ -2064,6 +2064,462 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Done. Saved when you next open the app'**
   String get widgetDoneSaved;
+
+  /// No description provided for @sharingExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared lists are end-to-end encrypted: only the people in the list can read it. They see the name you give here.'**
+  String get sharingExplain;
+
+  /// No description provided for @yourName.
+  ///
+  /// In en, this message translates to:
+  /// **'Your name'**
+  String get yourName;
+
+  /// No description provided for @yourNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How the others in the list see you'**
+  String get yourNameHint;
+
+  /// No description provided for @nameRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get nameRequired;
+
+  /// No description provided for @shareListQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Share \"{name}\"'**
+  String shareListQ(String name);
+
+  /// No description provided for @shareList.
+  ///
+  /// In en, this message translates to:
+  /// **'Share list'**
+  String get shareList;
+
+  /// No description provided for @newSharedList.
+  ///
+  /// In en, this message translates to:
+  /// **'New shared list'**
+  String get newSharedList;
+
+  /// No description provided for @joinSharedList.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a shared list'**
+  String get joinSharedList;
+
+  /// No description provided for @joinListChip.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get joinListChip;
+
+  /// No description provided for @sharingNeedsInternet.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t reach the server. Sharing needs an internet connection.'**
+  String get sharingNeedsInternet;
+
+  /// No description provided for @sharingUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Sharing isn\'t available right now. Try again in a moment.'**
+  String get sharingUnavailable;
+
+  /// No description provided for @sharedListGone.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re no longer in this list.'**
+  String get sharedListGone;
+
+  /// No description provided for @waitingToJoin.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting to join'**
+  String get waitingToJoin;
+
+  /// No description provided for @waitingExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner has to let you in. Show them this code; it must match the one on their phone.'**
+  String get waitingExplain;
+
+  /// No description provided for @sharedListE2e.
+  ///
+  /// In en, this message translates to:
+  /// **'End-to-end encrypted. Everyone here can add, edit and tick off tasks; owners can also rename the list and invite or remove people.'**
+  String get sharedListE2e;
+
+  /// No description provided for @peopleInList.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 person} other{{count} people}}'**
+  String peopleInList(int count);
+
+  /// No description provided for @youName.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} (you)'**
+  String youName(String name);
+
+  /// No description provided for @owner.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner'**
+  String get owner;
+
+  /// No description provided for @member.
+  ///
+  /// In en, this message translates to:
+  /// **'Member'**
+  String get member;
+
+  /// No description provided for @makeOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Make owner'**
+  String get makeOwner;
+
+  /// No description provided for @makeMember.
+  ///
+  /// In en, this message translates to:
+  /// **'Make member (not owner)'**
+  String get makeMember;
+
+  /// No description provided for @removeFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from list'**
+  String get removeFromList;
+
+  /// No description provided for @removeQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String removeQ(String name);
+
+  /// No description provided for @removeExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'They lose access to \"{list}\". The list moves to a new key, so they can\'t read anything added from now on.'**
+  String removeExplain(String list);
+
+  /// No description provided for @invitePeople.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite people'**
+  String get invitePeople;
+
+  /// No description provided for @leaveList.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave list'**
+  String get leaveList;
+
+  /// No description provided for @leaveListQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave \"{name}\"?'**
+  String leaveListQ(String name);
+
+  /// No description provided for @leaveListExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'The list and its tasks are removed from your phones. The others keep it.'**
+  String get leaveListExplain;
+
+  /// No description provided for @deleteForEveryone.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete for everyone'**
+  String get deleteForEveryone;
+
+  /// No description provided for @deleteSharedListQ.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete \"{name}\" for everyone?'**
+  String deleteSharedListQ(String name);
+
+  /// No description provided for @deleteSharedListExplain.
+  ///
+  /// In en, this message translates to:
+  /// **'The list and all its tasks are deleted for every member. This can\'t be undone.'**
+  String get deleteSharedListExplain;
+
+  /// No description provided for @syncNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Sync now'**
+  String get syncNow;
+
+  /// No description provided for @inviteTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite to {name}'**
+  String inviteTo(String name);
+
+  /// No description provided for @inviteIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Make an invite for one person. They scan the QR code, or open the link you send them, in ZT Tasks. Then you compare a short code to be sure it\'s them.'**
+  String get inviteIntro;
+
+  /// No description provided for @inviteAsOwner.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite as an owner'**
+  String get inviteAsOwner;
+
+  /// No description provided for @inviteAsOwnerHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Owners can rename the list, invite and remove people'**
+  String get inviteAsOwnerHint;
+
+  /// No description provided for @createInvite.
+  ///
+  /// In en, this message translates to:
+  /// **'Create invite'**
+  String get createInvite;
+
+  /// No description provided for @inviteReady.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan this code on their phone in ZT Tasks, or send them the link.'**
+  String get inviteReady;
+
+  /// No description provided for @inviteQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite QR code'**
+  String get inviteQr;
+
+  /// No description provided for @copyLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get copyLink;
+
+  /// No description provided for @linkCopied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get linkCopied;
+
+  /// No description provided for @shareLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Send link'**
+  String get shareLink;
+
+  /// No description provided for @inviteMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Join my shared list \"{list}\" in ZT Tasks: {link}'**
+  String inviteMessage(String list, String link);
+
+  /// No description provided for @inviteNextSteps.
+  ///
+  /// In en, this message translates to:
+  /// **'The invite works once, for 7 days. When they answer, you\'ll see them here and on the tasks screen: compare the codes, then let them in.'**
+  String get inviteNextSteps;
+
+  /// No description provided for @checkForAnswers.
+  ///
+  /// In en, this message translates to:
+  /// **'Check for answers'**
+  String get checkForAnswers;
+
+  /// No description provided for @joinRequest.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wants to join'**
+  String joinRequest(String name);
+
+  /// No description provided for @joinRequestFor.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} wants to join \"{list}\"'**
+  String joinRequestFor(String name, String list);
+
+  /// No description provided for @joinRequestHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to compare codes and let them in'**
+  String get joinRequestHint;
+
+  /// No description provided for @confirmJoinTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Let {name} into \"{list}\"?'**
+  String confirmJoinTitle(String name, String list);
+
+  /// No description provided for @confirmJoinBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Check that their phone shows this same code. If it doesn\'t, someone else may have the invite.'**
+  String get confirmJoinBody;
+
+  /// No description provided for @codesMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes match'**
+  String get codesMatch;
+
+  /// No description provided for @codesDiffer.
+  ///
+  /// In en, this message translates to:
+  /// **'Codes differ'**
+  String get codesDiffer;
+
+  /// No description provided for @joined.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} joined'**
+  String joined(String name);
+
+  /// No description provided for @joinIntro.
+  ///
+  /// In en, this message translates to:
+  /// **'Paste the invite link you were sent, or scan the QR code on the other phone.'**
+  String get joinIntro;
+
+  /// No description provided for @inviteLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite link'**
+  String get inviteLink;
+
+  /// No description provided for @scanQr.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan QR code'**
+  String get scanQr;
+
+  /// No description provided for @inviteOtherApp.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite is for another Zero-Trust app'**
+  String get inviteOtherApp;
+
+  /// No description provided for @inviteInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s not a ZT Tasks invite link'**
+  String get inviteInvalid;
+
+  /// No description provided for @inviteUsed.
+  ///
+  /// In en, this message translates to:
+  /// **'This invite was already used, withdrawn or has expired. Ask for a new one.'**
+  String get inviteUsed;
+
+  /// No description provided for @join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get join;
+
+  /// No description provided for @joinCodeTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Compare this code'**
+  String get joinCodeTitle;
+
+  /// No description provided for @joinCodeBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The owner\'s phone shows a code too. When they match, the owner lets you in and the list appears.'**
+  String get joinCodeBody;
+
+  /// No description provided for @sharedWith.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with {names}'**
+  String sharedWith(String names);
+
+  /// No description provided for @sharedListOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'People and sharing'**
+  String get sharedListOptions;
+
+  /// No description provided for @onlyOwnersRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Only owners can rename this list'**
+  String get onlyOwnersRename;
+
+  /// No description provided for @locationReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Location reminder'**
+  String get locationReminder;
+
+  /// No description provided for @noLocationReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'No location reminder'**
+  String get noLocationReminder;
+
+  /// No description provided for @remindArriveAt.
+  ///
+  /// In en, this message translates to:
+  /// **'When I arrive at {place}'**
+  String remindArriveAt(String place);
+
+  /// No description provided for @remindLeave.
+  ///
+  /// In en, this message translates to:
+  /// **'When I leave {place}'**
+  String remindLeave(String place);
+
+  /// No description provided for @clearLocationReminder.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove location reminder'**
+  String get clearLocationReminder;
+
+  /// No description provided for @arrivedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'You arrived at {place}'**
+  String arrivedAt(String place);
+
+  /// No description provided for @leftPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'You left {place}'**
+  String leftPlace(String place);
+
+  /// No description provided for @placeRemindersChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Location reminders'**
+  String get placeRemindersChannel;
+
+  /// No description provided for @placeRemindersChannelHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Task reminders when you arrive at or leave a place'**
+  String get placeRemindersChannelHint;
+
+  /// No description provided for @locationStaysOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.'**
+  String get locationStaysOnPhone;
+
+  /// No description provided for @aPlace.
+  ///
+  /// In en, this message translates to:
+  /// **'a place'**
+  String get aPlace;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -1,7 +1,7 @@
 name: zero_trust_tasks
 description: End-to-end encrypted tasks and reminders, part of the Zero-Trust apps.
 publish_to: none
-version: 0.3.3+10
+version: 0.4.0+11
 environment:
   sdk: ^3.8.0
 
@@ -21,7 +21,18 @@ dependencies:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zero_trust_core
-      ref: v0.10.0
+      # Core Dev: Hebrew + language setting (PR #21) and Z24 shared spaces
+      # (PR #22), which shared lists use. Switch to the release tag once
+      # one is pushed.
+      ref: 5c8476ea033a30c097b2ac1d8803fe8ed7921110
+  # Location reminders (T11), watched by the phone itself: no Google Play
+  # services, the location never leaves the phone (Core PR #26). Switch to
+  # the release tag once one is pushed.
+  zt_places:
+    git:
+      url: https://github.com/EdoSag/Zero-Trust-Core.git
+      path: packages/zt_places
+      ref: 7deeccb707ca6542e2ef17cf1b041a6716ff670f
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0
@@ -42,6 +53,10 @@ dependencies:
   home_widget: ^0.9.3
   # Reads Google Takeout .zip files.
   archive: ^4.0.9
+  # Shared lists: invite links as a QR code, scanning one, and sending one.
+  share_plus: ^13.3.1
+  qr_flutter: ^4.1.0
+  qr_code_scanner_plus: ">=2.1.2 <2.2.0"
   flutter_localizations:
     sdk: flutter
 dev_dependencies:

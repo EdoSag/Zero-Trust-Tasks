@@ -8,6 +8,7 @@ import 'package:zero_trust_tasks/app/app_gate.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 
 /// Store name stays "Zero-Trust Tasks"; the launcher shows "ZT Tasks".
 const tasksAppConfig = ZtAppConfig(appId: 'tasks', displayName: 'Zero-Trust Tasks');
@@ -31,6 +32,8 @@ Future<void> main() async {
         overrides: [
           ztAppConfigProvider.overrideWithValue(tasksAppConfig),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          // Shared lists: only owners rename a list (enforced by the server too).
+          ztSpacePolicyProvider.overrideWithValue(tasksSpacePolicy),
         ],
         child: const ZeroTrustTasksApp(),
       ),

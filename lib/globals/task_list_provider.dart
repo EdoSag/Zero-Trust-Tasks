@@ -9,6 +9,8 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 /// it has been stored.
 class TaskListProvider extends ChangeNotifier {
   List<TaskList> _stored = [];
+  List<TaskList> _shared = [];
+  Future<void> Function(TaskList)? _saveShared;
   StreamSubscription<List<TaskList>>? _subscription;
   Future<void> Function(TaskList)? _save;
   Future<void> Function(String)? _delete;
@@ -17,7 +19,8 @@ class TaskListProvider extends ChangeNotifier {
 
   /// Whether the stored lists have been read since the vault opened. Until
   /// then only the default list is known.
-  bool get isLoaded => _loaded;
+  bool get isLoaded => _loaded && _sharedLoaded;
+  bool _sharedLoaded = false;
 
   /// Every list, default first, then by position and name.
   List<TaskList> get lists {
@@ -27,7 +30,20 @@ class TaskListProvider extends ChangeNotifier {
         final byPosition = a.position.compareTo(b.position);
         return byPosition != 0 ? byPosition : a.name.toLowerCase().compareTo(b.name.toLowerCase());
       });
-    return List.unmodifiable([defaultList, ...others]);
+    final shared = List.of(_shared)..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    return List.unmodifiable([defaultList, ...others, ...shared]);
+  }
+
+  /// Lists shared with other people (see `sharedListsProvider`).
+  List<TaskList> get sharedLists => List.unmodifiable(_shared);
+
+  /// The shared lists as they are now, and how to save a shared list's
+  /// name and colour.
+  void setShared(List<TaskList> lists, {Future<void> Function(TaskList)? save, bool ready = true}) {
+    _shared = lists;
+    _sharedLoaded = ready;
+    _saveShared = save;
+    _notify();
   }
 
   /// The list with [id]; tasks with a missing or unknown list are in the
@@ -51,6 +67,10 @@ class TaskListProvider extends ChangeNotifier {
     _save = save;
     _delete = delete;
     _stored = [];
+    if (source == null) {
+      _shared = [];
+      _sharedLoaded = false;
+    }
     _loaded = false;
     _notify();
     _subscription = source?.listen((lists) {
@@ -64,7 +84,7 @@ class TaskListProvider extends ChangeNotifier {
       _save ?? (throw StateError('Your tasks are locked. Unlock to make changes.'));
 
   Future<TaskList> create(String name, {int? color}) async {
-    final last = lists.last.position;
+    final last = lists.where((l) => !l.isShared).last.position;
     final list = TaskList.create(name: name.trim(), color: color, position: last + 1);
     await save(list);
     return list;
@@ -72,6 +92,12 @@ class TaskListProvider extends ChangeNotifier {
 
   /// Adds or updates [list] (also how the default list is renamed).
   Future<void> save(TaskList list) async {
+    if (list.isShared) {
+      // Shown once saved: only owners may change it, and the space says so.
+      final save = _saveShared ?? (throw StateError('Your tasks are locked.'));
+      await save(list);
+      return;
+    }
     final save = _requireSave;
     _stored = [..._stored.where((l) => l.id != list.id), list];
     _notify();
@@ -81,6 +107,7 @@ class TaskListProvider extends ChangeNotifier {
   /// Removes the list itself. Its tasks are handled by the caller.
   Future<void> remove(String id) async {
     if (id == TaskList.defaultId) throw StateError('The default list can\'t be deleted.');
+    if (TaskList.spaceIdOf(id) != null) throw StateError('Leave or delete a shared list instead.');
     final delete = _delete ?? (throw StateError('Your tasks are locked.'));
     _stored = _stored.where((l) => l.id != id).toList();
     _notify();

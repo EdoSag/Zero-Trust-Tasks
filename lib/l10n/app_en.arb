@@ -881,5 +881,216 @@
   "widgetCompleteTask": "Complete task",
   "widgetOpenToSee": "Open ZT Tasks to see your tasks",
   "widgetOpenAppSummary": "Open the app to see your tasks",
-  "widgetDoneSaved": "Done. Saved when you next open the app"
+  "widgetDoneSaved": "Done. Saved when you next open the app",
+  "sharingExplain": "Shared lists are end-to-end encrypted: only the people in the list can read it. They see the name you give here.",
+  "yourName": "Your name",
+  "yourNameHint": "How the others in the list see you",
+  "nameRequired": "Enter a name",
+  "shareListQ": "Share \"{name}\"",
+  "@shareListQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareList": "Share list",
+  "newSharedList": "New shared list",
+  "joinSharedList": "Join a shared list",
+  "joinListChip": "Join",
+  "sharingNeedsInternet": "Couldn't reach the server. Sharing needs an internet connection.",
+  "sharingUnavailable": "Sharing isn't available right now. Try again in a moment.",
+  "sharedListGone": "You're no longer in this list.",
+  "waitingToJoin": "Waiting to join",
+  "waitingExplain": "The owner has to let you in. Show them this code; it must match the one on their phone.",
+  "sharedListE2e": "End-to-end encrypted. Everyone here can add, edit and tick off tasks; owners can also rename the list and invite or remove people.",
+  "peopleInList": "{count, plural, =1{1 person} other{{count} people}}",
+  "@peopleInList": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "youName": "{name} (you)",
+  "@youName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "owner": "Owner",
+  "member": "Member",
+  "makeOwner": "Make owner",
+  "makeMember": "Make member (not owner)",
+  "removeFromList": "Remove from list",
+  "removeQ": "Remove {name}?",
+  "@removeQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "removeExplain": "They lose access to \"{list}\". The list moves to a new key, so they can't read anything added from now on.",
+  "@removeExplain": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "invitePeople": "Invite people",
+  "leaveList": "Leave list",
+  "leaveListQ": "Leave \"{name}\"?",
+  "@leaveListQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "leaveListExplain": "The list and its tasks are removed from your phones. The others keep it.",
+  "deleteForEveryone": "Delete for everyone",
+  "deleteSharedListQ": "Delete \"{name}\" for everyone?",
+  "@deleteSharedListQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteSharedListExplain": "The list and all its tasks are deleted for every member. This can't be undone.",
+  "syncNow": "Sync now",
+  "inviteTo": "Invite to {name}",
+  "@inviteTo": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteIntro": "Make an invite for one person. They scan the QR code, or open the link you send them, in ZT Tasks. Then you compare a short code to be sure it's them.",
+  "inviteAsOwner": "Invite as an owner",
+  "inviteAsOwnerHint": "Owners can rename the list, invite and remove people",
+  "createInvite": "Create invite",
+  "inviteReady": "Scan this code on their phone in ZT Tasks, or send them the link.",
+  "inviteQr": "Invite QR code",
+  "copyLink": "Copy link",
+  "linkCopied": "Link copied",
+  "shareLink": "Send link",
+  "inviteMessage": "Join my shared list \"{list}\" in ZT Tasks: {link}",
+  "@inviteMessage": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      },
+      "link": {
+        "type": "String"
+      }
+    }
+  },
+  "inviteNextSteps": "The invite works once, for 7 days. When they answer, you'll see them here and on the tasks screen: compare the codes, then let them in.",
+  "checkForAnswers": "Check for answers",
+  "joinRequest": "{name} wants to join",
+  "@joinRequest": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "joinRequestFor": "{name} wants to join \"{list}\"",
+  "@joinRequestFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "joinRequestHint": "Tap to compare codes and let them in",
+  "confirmJoinTitle": "Let {name} into \"{list}\"?",
+  "@confirmJoinTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "confirmJoinBody": "Check that their phone shows this same code. If it doesn't, someone else may have the invite.",
+  "codesMatch": "Codes match",
+  "codesDiffer": "Codes differ",
+  "joined": "{name} joined",
+  "@joined": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "joinIntro": "Paste the invite link you were sent, or scan the QR code on the other phone.",
+  "inviteLink": "Invite link",
+  "scanQr": "Scan QR code",
+  "inviteOtherApp": "This invite is for another Zero-Trust app",
+  "inviteInvalid": "That's not a ZT Tasks invite link",
+  "inviteUsed": "This invite was already used, withdrawn or has expired. Ask for a new one.",
+  "join": "Join",
+  "joinCodeTitle": "Compare this code",
+  "joinCodeBody": "The owner's phone shows a code too. When they match, the owner lets you in and the list appears.",
+  "sharedWith": "Shared with {names}",
+  "@sharedWith": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedListOptions": "People and sharing",
+  "onlyOwnersRename": "Only owners can rename this list",
+  "locationReminder": "Location reminder",
+  "noLocationReminder": "No location reminder",
+  "remindArriveAt": "When I arrive at {place}",
+  "@remindArriveAt": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "remindLeave": "When I leave {place}",
+  "@remindLeave": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLocationReminder": "Remove location reminder",
+  "arrivedAt": "You arrived at {place}",
+  "@arrivedAt": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "leftPlace": "You left {place}",
+  "@leftPlace": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "placeRemindersChannel": "Location reminders",
+  "placeRemindersChannelHint": "Task reminders when you arrive at or leave a place",
+  "locationStaysOnPhone": "Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.",
+  "aPlace": "a place"
 }

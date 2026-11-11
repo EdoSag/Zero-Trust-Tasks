@@ -13,6 +13,8 @@ import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
+import 'package:zt_places/zt_places.dart';
 
 enum _TaskAction { moveToList, makeSubtask, duplicate, saveAsTemplate, archive, delete }
 
@@ -335,6 +337,22 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(DateFormat.yMMMd().add_jm().format(currentTask.reminderAt!)),
+                      ],
+                    ),
+                  ],
+                  if (ref.watch(placeRemindersProvider).forTask(currentTask.id) case final place?) ...[
+                    const SizedBox(height: 12.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.place_outlined, size: 20.0),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            place.trigger == ZtPlaceTrigger.arrive
+                                ? context.l10n.remindArriveAt(place.place.name.isEmpty ? context.l10n.aPlace : place.place.name)
+                                : context.l10n.remindLeave(place.place.name.isEmpty ? context.l10n.aPlace : place.place.name),
+                          ),
+                        ),
                       ],
                     ),
                   ],

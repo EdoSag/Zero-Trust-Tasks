@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/app/auth_providers.dart';
 import 'package:zero_trust_tasks/app/tasks_hooks.dart';
+import 'package:zero_trust_tasks/app/share_intake.dart';
 import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
@@ -30,18 +31,23 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
   late bool _signingIn = ref.read(currentUserProvider) == null;
   UnlockResult? _awaitingRecoveryKey;
   late final WidgetLaunchListener _widgetLaunches = WidgetLaunchListener(ref);
+  late final ShareIntake _shares = ShareIntake(ref);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (ref.read(platformHooksEnabledProvider)) unawaited(_widgetLaunches.start());
+    if (ref.read(platformHooksEnabledProvider)) {
+      unawaited(_widgetLaunches.start());
+      unawaited(_shares.start());
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _widgetLaunches.dispose();
+    _shares.dispose();
     super.dispose();
   }
 

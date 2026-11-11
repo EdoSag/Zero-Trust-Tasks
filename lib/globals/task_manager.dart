@@ -264,9 +264,14 @@ class TaskManager extends ChangeNotifier {
   }
 
   Future<void> updateTask(Task updatedTask) async {
-    if (_find(updatedTask.id) == null) return;
+    final old = _find(updatedTask.id);
+    if (old == null) return;
     final saved = updatedTask.copyWith(updatedAt: DateTime.now());
+    // The editor moved it to a list in another store (own <-> shared, or
+    // another shared list): the old copy goes, like with "Move to list".
+    final from = TaskList.spaceIdOf(old.listId) != TaskList.spaceIdOf(saved.listId) ? _writerFor(old) : null;
     await _put([saved]);
+    await from?.delete(old);
     _remind(saved);
   }
 

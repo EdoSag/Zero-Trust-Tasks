@@ -98,7 +98,10 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     if (manager.sharedReady && !_sharedApplied) {
       // Taps on shared-list tasks waited for those lists to be read.
       _sharedApplied = true;
-      if (_loaded) unawaited(_applyPending());
+      if (_loaded) {
+        unawaited(_applyPending());
+        _openWidgetLaunch();
+      }
     }
     if (!_loaded) {
       _loaded = true;
@@ -185,6 +188,14 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
 
   void _openWidgetLaunch() {
     if (!mounted || ref.read(taskManagerProvider).isLoading) return;
+    final manager = ref.read(taskManagerProvider);
+    final waiting = ref.read(widgetLaunchProvider);
+    if (waiting == null) return;
+    if (waiting.host == 'task' &&
+        !manager.sharedReady &&
+        !manager.tasks.any((t) => t.id == waiting.queryParameters['id'])) {
+      return; // maybe a shared list's task: opened once shared lists are read
+    }
     final uri = ref.read(widgetLaunchProvider.notifier).take();
     if (uri == null) return;
     final navigator = Navigator.of(context);

@@ -285,6 +285,19 @@ void main() {
       expect(shared.deleted.last, 's1/own');
     });
 
+    test('changing the list in the editor moves the task between stores too', () async {
+      final own = MemoryWriter();
+      final shared = MemoryShared();
+      final manager = TaskManager(reminders: false)
+        ..attach(source: () => Stream.value(<Task>[]), writer: own)
+        ..setShared([task('Milk', listId: TaskList.sharedId('s1'))], writer: shared);
+      await pump();
+      await manager.updateTask(manager.tasks.single.copyWith(clearListId: true));
+      expect(own.saved['milk']!.listId, isNull);
+      expect(shared.deleted, ['s1/milk'], reason: 'the other members lose it');
+      expect(manager.tasks.length, 1);
+    });
+
     test('sharing a list drops only the private copies of its tasks', () async {
       final own = MemoryWriter();
       final manager = TaskManager(reminders: false)

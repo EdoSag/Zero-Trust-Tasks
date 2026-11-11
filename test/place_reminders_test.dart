@@ -83,6 +83,18 @@ void main() {
     expect(phone.watched, isEmpty);
   });
 
+  test('turning task details off in notifications re-arms without the title', () async {
+    final milk = task('Milk');
+    await put(milk.id, tasksCollection.encode(milk));
+    await container.read(settingsProvider).setShowTaskDetailsInNotifications(true);
+    await remind(milk);
+    await pump();
+    expect(phone.watched.single.title, 'Milk');
+    await container.read(settingsProvider).setShowTaskDetailsInNotifications(false);
+    await pump();
+    expect(phone.watched.single.title, isNot(contains('Milk')));
+  });
+
   test('the place is kept apart from the task, so shared lists never carry it', () async {
     final milk = task('Milk');
     await put(milk.id, tasksCollection.encode(milk));

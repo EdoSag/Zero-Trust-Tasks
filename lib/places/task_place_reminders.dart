@@ -126,6 +126,8 @@ class PlaceRemindersController extends Notifier<PlaceRemindersState> {
       }, onError: (Object _) {}),
     );
     ref.listen(taskManagerProvider, (_, _) => _schedule());
+    // "Show task details in notifications" changes what armed alerts say.
+    ref.listen(settingsProvider, (_, _) => _schedule());
     return const PlaceRemindersState();
   }
 
@@ -258,8 +260,9 @@ class PlaceRemindersController extends Notifier<PlaceRemindersState> {
   Future<void> _forgetFired(String alertId) async {
     final prefs = ref.read(sharedPreferencesProvider);
     final store = _store;
-    if (store == null) {
-      // Locked: remember the id (no title, no place) until unlock.
+    if (store == null || !_loaded) {
+      // Locked, or reminders not read yet: remember the id (no title, no
+      // place) until they are.
       await prefs.setStringList(firedKey, {...?prefs.getStringList(firedKey), alertId}.toList());
       return;
     }

@@ -33,8 +33,13 @@ Task sharedTaskDraft({String? subject, String? text}) {
   return Task.create(title: title, description: rest.isEmpty ? null : rest, links: urls.toSet().toList());
 }
 
+/// [line] without the bits of punctuation an address leaves behind ("."
+/// or "()"). Other symbols stay: "Revenue - expenses = profit" and emoji
+/// are the person's own text.
 String _words(String line) =>
-    line.split(RegExp(r'\s+')).where((w) => RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(w)).join(' ');
+    line.split(RegExp(r'\s+')).where((w) => w.isNotEmpty && !_leftover.hasMatch(w)).join(' ');
+
+final _leftover = RegExp(r'''^[().,;:!?\[\]{}'"]+$''');
 
 final _url = RegExp(r'https?://[^\s<>"]+');
 

@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:zero_trust_tasks/app/share_intake.dart';
 import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
+import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/platform/links.dart';
@@ -201,6 +203,14 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     final navigator = Navigator.of(context);
     if (uri.host == 'new-task') {
       showQuickAdd(context);
+    } else if (uri.host == 'shared') {
+      // Text shared from another app: the editor opens filled in, and
+      // nothing is saved until Save.
+      final draft = sharedTaskDraft(
+        subject: uri.queryParameters['subject'],
+        text: uri.queryParameters['text'],
+      );
+      navigator.push(MaterialPageRoute<void>(builder: (_) => AddTaskScreen(draft: draft)));
     } else if (uri.host == 'task') {
       final id = uri.queryParameters['id'];
       final task = ref.read(taskManagerProvider).tasks.where((t) => t.id == id).firstOrNull;

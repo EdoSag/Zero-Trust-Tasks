@@ -51,7 +51,10 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     super.didChangeDependencies();
     // Settings → Language changed: write the widget again in the new one.
     final language = context.l10n.localeName;
-    if (_widgetLanguage != null && _widgetLanguage != language) _scheduleWidgetWrite();
+    if (_widgetLanguage != null && _widgetLanguage != language) {
+      _scheduleWidgetWrite();
+      unawaited(NotificationService.instance.refreshLanguage().catchError((Object _) {}));
+    }
     _widgetLanguage = language;
   }
 

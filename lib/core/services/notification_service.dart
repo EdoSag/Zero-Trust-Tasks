@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest.dart' as tz;
@@ -124,6 +125,18 @@ class NotificationService {
     final localTz = await FlutterTimezone.getLocalTimezone();
     tz.setLocalLocation(tz.getLocation(localTz));
 
+    await _initialize();
+    _initialized = true;
+  }
+
+  /// The language changed in Settings: register the iOS reminder buttons
+  /// again in it (Android builds its buttons with each reminder).
+  Future<void> refreshLanguage() async {
+    if (!_initialized || defaultTargetPlatform != TargetPlatform.iOS) return;
+    await _initialize();
+  }
+
+  Future<void> _initialize() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     final ios = DarwinInitializationSettings(
       requestAlertPermission: false,
@@ -146,7 +159,6 @@ class NotificationService {
       },
       onDidReceiveBackgroundNotificationResponse: notificationActionInBackground,
     );
-    _initialized = true;
   }
 
   Future<bool> requestPermissions() async {

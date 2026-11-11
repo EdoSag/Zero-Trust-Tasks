@@ -21,7 +21,9 @@ dependencies:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zero_trust_core
-      ref: v0.8.1
+      # 0.10.0: language setting + Hebrew (Core PR #21). Switch to the
+      # v0.10.0 tag once it is pushed.
+      ref: ba9a62de6bf17de7deb4596751c3f457d48d7942
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0
@@ -49,6 +51,7 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^5.0.0
 flutter:
+  generate: true
   uses-material-design: true
   assets:
     - .env

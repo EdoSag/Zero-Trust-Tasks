@@ -4,6 +4,7 @@ import 'package:zero_trust_tasks/models/task_sort_option.dart';
 import 'package:zero_trust_tasks/models/task_status_filter.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Bottom sheet for adjusting category/priority/status filters and the
 /// sort order (item 1). Returns the new [TaskFilterState] when applied.
@@ -44,7 +45,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Filter & sort',
+                    context.l10n.filterSort,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -55,13 +56,13 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
                         _state = _state.clearFilters();
                       });
                     },
-                    child: const Text('Clear all'),
+                    child: Text(context.l10n.clearAll),
                   ),
                 ],
               ),
               const SizedBox(height: 12),
               Text(
-                'Status',
+                context.l10n.status,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -93,7 +94,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               ),
               const SizedBox(height: 16),
               Text(
-                'Priority',
+                context.l10n.priority,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -131,7 +132,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               if (widget.categories.isNotEmpty) ...[
                 const SizedBox(height: 16),
                 Text(
-                  'Category',
+                  context.l10n.category,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -159,7 +160,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               ],
               const SizedBox(height: 16),
               Text(
-                'Sort by',
+                context.l10n.sortBy,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -190,7 +191,7 @@ class _TaskFilterSheetState extends State<TaskFilterSheet> {
               const SizedBox(height: 24),
               FilledButton(
                 onPressed: () => Navigator.pop(context, _state),
-                child: const Text('Apply'),
+                child: Text(context.l10n.apply),
               ),
             ],
           ),

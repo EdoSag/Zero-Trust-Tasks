@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Shared helpers for showing consistent success/error feedback.
 class SnackbarHelper {
@@ -19,7 +20,7 @@ class SnackbarHelper {
         action: onRetry == null
             ? null
             : SnackBarAction(
-                label: 'Retry',
+                label: currentL10n.retry,
                 onPressed: onRetry,
               ),
       ),

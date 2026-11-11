@@ -1,3 +1,4 @@
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 /// Formats a [DateTime] as a short human-readable relative time string,
 /// e.g. "just now", "5 minutes ago", "3 hours ago", "2 days ago".
 String formatRelativeTime(DateTime dateTime) {
@@ -5,24 +6,24 @@ String formatRelativeTime(DateTime dateTime) {
   final difference = now.difference(dateTime.toLocal());
 
   if (difference.isNegative || difference.inSeconds < 60) {
-    return 'just now';
+    return currentL10n.justNow;
   }
   if (difference.inMinutes < 60) {
     final minutes = difference.inMinutes;
-    return '$minutes minute${minutes == 1 ? '' : 's'} ago';
+    return currentL10n.minutesAgo(minutes);
   }
   if (difference.inHours < 24) {
     final hours = difference.inHours;
-    return '$hours hour${hours == 1 ? '' : 's'} ago';
+    return currentL10n.hoursAgo(hours);
   }
   if (difference.inDays < 30) {
     final days = difference.inDays;
-    return '$days day${days == 1 ? '' : 's'} ago';
+    return currentL10n.daysAgo(days);
   }
   if (difference.inDays < 365) {
     final months = (difference.inDays / 30).floor();
-    return '$months month${months == 1 ? '' : 's'} ago';
+    return currentL10n.monthsAgo(months);
   }
   final years = (difference.inDays / 365).floor();
-  return '$years year${years == 1 ? '' : 's'} ago';
+  return currentL10n.yearsAgo(years);
 }

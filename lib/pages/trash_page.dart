@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/components/confirmation_dialog.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Shows soft-deleted tasks. Tasks are auto-purged after 30 days.
 class TrashPage extends ConsumerWidget {
@@ -13,16 +14,16 @@ class TrashPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final taskManager = ref.watch(taskManagerProvider);
     final trashed = taskManager.getTrashedTasks();
-    final dateFormat = DateFormat('MMM dd, yyyy');
+    final dateFormat = DateFormat.yMMMd();
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Trash'),
+        title: Text(context.l10n.trash),
         actions: [
           if (trashed.isNotEmpty)
             TextButton(
               onPressed: () => _emptyTrash(context, taskManager, trashed.length),
-              child: const Text('Empty'),
+              child: Text(context.l10n.empty),
             ),
         ],
       ),
@@ -38,14 +39,14 @@ class TrashPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Trash is empty',
+                    context.l10n.trashIsEmpty,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'Deleted tasks are kept for 30 days.',
+                    context.l10n.deletedTasksAreKeptFor2,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -58,7 +59,7 @@ class TrashPage extends ConsumerWidget {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                   child: Text(
-                    'Tasks are permanently deleted after 30 days.',
+                    context.l10n.tasksArePermanentlyDeletedAfter,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -85,20 +86,20 @@ class TrashPage extends ConsumerWidget {
                             ),
                           ),
                           subtitle: Text(
-                            'Deleted ${dateFormat.format(task.deletedAt!)} · $daysLeft day${daysLeft == 1 ? '' : 's'} left',
+                            context.l10n.deletedDaysLeft(daysLeft, dateFormat.format(task.deletedAt!)),
                           ),
                           trailing: Row(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               IconButton(
                                 icon: const Icon(Icons.restore),
-                                tooltip: 'Restore',
+                                tooltip: context.l10n.restore,
                                 onPressed: () =>
                                     _restore(context, taskManager, task.id),
                               ),
                               IconButton(
                                 icon: const Icon(Icons.delete_forever),
-                                tooltip: 'Delete forever',
+                                tooltip: context.l10n.deleteForever,
                                 onPressed: () => _deletePermanently(
                                   context,
                                   taskManager,
@@ -126,7 +127,7 @@ class TrashPage extends ConsumerWidget {
     await taskManager.restoreFromTrash(taskId);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task restored')),
+        SnackBar(content: Text(context.l10n.taskRestored)),
       );
     }
   }
@@ -139,9 +140,9 @@ class TrashPage extends ConsumerWidget {
   ) async {
     final confirmed = await ConfirmationDialog.show(
       context,
-      title: 'Delete forever?',
-      message: '"$title" will be permanently deleted and cannot be recovered.',
-      confirmPhrase: 'DELETE',
+      title: context.l10n.deleteForever2,
+      message: context.l10n.permDeleteOne(title),
+      confirmPhrase: context.l10n.deletePhrase,
       isDestructive: true,
     );
     if (confirmed && context.mounted) {
@@ -156,9 +157,9 @@ class TrashPage extends ConsumerWidget {
   ) async {
     final confirmed = await ConfirmationDialog.show(
       context,
-      title: 'Empty trash?',
-      message: 'All $count task${count == 1 ? '' : 's'} will be permanently deleted.',
-      confirmPhrase: 'DELETE',
+      title: context.l10n.emptyTrash,
+      message: context.l10n.permDeleteAll(count),
+      confirmPhrase: context.l10n.deletePhrase,
       isDestructive: true,
     );
     if (confirmed && context.mounted) {

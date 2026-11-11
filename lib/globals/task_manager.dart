@@ -14,6 +14,7 @@ import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Saves and deletes go through the core's sync, so every edit is encrypted,
 /// stored on the device and pushed to the account's other devices.
@@ -88,7 +89,7 @@ class TaskManager extends ChangeNotifier {
       },
       onError: (Object e) {
         _isLoading = false;
-        _error = 'Couldn\'t read your tasks: ${ztErrorMessage(e)}';
+        _error = currentL10n.cantReadTasks(ztErrorMessage(e));
         _notify();
       },
     );
@@ -266,7 +267,7 @@ class TaskManager extends ChangeNotifier {
     await _put([
       Task(
         id: const Uuid().v4(),
-        title: '${original.title} (Copy)',
+        title: currentL10n.copyOf(original.title),
         description: original.description,
         category: original.category,
         priority: original.priority,

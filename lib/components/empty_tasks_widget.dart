@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Distinguishes "you have no tasks at all" from "your filters/search
 /// matched nothing" so the user gets an actionable, accurate message.
@@ -40,7 +41,7 @@ class EmptyTasksWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              isNoMatches ? 'No matching tasks' : 'No tasks yet',
+              isNoMatches ? context.l10n.noMatchingTasks : context.l10n.noTasksYet,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
                 color: Theme.of(
@@ -51,8 +52,8 @@ class EmptyTasksWidget extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               isNoMatches
-                  ? 'No tasks match your current search or filters'
-                  : 'Create your first task to get started',
+                  ? context.l10n.noTasksMatchYourCurrent
+                  : context.l10n.createYourFirstTaskTo,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(
                   context,
@@ -65,7 +66,7 @@ class EmptyTasksWidget extends StatelessWidget {
               OutlinedButton.icon(
                 onPressed: onClearFilters,
                 icon: const Icon(Icons.filter_alt_off),
-                label: const Text('Clear filters'),
+                label: Text(context.l10n.clearFilters),
               ),
             ],
             if (!isNoMatches && onCreateTask != null) ...[
@@ -73,7 +74,7 @@ class EmptyTasksWidget extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onCreateTask,
                 icon: const Icon(Icons.add),
-                label: const Text('Create task'),
+                label: Text(context.l10n.createTask),
               ),
             ],
           ],

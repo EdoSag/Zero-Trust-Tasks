@@ -12,6 +12,7 @@ import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/models/task_status_filter.dart';
 import 'package:zero_trust_tasks/pages/insights_page.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class DashboardPage extends StatelessWidget {
   const DashboardPage({super.key});
@@ -53,7 +54,7 @@ class DashboardPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Overview',
+                context.l10n.overview,
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -68,49 +69,49 @@ class DashboardPage extends StatelessWidget {
                 childAspectRatio: 1.5,
                 children: [
                   DashboardCard(
-                    title: 'Total Tasks',
+                    title: context.l10n.totalTasks,
                     value: '${taskManager.totalTasks}',
                     icon: Icons.assignment,
                     color: Theme.of(context).colorScheme.primary,
                     onTap: () => _openFilteredList(
                       context,
-                      title: 'All Tasks',
+                      title: context.l10n.allTasks,
                     ),
                   ),
                   DashboardCard(
-                    title: 'Pending',
+                    title: context.l10n.pending,
                     value: '${taskManager.pendingTasksCount}',
                     icon: Icons.pending_actions,
                     color: Colors.orange,
                     onTap: () => _openFilteredList(
                       context,
-                      title: 'Pending Tasks',
+                      title: context.l10n.pendingTasks,
                       filter: TaskFilterState.statusFilter(
                         TaskStatusFilter.pending,
                       ),
                     ),
                   ),
                   DashboardCard(
-                    title: 'Completed',
+                    title: context.l10n.completed,
                     value: '${taskManager.completedTasksCount}',
                     icon: Icons.check_circle,
                     color: Colors.green,
                     onTap: () => _openFilteredList(
                       context,
-                      title: 'Completed Tasks',
+                      title: context.l10n.completedTasks,
                       filter: TaskFilterState.statusFilter(
                         TaskStatusFilter.completed,
                       ),
                     ),
                   ),
                   DashboardCard(
-                    title: 'Overdue',
+                    title: context.l10n.overdue,
                     value: '${taskManager.overdueTasksCount}',
                     icon: Icons.warning,
                     color: Colors.red,
                     onTap: () => _openFilteredList(
                       context,
-                      title: 'Overdue Tasks',
+                      title: context.l10n.overdueTasks,
                       filter: TaskFilterState.statusFilter(
                         TaskStatusFilter.overdue,
                       ),
@@ -120,7 +121,7 @@ class DashboardPage extends StatelessWidget {
               ),
               const SizedBox(height: 24),
               Text(
-                'Priority Breakdown',
+                context.l10n.priorityBreakdown,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
@@ -136,11 +137,11 @@ class DashboardPage extends StatelessWidget {
                   ),
                 ),
                 icon: const Icon(Icons.insights),
-                label: const Text('View Productivity Insights'),
+                label: Text(context.l10n.viewProductivityInsights),
               ),
               const SizedBox(height: 24),
               Text(
-                'Recent Tasks',
+                context.l10n.recentTasks,
                 style: Theme.of(
                   context,
                 ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),

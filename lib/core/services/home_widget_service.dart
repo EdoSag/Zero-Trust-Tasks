@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/core/services/task_filter_service.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Writes what the Android home-screen widget shows
 /// (`TaskListWidgetProvider.kt`).
@@ -41,12 +42,12 @@ class HomeWidgetService {
     final overdue = open.where((t) => t.isOverdue && !isToday(t.dueDate!)).length;
     final scoped = showTasks ? inScope.length : open.length;
     final parts = [
-      scoped == 0 ? 'Nothing to do' : '$scoped open',
-      if (dueToday > 0) '$dueToday due today',
-      if (overdue > 0) '$overdue overdue',
+      scoped == 0 ? currentL10n.nothingToDo : currentL10n.nOpen(scoped),
+      if (dueToday > 0) currentL10n.nDueToday(dueToday),
+      if (overdue > 0) currentL10n.nOverdue(overdue),
     ];
     if (!showTasks) {
-      return WidgetContent(title: 'All tasks', summary: parts.join(' · '), rows: const []);
+      return WidgetContent(title: currentL10n.allTasks2, summary: parts.join(' · '), rows: const []);
     }
     inScope.sort((a, b) {
       final ad = a.dueDate, bd = b.dueDate;
@@ -59,15 +60,15 @@ class HomeWidgetService {
     String? dueLabel(Task t) {
       final d = t.dueDate;
       if (d == null) return null;
-      if (isToday(d)) return 'Today';
+      if (isToday(d)) return currentL10n.today;
       final tomorrow = DateTime(today.year, today.month, today.day + 1);
-      if (d.year == tomorrow.year && d.month == tomorrow.month && d.day == tomorrow.day) return 'Tomorrow';
+      if (d.year == tomorrow.year && d.month == tomorrow.month && d.day == tomorrow.day) return currentL10n.tomorrow;
       final label = DateFormat('EEE d MMM').format(d);
-      return d.isBefore(today) ? 'Overdue · $label' : label;
+      return d.isBefore(today) ? currentL10n.overdueLabel(label) : label;
     }
 
     return WidgetContent(
-      title: list?.name ?? 'All lists',
+      title: list?.name ?? currentL10n.allLists,
       summary: parts.join(' · '),
       rows: [
         for (final t in inScope.take(maxRows)) WidgetRow(id: t.id, title: t.title, due: dueLabel(t)),
@@ -88,6 +89,19 @@ class HomeWidgetService {
         await HomeWidget.saveWidgetData<String>('tasks_widget_row_${i}_title', row?.title);
         await HomeWidget.saveWidgetData<String>('tasks_widget_row_${i}_due', row?.due);
       }
+      // The widget's fixed texts, in the app's language (WidgetText.kt).
+      final l = currentL10n;
+      final texts = {
+        'add_task': l.widgetAddTask,
+        'complete_task': l.widgetCompleteTask,
+        'open_to_see': l.widgetOpenToSee,
+        'your_tasks': l.yourTasks,
+        'open_app_summary': l.widgetOpenAppSummary,
+        'done_saved': l.widgetDoneSaved,
+      };
+      for (final MapEntry(:key, :value) in texts.entries) {
+        await HomeWidget.saveWidgetData<String>('tasks_widget_text_$key', value);
+      }
       await HomeWidget.updateWidget(qualifiedAndroidName: providerName);
     } on Object catch (e) {
       debugPrint('Home-screen widget not updated: $e');
@@ -95,9 +109,9 @@ class HomeWidgetService {
   }
 
   /// Back to the signed-out look: no counts, no titles, a lock.
-  Future<void> clear() => write(const WidgetContent(
-        title: 'Your tasks',
-        summary: 'Signed out',
+  Future<void> clear() => write(WidgetContent(
+        title: currentL10n.yourTasks,
+        summary: currentL10n.signedOut,
         rows: [],
         locked: true,
       ));

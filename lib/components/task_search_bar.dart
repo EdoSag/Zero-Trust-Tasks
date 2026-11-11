@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Debounced search field for the tasks list (items 1 & 24).
 class TaskSearchBar extends StatefulWidget {
@@ -55,14 +56,14 @@ class _TaskSearchBarState extends State<TaskSearchBar> {
       controller: _controller,
       onChanged: _handleChanged,
       decoration: InputDecoration(
-        hintText: 'Search tasks, descriptions, categories...',
+        hintText: context.l10n.searchTasksDescriptionsCategories,
         isDense: true,
         prefixIcon: const Icon(Icons.search),
         suffixIcon: _controller.text.isEmpty
             ? null
             : IconButton(
                 icon: const Icon(Icons.clear),
-                tooltip: 'Clear search',
+                tooltip: context.l10n.clearSearch,
                 onPressed: _clear,
               ),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),

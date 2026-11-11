@@ -7,6 +7,7 @@ import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// One line to add a task: "call mum tomorrow 6pm". Dates, times, repeats,
 /// `!priority` and `#tags` are read as you type (English and Hebrew) and
@@ -74,12 +75,12 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         // Short, so it's out of the way when adding several in a row.
         duration: const Duration(seconds: 2),
         content: Text(parsed.due == null
-            ? 'Task added'
-            : 'Task added, due ${describeDue(parsed.due!, parsed.hasTime)}'),
+            ? currentL10n.taskAdded
+            : currentL10n.taskAddedDue(describeDue(parsed.due!, parsed.hasTime))),
       ));
     } on Object catch (e) {
       if (mounted) setState(() => _saving = false);
-      messenger.showSnackBar(SnackBar(content: Text('Couldn\'t add the task: $e')));
+      messenger.showSnackBar(SnackBar(content: Text(currentL10n.cantAddTask('$e'))));
     }
   }
 
@@ -113,9 +114,9 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
             textInputAction: TextInputAction.done,
-            decoration: const InputDecoration(
-              labelText: 'New task',
-              hintText: 'Call mum tomorrow 6pm',
+            decoration: InputDecoration(
+              labelText: context.l10n.newTask,
+              hintText: context.l10n.callMumTomorrow6pm,
               border: OutlineInputBorder(),
             ),
             onChanged: (_) => setState(() {}),
@@ -150,7 +151,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   Chip(label: Text('#$tag'), visualDensity: VisualDensity.compact),
                 TextButton(
                   onPressed: () => setState(() => _readDates = false),
-                  child: const Text('Keep as typed'),
+                  child: Text(context.l10n.keepAsTyped),
                 ),
               ],
             )
@@ -158,47 +159,46 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             Row(
               children: [
                 Expanded(
-                  child: Text('Saved exactly as typed.', style: theme.textTheme.bodySmall),
+                  child: Text(context.l10n.savedExactlyAsTyped, style: theme.textTheme.bodySmall),
                 ),
                 TextButton(
                   onPressed: () => setState(() => _readDates = true),
-                  child: const Text('Read dates'),
+                  child: Text(context.l10n.readDates),
                 ),
               ],
             )
           else
             Text(
-              'Dates and times are read as you type, in English or Hebrew. '
-              'Also: every week, !high, #tag',
+              context.l10n.quickAddHelp,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
           if (found && parsed.title != _controller.text.trim())
             Padding(
               padding: const EdgeInsets.only(top: 4),
-              child: Text('Title: ${parsed.title}', style: theme.textTheme.bodySmall),
+              child: Text(context.l10n.titleIs(parsed.title), style: theme.textTheme.bodySmall),
             ),
           const SizedBox(height: 8),
           Row(
             children: [
               IconButton(
                 icon: Icon(_starred ? Icons.star : Icons.star_border, color: _starred ? Colors.amber.shade700 : null),
-                tooltip: _starred ? 'Remove star' : 'Star',
+                tooltip: _starred ? context.l10n.removeStar : context.l10n.star,
                 onPressed: () => setState(() => _starred = !_starred),
               ),
               Expanded(
                 child: Text(
-                  'List: ${context.taskLists.byId(widget.listId).name}',
+                  context.l10n.listIs(context.taskLists.byId(widget.listId).name),
                   style: theme.textTheme.bodySmall,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              TextButton(onPressed: _more, child: const Text('More options')),
+              TextButton(onPressed: _more, child: Text(context.l10n.moreOptions)),
               const SizedBox(width: 8),
               FilledButton(
                 // The app theme makes filled buttons full width; not in a row.
                 style: FilledButton.styleFrom(minimumSize: const Size(72, 44)),
                 onPressed: parsed.isEmpty || _saving ? null : _save,
-                child: const Text('Add'),
+                child: Text(context.l10n.add),
               ),
             ],
           ),
@@ -209,13 +209,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
 
   static String _describeRepeat(RecurrenceRule rule) {
     if (rule.interval <= 1) return rule.frequency.displayName;
-    final unit = switch (rule.frequency) {
-      RecurrenceFrequency.daily => 'days',
-      RecurrenceFrequency.weekly => 'weeks',
-      RecurrenceFrequency.monthly => 'months',
-      RecurrenceFrequency.yearly => 'years',
+    final l = currentL10n;
+    return switch (rule.frequency) {
+      RecurrenceFrequency.daily => l.everyNDays(rule.interval),
+      RecurrenceFrequency.weekly => l.everyNWeeks(rule.interval),
+      RecurrenceFrequency.monthly => l.everyNMonths(rule.interval),
+      RecurrenceFrequency.yearly => l.everyNYears(rule.interval),
     };
-    return 'Every ${rule.interval} $unit';
   }
 }
 
@@ -225,8 +225,8 @@ String describeDue(DateTime due, bool hasTime, {DateTime? now}) {
   final today = DateTime(clock.year, clock.month, clock.day);
   final days = DateTime(due.year, due.month, due.day).difference(today).inHours / 24;
   final day = switch (days.round()) {
-    0 => 'Today',
-    1 => 'Tomorrow',
+    0 => currentL10n.today,
+    1 => currentL10n.tomorrow,
     _ => DateFormat(due.year == clock.year ? 'EEE d MMM' : 'd MMM y').format(due),
   };
   return hasTime ? '$day ${DateFormat('HH:mm').format(due)}' : day;

@@ -9,6 +9,7 @@ import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
 final platformHooksEnabledProvider = Provider<bool>((ref) => true);
@@ -41,6 +42,17 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       _actions = NotificationService.instance.actionQueued.listen((_) => _applyPending());
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _onTasksChanged());
+  }
+
+  String? _widgetLanguage;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Settings → Language changed: write the widget again in the new one.
+    final language = context.l10n.localeName;
+    if (_widgetLanguage != null && _widgetLanguage != language) _scheduleWidgetWrite();
+    _widgetLanguage = language;
   }
 
   @override
@@ -85,9 +97,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       );
       if (changed > 0 && mounted) {
         ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(
-          content: Text(changed == 1
-              ? 'Saved 1 change from a reminder or widget'
-              : 'Saved $changed changes from reminders or the widget'),
+          content: Text(context.l10n.savedChanges(changed)),
         ));
       }
     } on Object catch (e) {

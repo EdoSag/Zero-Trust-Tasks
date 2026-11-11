@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({
@@ -25,7 +26,7 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('MMM dd, yyyy');
+    final dateFormat = DateFormat.yMMMd();
     final urgency = TaskUrgencyService.getUrgency(task);
     final urgencyColor = TaskUrgencyService.getColor(urgency, context);
     final hasSubTasks = task.subTasks.isNotEmpty;
@@ -66,8 +67,8 @@ class TaskCard extends StatelessWidget {
                         children: [
                           Semantics(
                             label: task.isCompleted
-                                ? 'Mark "${task.title}" as not completed'
-                                : 'Mark "${task.title}" as completed',
+                                ? context.l10n.markNotCompleted(task.title)
+                                : context.l10n.markCompleted(task.title),
                             child: Checkbox(
                               value: task.isCompleted,
                               onChanged: (value) {
@@ -152,7 +153,7 @@ class TaskCard extends StatelessWidget {
                                 task.starred ? Icons.star : Icons.star_border,
                                 color: task.starred ? Colors.amber.shade700 : null,
                               ),
-                              tooltip: task.starred ? 'Remove star from "${task.title}"' : 'Star "${task.title}"',
+                              tooltip: task.starred ? context.l10n.removeStarFrom(task.title) : context.l10n.starTask(task.title),
                               visualDensity: VisualDensity.compact,
                               onPressed: () => context.taskManager.toggleStar(task.id),
                             ),
@@ -359,9 +360,9 @@ class TaskCard extends StatelessWidget {
                 ),
               ),
             if (selectionMode)
-              Positioned(
+              PositionedDirectional(
                 top: 8,
-                right: 8,
+                end: 8,
                 child: Icon(
                   isSelected
                       ? Icons.check_circle
@@ -385,12 +386,12 @@ class TaskCard extends StatelessWidget {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(wasCompleted ? 'Task marked incomplete' : 'Task completed'),
+        content: Text(wasCompleted ? context.l10n.taskMarkedIncomplete : context.l10n.taskCompleted),
         // Flutter keeps a snackbar with a button until dismissed unless told
         // otherwise.
         persist: false,
         action: SnackBarAction(
-          label: 'Undo',
+          label: context.l10n.undo,
           onPressed: () {
             taskManager.toggleTaskComplete(task.id);
           },

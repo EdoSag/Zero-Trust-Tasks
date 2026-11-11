@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Shown when [TaskManager.error] is set, with a retry action (item 3).
 class ErrorStateWidget extends StatelessWidget {
@@ -22,7 +23,7 @@ class ErrorStateWidget extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'Something went wrong',
+              context.l10n.somethingWentWrong,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -42,7 +43,7 @@ class ErrorStateWidget extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetry,
                 icon: const Icon(Icons.refresh),
-                label: const Text('Retry'),
+                label: Text(context.l10n.retry),
               ),
             ],
           ],

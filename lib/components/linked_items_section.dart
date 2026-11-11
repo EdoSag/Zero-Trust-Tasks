@@ -6,6 +6,7 @@ import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/suite/linked_app_launcher.dart';
 import 'package:zero_trust_tasks/suite/linked_apps.dart';
 import 'package:zero_trust_tasks/suite/linked_items.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// The notes (ZT Notes) and people (ZT Contacts) linked to a task, with
 /// buttons to link more. Used on the task page and in the editor.
@@ -32,7 +33,7 @@ class LinkedItemsSection extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Linked notes and contacts',
+        Text(context.l10n.linkedNotesAndContacts,
             style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold)),
         for (final id in noteIds)
           _LinkedTile(
@@ -42,7 +43,7 @@ class LinkedItemsSection extends ConsumerWidget {
             find: (List<LinkedNote> all) => all.where((n) => n.id == id).firstOrNull,
             title: (n) => n.displayTitle,
             subtitle: (n) => n.preview,
-            missing: 'Note not found. It may have been deleted in ZT Notes.',
+            missing: context.l10n.noteNotFoundItMay,
             onTap: (n) => _showNote(context, n),
             onRemove: () => onChanged([...noteIds]..remove(id), contactIds),
           ),
@@ -54,7 +55,7 @@ class LinkedItemsSection extends ConsumerWidget {
             find: (List<LinkedContact> all) => all.where((c) => c.id == id).firstOrNull,
             title: (c) => c.name,
             subtitle: (c) => c.detail,
-            missing: 'Contact not found. It may have been deleted in ZT Contacts.',
+            missing: context.l10n.contactNotFoundItMay,
             onTap: (c) => _showContact(context, c),
             onRemove: () => onChanged(noteIds, [...contactIds]..remove(id)),
           ),
@@ -64,7 +65,7 @@ class LinkedItemsSection extends ConsumerWidget {
           children: [
             ActionChip(
               avatar: const Icon(Icons.sticky_note_2_outlined, size: 18),
-              label: const Text('Link a note'),
+              label: Text(context.l10n.linkANote),
               onPressed: () async {
                 final picked = await showLinkPicker<LinkedNote>(
                   context,
@@ -81,7 +82,7 @@ class LinkedItemsSection extends ConsumerWidget {
             ),
             ActionChip(
               avatar: const Icon(Icons.person_add_alt, size: 18),
-              label: const Text('Link a contact'),
+              label: Text(context.l10n.linkAContact),
               onPressed: () async {
                 final picked = await showLinkPicker<LinkedContact>(
                   context,
@@ -136,10 +137,10 @@ class _LinkedTile<T> extends StatelessWidget {
       final s = subtitle(found);
       sub = s.isEmpty ? null : s;
     } else if (all is AsyncError) {
-      text = 'Couldn\'t load this link';
+      text = context.l10n.couldntLoadThisLink;
       sub = ztErrorMessage((all as AsyncError).error);
     } else if (all == null || all.isLoading) {
-      text = 'Loading…';
+      text = context.l10n.loading;
     } else {
       text = missing;
     }
@@ -152,7 +153,7 @@ class _LinkedTile<T> extends StatelessWidget {
       onTap: found == null ? null : () => onTap(found),
       trailing: IconButton(
         icon: const Icon(Icons.close, size: 18),
-        tooltip: 'Remove link',
+        tooltip: context.l10n.removeLink,
         onPressed: onRemove,
       ),
     );
@@ -174,13 +175,13 @@ void _showNote(BuildContext context, LinkedNote note) {
         children: [
           Text(note.displayTitle, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 12),
-          SelectableText(note.body.trim().isEmpty ? 'This note is empty.' : note.body.trim()),
+          SelectableText(note.body.trim().isEmpty ? context.l10n.thisNoteIsEmpty : note.body.trim()),
           const SizedBox(height: 16),
           Align(
             alignment: AlignmentDirectional.centerStart,
             child: OutlinedButton.icon(
               icon: const Icon(Icons.open_in_new, size: 18),
-              label: const Text('Open ZT Notes'),
+              label: Text(context.l10n.openZtNotes),
               onPressed: () => openLinkedApp(LinkedApp.notes),
             ),
           ),
@@ -198,7 +199,7 @@ void _showContact(BuildContext context, LinkedContact contact) {
     } on Object {
       // Reported below.
     }
-    messenger.showSnackBar(const SnackBar(content: Text('No app on this phone can do that.')));
+    messenger.showSnackBar(SnackBar(content: Text(currentL10n.noAppOnThisPhone)));
   }
 
   showModalBottomSheet<void>(
@@ -217,24 +218,24 @@ void _showContact(BuildContext context, LinkedContact contact) {
           for (final phone in contact.phones) ...[
             ListTile(
               leading: const Icon(Icons.call_outlined),
-              title: Text('Call $phone'),
+              title: Text(context.l10n.callNumber(ltr(phone))),
               onTap: () => open(Uri(scheme: 'tel', path: phone)),
             ),
             ListTile(
               leading: const Icon(Icons.sms_outlined),
-              title: Text('Text $phone'),
+              title: Text(context.l10n.textNumber(ltr(phone))),
               onTap: () => open(Uri(scheme: 'sms', path: phone)),
             ),
           ],
           for (final email in contact.emails)
             ListTile(
               leading: const Icon(Icons.mail_outline),
-              title: Text('Email $email'),
+              title: Text(context.l10n.emailAddress(ltr(email))),
               onTap: () => open(Uri(scheme: 'mailto', path: email)),
             ),
           ListTile(
             leading: const Icon(Icons.open_in_new),
-            title: const Text('Open ZT Contacts'),
+            title: Text(context.l10n.openZtContacts),
             onTap: () => openLinkedApp(LinkedApp.contacts),
           ),
         ],
@@ -304,7 +305,7 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
   Widget build(BuildContext context) {
     final items = ref.watch(widget.provider);
     final theme = Theme.of(context);
-    final what = _isNotes ? 'notes' : 'contacts';
+    final l = context.l10n;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SizedBox(
@@ -316,13 +317,13 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
               child: Row(
                 children: [
                   Expanded(
-                    child: Text(_isNotes ? 'Link notes' : 'Link contacts', style: theme.textTheme.titleLarge),
+                    child: Text(_isNotes ? context.l10n.linkNotes : context.l10n.linkContacts, style: theme.textTheme.titleLarge),
                   ),
                   FilledButton(
                     // The app theme makes filled buttons full width; not in a row.
                     style: FilledButton.styleFrom(minimumSize: const Size(72, 44)),
                     onPressed: () => Navigator.pop(context, _picked),
-                    child: const Text('Done'),
+                    child: Text(context.l10n.done),
                   ),
                 ],
               ),
@@ -331,7 +332,7 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: TextField(
                 decoration: InputDecoration(
-                  hintText: 'Search $what',
+                  hintText: _isNotes ? l.searchNotes : l.searchContacts,
                   prefixIcon: const Icon(Icons.search),
                   border: const OutlineInputBorder(),
                   isDense: true,
@@ -344,7 +345,7 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
               child: switch (items) {
                 AsyncData(:final value) => _list(value),
                 AsyncError(:final error) => _message(
-                    'Couldn\'t load your $what. ${ztErrorMessage(error)}',
+                    _isNotes ? l.cantLoadNotes(ztErrorMessage(error)) : l.cantLoadContacts(ztErrorMessage(error)),
                   ),
                 _ => const Center(child: CircularProgressIndicator()),
               },
@@ -366,7 +367,7 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
                 const SizedBox(height: 12),
                 OutlinedButton.icon(
                   icon: const Icon(Icons.open_in_new, size: 18),
-                  label: Text('Open ${widget.app.label}'),
+                  label: Text(context.l10n.openApp(widget.app.label)),
                   onPressed: () => openLinkedApp(widget.app),
                 ),
               ],
@@ -379,8 +380,8 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
     if (all.isEmpty) {
       return _message(
         _isNotes
-            ? 'No notes yet. Notes you write in ZT Notes with this account show up here.'
-            : 'No contacts yet. People you save in ZT Contacts with this account show up here.',
+            ? context.l10n.noNotesYetNotesYou
+            : context.l10n.noContactsYetPeopleYou,
         offerApp: true,
       );
     }
@@ -391,7 +392,7 @@ class _LinkPickerState<T> extends ConsumerState<_LinkPicker<T>> {
                 widget.titleOf(i).toLowerCase().contains(_query) ||
                 widget.subtitleOf(i).toLowerCase().contains(_query))
             .toList();
-    if (shown.isEmpty) return _message('Nothing matches "$_query".');
+    if (shown.isEmpty) return _message(context.l10n.nothingMatches(_query));
     return ListView.builder(
       itemCount: shown.length,
       itemBuilder: (context, index) {

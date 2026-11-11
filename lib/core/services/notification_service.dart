@@ -9,6 +9,7 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/models/pending_task_action.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 const _completeAction = 'complete';
 const _snoozeAction = 'snooze';
@@ -17,21 +18,21 @@ const _iosCategory = 'task_reminder';
 /// How long Snooze on a reminder waits.
 const snoozeDuration = Duration(hours: 1);
 
-const _androidChannel = AndroidNotificationDetails(
+AndroidNotificationDetails get _androidChannel => AndroidNotificationDetails(
   'task_reminders',
-  'Task Reminders',
-  channelDescription: 'Reminders for your tasks',
+  currentL10n.taskReminders,
+  channelDescription: currentL10n.remindersForYourTasks,
   importance: Importance.high,
   priority: Priority.high,
   actions: [
-    AndroidNotificationAction(_completeAction, 'Complete'),
-    AndroidNotificationAction(_snoozeAction, 'Snooze 1 hour'),
+    AndroidNotificationAction(_completeAction, currentL10n.complete),
+    AndroidNotificationAction(_snoozeAction, currentL10n.snooze1Hour),
   ],
 );
 
-const _details = NotificationDetails(
+NotificationDetails get _details => NotificationDetails(
   android: _androidChannel,
-  iOS: DarwinNotificationDetails(categoryIdentifier: _iosCategory),
+  iOS: const DarwinNotificationDetails(categoryIdentifier: _iosCategory),
 );
 
 /// Complete or Snooze tapped while the app isn't running. Runs in its own
@@ -132,8 +133,8 @@ class NotificationService {
         DarwinNotificationCategory(
           _iosCategory,
           actions: [
-            DarwinNotificationAction.plain(_completeAction, 'Complete'),
-            DarwinNotificationAction.plain(_snoozeAction, 'Snooze 1 hour'),
+            DarwinNotificationAction.plain(_completeAction, currentL10n.complete),
+            DarwinNotificationAction.plain(_snoozeAction, currentL10n.snooze1Hour),
           ],
         ),
       ],
@@ -178,10 +179,10 @@ class NotificationService {
     final scheduledTime = tz.TZDateTime.from(task.reminderAt!, tz.local);
     if (scheduledTime.isBefore(tz.TZDateTime.now(tz.local))) return;
 
-    final title = showTaskDetailsInNotifications ? task.title : 'Task reminder';
+    final title = showTaskDetailsInNotifications ? task.title : currentL10n.taskReminder;
     final body = showTaskDetailsInNotifications
         ? (task.description ?? task.title)
-        : 'You have a task reminder.';
+        : currentL10n.youHaveATaskReminder;
 
     await _plugin.zonedSchedule(
       task.id.hashCode,

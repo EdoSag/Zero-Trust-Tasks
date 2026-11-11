@@ -9,6 +9,7 @@ import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
 import 'package:zero_trust_tasks/suite/linked_apps.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Routes between the shared account screens and the app.
 ///
@@ -158,12 +159,12 @@ class TasksHome extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Couldn\'t open your tasks on this device. ${ztErrorMessage(error)}',
+                  Text(context.l10n.cantOpenTasks(ztErrorMessage(error)),
                       textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => ref.invalidate(ztLocalStoreProvider),
-                    child: const Text('Try again'),
+                    child: Text(context.l10n.tryAgain),
                   ),
                 ],
               ),

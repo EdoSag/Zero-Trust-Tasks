@@ -48,7 +48,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                android:text="All tasks"/>
+                android:text="@string/widget_all_tasks"/>
             <TextView
                 android:id="@+id/summary"
                 style="@style/ZtWidget.Caption"
@@ -61,7 +61,7 @@
             style="@style/ZtWidget.Action"
             android:layout_marginStart="8dp"
             android:src="@drawable/ic_zt_widget_add"
-            android:contentDescription="Add a task"/>
+            android:contentDescription="@string/widget_add_task"/>
     </LinearLayout>
 
     <LinearLayout
@@ -85,7 +85,7 @@
                 android:layout_height="36dp"
                 android:padding="8dp"
                 android:src="@drawable/zt_widget_check_ring"
-                android:contentDescription="Complete task"/>
+                android:contentDescription="@string/widget_complete_task"/>
             <LinearLayout
                 android:id="@+id/row_0_text"
                 android:layout_width="0dp"
@@ -121,7 +121,7 @@
                 android:layout_height="36dp"
                 android:padding="8dp"
                 android:src="@drawable/zt_widget_check_ring"
-                android:contentDescription="Complete task"/>
+                android:contentDescription="@string/widget_complete_task"/>
             <LinearLayout
                 android:id="@+id/row_1_text"
                 android:layout_width="0dp"
@@ -157,7 +157,7 @@
                 android:layout_height="36dp"
                 android:padding="8dp"
                 android:src="@drawable/zt_widget_check_ring"
-                android:contentDescription="Complete task"/>
+                android:contentDescription="@string/widget_complete_task"/>
             <LinearLayout
                 android:id="@+id/row_2_text"
                 android:layout_width="0dp"
@@ -193,7 +193,7 @@
                 android:layout_height="36dp"
                 android:padding="8dp"
                 android:src="@drawable/zt_widget_check_ring"
-                android:contentDescription="Complete task"/>
+                android:contentDescription="@string/widget_complete_task"/>
             <LinearLayout
                 android:id="@+id/row_3_text"
                 android:layout_width="0dp"
@@ -229,7 +229,7 @@
                 android:layout_height="36dp"
                 android:padding="8dp"
                 android:src="@drawable/zt_widget_check_ring"
-                android:contentDescription="Complete task"/>
+                android:contentDescription="@string/widget_complete_task"/>
             <LinearLayout
                 android:id="@+id/row_4_text"
                 android:layout_width="0dp"
@@ -274,6 +274,6 @@
             android:layout_weight="1"
             android:layout_marginStart="8dp"
             android:maxLines="2"
-            android:text="Open ZT Tasks to see your tasks"/>
+            android:text="@string/widget_open_to_see"/>
     </LinearLayout>
 </LinearLayout>

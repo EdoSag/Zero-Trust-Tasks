@@ -22,6 +22,7 @@ import 'package:zero_trust_tasks/models/task_status_filter.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class TasksListPage extends StatefulWidget {
   const TasksListPage({super.key, this.initialFilter, this.title});
@@ -98,21 +99,21 @@ class _TasksListPageState extends State<TasksListPage> {
     final name = await showDialog<String>(
       context: context,
       builder: (dCtx) => AlertDialog(
-        title: const Text('Save current filter'),
+        title: Text(context.l10n.saveCurrentFilter),
         content: TextField(
           controller: nameCtrl,
-          decoration: const InputDecoration(labelText: 'Filter name'),
+          decoration: InputDecoration(labelText: context.l10n.filterName),
           autofocus: true,
           onSubmitted: (v) => Navigator.pop(dCtx, v.trim()),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dCtx, nameCtrl.text.trim()),
-            child: const Text('Save'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -170,7 +171,7 @@ class _TasksListPageState extends State<TasksListPage> {
     await ctx.taskManager.moveToList(_selectedTaskIds, listId);
     if (ctx.mounted) {
       ScaffoldMessenger.of(ctx).showSnackBar(SnackBar(
-        content: Text('Moved $count ${count == 1 ? 'task' : 'tasks'} to ${ctx.taskLists.byId(listId).name}'),
+        content: Text(ctx.l10n.movedTasksTo(count, ctx.taskLists.byId(listId).name)),
       ));
     }
     _exitSelectionMode();
@@ -217,7 +218,7 @@ class _TasksListPageState extends State<TasksListPage> {
     if (ctx.mounted) {
       ScaffoldMessenger.of(ctx).showSnackBar(
         SnackBar(
-          content: Text('${_selectedTaskIds.length} tasks moved to trash'),
+          content: Text(currentL10n.tasksTrashed(_selectedTaskIds.length)),
         ),
       );
     }
@@ -231,12 +232,12 @@ class _TasksListPageState extends State<TasksListPage> {
     final result = await showDialog<String?>(
       context: ctx,
       builder: (dCtx) => SimpleDialog(
-        title: const Text('Set category'),
+        title: Text(context.l10n.setCategory),
         children: [
           SimpleDialogOption(
             onPressed: () => Navigator.pop(dCtx, ''),
             child: Text(
-              'None',
+              context.l10n.none,
               style: TextStyle(
                 color: Theme.of(dCtx).colorScheme.onSurface.withValues(
                   alpha: 0.5,
@@ -265,7 +266,7 @@ class _TasksListPageState extends State<TasksListPage> {
     final result = await showDialog<TaskPriority>(
       context: ctx,
       builder: (dCtx) => SimpleDialog(
-        title: const Text('Set priority'),
+        title: Text(context.l10n.setPriority),
         children: TaskPriority.values
             .map(
               (p) => SimpleDialogOption(
@@ -294,21 +295,21 @@ class _TasksListPageState extends State<TasksListPage> {
     if (_filterState.statuses.length == 1) {
       switch (_filterState.statuses.first) {
         case TaskStatusFilter.pending:
-          return 'Pending Tasks';
+          return context.l10n.pendingTasks;
         case TaskStatusFilter.completed:
-          return 'Completed Tasks';
+          return context.l10n.completedTasks;
         case TaskStatusFilter.overdue:
-          return 'Overdue Tasks';
+          return context.l10n.overdueTasks;
         case TaskStatusFilter.today:
-          return 'Due Today';
+          return context.l10n.dueToday;
         case TaskStatusFilter.upcoming:
-          return 'Upcoming Tasks';
+          return context.l10n.upcomingTasks;
       }
     }
     if (_filterState.priorities.length == 1) {
-      return '${_filterState.priorities.first.displayName} Priority Tasks';
+      return context.l10n.priorityTasks(_filterState.priorities.first.displayName);
     }
-    return 'Tasks';
+    return context.l10n.tasks;
   }
 
   @override
@@ -395,20 +396,20 @@ class _TasksListPageState extends State<TasksListPage> {
           appBar = AppBar(
             leading: IconButton(
               icon: const Icon(Icons.close),
-              tooltip: 'Cancel selection',
+              tooltip: context.l10n.cancelSelection,
               onPressed: _exitSelectionMode,
             ),
             title: Text(
               _selectedTaskIds.isEmpty
-                  ? 'Select tasks'
-                  : '${_selectedTaskIds.length} selected',
+                  ? context.l10n.selectTasks
+                  : context.l10n.nSelected(_selectedTaskIds.length),
             ),
             actions: [
               TextButton(
                 onPressed: allSelected
                     ? () => setState(() => _selectedTaskIds = {})
                     : () => _selectAll(sorted),
-                child: Text(allSelected ? 'None' : 'All'),
+                child: Text(allSelected ? context.l10n.none : context.l10n.all),
               ),
             ],
           );
@@ -441,13 +442,13 @@ class _TasksListPageState extends State<TasksListPage> {
                         label: Text('${_filterState.activeFilterCount}'),
                         child: IconButton(
                           icon: const Icon(Icons.filter_list),
-                          tooltip: 'Filter and sort',
+                          tooltip: context.l10n.filterAndSort,
                           onPressed: () => _openFilterSheet(categories),
                         ),
                       ),
                       IconButton(
                         icon: const Icon(Icons.bookmark_add_outlined),
-                        tooltip: 'Save current filter',
+                        tooltip: context.l10n.saveCurrentFilter,
                         onPressed: _showSaveFilterDialog,
                       ),
                       if (!_calendarView)
@@ -456,8 +457,8 @@ class _TasksListPageState extends State<TasksListPage> {
                             _sectioned ? Icons.view_agenda : Icons.view_list,
                           ),
                           tooltip: _sectioned
-                              ? 'Switch to flat list'
-                              : 'Switch to sectioned list',
+                              ? context.l10n.switchToFlatList
+                              : context.l10n.switchToSectionedList,
                           onPressed: _toggleSectioned,
                         ),
                       IconButton(
@@ -467,8 +468,8 @@ class _TasksListPageState extends State<TasksListPage> {
                               : Icons.calendar_month_outlined,
                         ),
                         tooltip: _calendarView
-                            ? 'Switch to list'
-                            : 'Switch to calendar',
+                            ? context.l10n.switchToList
+                            : context.l10n.switchToCalendar,
                         onPressed: () => setState(() {
                           _calendarView = !_calendarView;
                           if (_calendarView) {
@@ -545,7 +546,7 @@ class _TasksListPageState extends State<TasksListPage> {
               : FloatingActionButton.extended(
                   onPressed: _openAddTask,
                   icon: const Icon(Icons.add),
-                  label: const Text('New Task'),
+                  label: Text(context.l10n.newTask2),
                 ),
         );
       },
@@ -578,32 +579,32 @@ class _BulkActionBar extends StatelessWidget {
         children: [
           _BulkButton(
             icon: Icons.check_circle_outline,
-            label: 'Complete',
+            label: context.l10n.complete,
             enabled: enabled,
             onTap: onComplete,
           ),
           _BulkButton(
             icon: Icons.delete_outline,
-            label: 'Delete',
+            label: context.l10n.delete,
             enabled: enabled,
             onTap: onDelete,
             destructive: true,
           ),
           _BulkButton(
             icon: Icons.drive_file_move_outline,
-            label: 'Move',
+            label: context.l10n.move,
             enabled: enabled,
             onTap: onMove,
           ),
           _BulkButton(
             icon: Icons.label_outline,
-            label: 'Category',
+            label: context.l10n.category,
             enabled: enabled,
             onTap: onCategory,
           ),
           _BulkButton(
             icon: Icons.flag_outlined,
-            label: 'Priority',
+            label: context.l10n.priority,
             enabled: enabled,
             onTap: onPriority,
           ),

@@ -1,5 +1,6 @@
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/components/linked_items_section.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/models/sub_task.dart';
@@ -11,6 +12,11 @@ import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/pages/templates_page.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:uuid/uuid.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
+import 'package:zt_places/zt_places.dart';
 
 class AddTaskScreen extends StatefulWidget {
   const AddTaskScreen({
@@ -65,6 +71,12 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
   DateTime? _reminderAt;
 
+  /// Location reminder (T11), kept in the vault apart from the task.
+  ZtPlace? _place;
+  ZtPlaceTrigger _placeTrigger = ZtPlaceTrigger.arrive;
+  bool _placeChanged = false;
+  bool _saveToPlaces = false;
+
   List<String> _tags = [];
 
   final _notesController = TextEditingController();
@@ -94,6 +106,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     super.initState();
     final source = widget.taskToEdit ?? widget.draft;
     _listId = source?.listId ?? widget.initialListId;
+    final editing = widget.taskToEdit;
+    if (editing != null) {
+      final existing = ProviderScope.containerOf(context, listen: false)
+          .read(placeRemindersProvider)
+          .forTask(editing.id);
+      _place = existing?.place;
+      _placeTrigger = existing?.trigger ?? ZtPlaceTrigger.arrive;
+    }
     _starred = source?.starred ?? widget.initialStarred;
     if (source != null) {
       final task = source;
@@ -230,6 +250,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         clearPosition: (widget.taskToEdit!.listId ?? TaskList.defaultId) != (_listId ?? TaskList.defaultId),
       );
       await taskManager.updateTask(updatedTask);
+      await _savePlace(updatedTask.id);
     } else {
       final newTask = Task.create(
         title: _titleController.text.trim(),
@@ -254,10 +275,43 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         starred: _starred,
       );
       await taskManager.addTask(newTask);
+      await _savePlace(newTask.id);
     }
     if (mounted) {
       Navigator.pop(context);
     }
+  }
+
+  Future<void> _savePlace(String taskId) async {
+    if (!_placeChanged) return;
+    final places = ProviderScope.containerOf(context, listen: false).read(placeRemindersProvider.notifier);
+    final place = _place;
+    if (place == null) {
+      await places.remove(taskId);
+    } else {
+      await places.set(taskId, place, _placeTrigger, saveToPlaces: _saveToPlaces);
+    }
+  }
+
+  Future<void> _pickPlace() async {
+    final container = ProviderScope.containerOf(context, listen: false);
+    final places = container.read(placeRemindersProvider.notifier);
+    final choice = await ZtPlacePickerPage.show(
+      context,
+      reminders: container.read(ztPlaceRemindersProvider),
+      savedPlaces: container.read(placeRemindersProvider).places,
+      initialPlace: _place,
+      initialTrigger: _placeTrigger,
+      onRemovePlace: places.removePlace,
+      newId: () => const Uuid().v4(),
+    );
+    if (choice == null || !mounted) return;
+    setState(() {
+      _place = choice.place;
+      _placeTrigger = choice.trigger;
+      _saveToPlaces = choice.saveToPlaces;
+      _placeChanged = true;
+    });
   }
 
   void _addSubTask() {
@@ -303,17 +357,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
     final categories = taskManager.getCategories().whereType<String>();
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.taskToEdit != null ? 'Edit Task' : 'New Task'),
+        title: Text(widget.taskToEdit != null ? context.l10n.editTask : context.l10n.newTask2),
         actions: [
           IconButton(
             icon: Icon(_starred ? Icons.star : Icons.star_border, color: _starred ? Colors.amber.shade700 : null),
-            tooltip: _starred ? 'Remove star' : 'Star',
+            tooltip: _starred ? context.l10n.removeStar : context.l10n.star,
             onPressed: () => setState(() => _starred = !_starred),
           ),
           if (widget.taskToEdit == null && widget.template == null && widget.draft == null)
             IconButton(
               icon: const Icon(Icons.article_outlined),
-              tooltip: 'Use a template',
+              tooltip: context.l10n.useATemplate,
               onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const TemplatesPage()),
@@ -328,29 +382,29 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           children: [
             TextFormField(
               controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Title *',
+              decoration: InputDecoration(
+                labelText: context.l10n.title,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.title),
               ),
               validator: (value) {
                 if (value == null || value.trim().isEmpty) {
-                  return 'Title is required';
+                  return context.l10n.titleIsRequired;
                 }
                 return null;
               },
             ),
             const SizedBox(height: 8),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: Builder(builder: (context) {
                 final list = context.taskLists.byId(_listId);
                 return ActionChip(
                   avatar: Icon(Icons.circle, size: 12, color: list.colorValue ?? Theme.of(context).colorScheme.primary),
-                  label: Text('List: ${list.name}'),
-                  tooltip: 'Choose a list',
+                  label: Text(context.l10n.listIs(list.name)),
+                  tooltip: context.l10n.chooseAList,
                   onPressed: () async {
-                    final picked = await TaskListDialogs.pick(context, currentId: _listId, title: 'Save in list');
+                    final picked = await TaskListDialogs.pick(context, currentId: _listId, title: context.l10n.saveInList);
                     if (picked != null) setState(() => _listId = picked);
                   },
                 );
@@ -359,8 +413,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description',
+              decoration: InputDecoration(
+                labelText: context.l10n.description,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.description),
               ),
@@ -393,8 +447,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 return TextFormField(
                   controller: controller,
                   focusNode: focusNode,
-                  decoration: const InputDecoration(
-                    labelText: 'Category',
+                  decoration: InputDecoration(
+                    labelText: context.l10n.category,
                     border: OutlineInputBorder(),
                     prefixIcon: Icon(Icons.label),
                   ),
@@ -404,8 +458,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             const SizedBox(height: 16),
             DropdownButtonFormField<TaskPriority>(
               initialValue: _selectedPriority,
-              decoration: const InputDecoration(
-                labelText: 'Priority',
+              decoration: InputDecoration(
+                labelText: context.l10n.priority,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.flag),
               ),
@@ -440,14 +494,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               leading: const Icon(Icons.play_circle_outline),
               title: Text(
                 _startDate == null
-                    ? 'No start date'
-                    : 'Start: ${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}',
+                    ? context.l10n.noStartDate
+                    : context.l10n.startOn('${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}'),
               ),
               trailing: _startDate == null
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear start date',
+                      tooltip: context.l10n.clearStartDate,
                       onPressed: () => setState(() => _startDate = null),
                     ),
               onTap: () async {
@@ -469,16 +523,16 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               leading: const Icon(Icons.calendar_today),
               title: Text(
                 _dueDate == null
-                    ? 'No due date'
+                    ? context.l10n.noDueDate
                     : _dueTime == null
-                        ? 'Due: ${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')}'
-                        : 'Due: ${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')} ${_dueTime!.format(context)}',
+                        ? context.l10n.dueOn('${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')}')
+                        : context.l10n.dueOn('${_dueDate!.year}-${_dueDate!.month.toString().padLeft(2, '0')}-${_dueDate!.day.toString().padLeft(2, '0')} ${_dueTime!.format(context)}'),
               ),
               trailing: _dueDate == null
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear due date',
+                      tooltip: context.l10n.clearDueDate,
                       onPressed: () => setState(() {
                         _dueDate = null;
                         _dueTime = null;
@@ -512,14 +566,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               leading: const Icon(Icons.notifications_outlined),
               title: Text(
                 _reminderAt == null
-                    ? 'No reminder'
-                    : 'Remind: ${_reminderAt!.year}-${_reminderAt!.month.toString().padLeft(2, '0')}-${_reminderAt!.day.toString().padLeft(2, '0')} ${_reminderAt!.hour.toString().padLeft(2, '0')}:${_reminderAt!.minute.toString().padLeft(2, '0')}',
+                    ? context.l10n.noReminder
+                    : context.l10n.remindOn('${_reminderAt!.year}-${_reminderAt!.month.toString().padLeft(2, '0')}-${_reminderAt!.day.toString().padLeft(2, '0')} ${_reminderAt!.hour.toString().padLeft(2, '0')}:${_reminderAt!.minute.toString().padLeft(2, '0')}'),
               ),
               trailing: _reminderAt == null
                   ? null
                   : IconButton(
                       icon: const Icon(Icons.clear),
-                      tooltip: 'Clear reminder',
+                      tooltip: context.l10n.clearReminder,
                       onPressed: () {
                         setState(() {
                           _reminderAt = null;
@@ -560,15 +614,43 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            ListTile(
+              key: const ValueKey('location-reminder'),
+              leading: const Icon(Icons.place_outlined),
+              title: Text(
+                _place == null
+                    ? context.l10n.noLocationReminder
+                    : (_placeTrigger == ZtPlaceTrigger.arrive
+                        ? context.l10n.remindArriveAt(_place!.name.isEmpty ? context.l10n.aPlace : _place!.name)
+                        : context.l10n.remindLeave(_place!.name.isEmpty ? context.l10n.aPlace : _place!.name)),
+              ),
+              subtitle: _place == null ? null : Text(context.l10n.locationStaysOnPhone),
+              trailing: _place == null
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.clear),
+                      tooltip: context.l10n.clearLocationReminder,
+                      onPressed: () => setState(() {
+                        _place = null;
+                        _placeChanged = true;
+                      }),
+                    ),
+              onTap: _pickPlace,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+                side: BorderSide(color: Theme.of(context).dividerColor),
+              ),
+            ),
+            const SizedBox(height: 12),
             DropdownButtonFormField<RecurrenceFrequency?>(
               initialValue: _recurrenceFrequency,
-              decoration: const InputDecoration(
-                labelText: 'Repeat',
+              decoration: InputDecoration(
+                labelText: context.l10n.repeat,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.repeat),
               ),
               items: [
-                const DropdownMenuItem(value: null, child: Text('No repeat')),
+                DropdownMenuItem(value: null, child: Text(context.l10n.noRepeat)),
                 ...RecurrenceFrequency.values.map(
                   (f) => DropdownMenuItem(
                     value: f,
@@ -594,7 +676,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  const Text('Every'),
+                  Text(context.l10n.every),
                   const SizedBox(width: 12),
                   SizedBox(
                     width: 60,
@@ -641,7 +723,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       7: 'Sun',
                     }.entries)
                       FilterChip(
-                        label: Text(entry.value),
+                        label: Text(DateFormat.E().format(DateTime(2024, 1, entry.key))), // 1 Jan 2024 was a Monday.
                         selected: _recurrenceWeekdays.contains(entry.key),
                         onSelected: (selected) {
                           setState(() {
@@ -661,14 +743,14 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 leading: const Icon(Icons.event_busy_outlined),
                 title: Text(
                   _recurrenceEndDate == null
-                      ? 'No end date'
-                      : 'Ends: ${_recurrenceEndDate!.year}-${_recurrenceEndDate!.month.toString().padLeft(2, '0')}-${_recurrenceEndDate!.day.toString().padLeft(2, '0')}',
+                      ? context.l10n.noEndDate
+                      : context.l10n.endsOn('${_recurrenceEndDate!.year}-${_recurrenceEndDate!.month.toString().padLeft(2, '0')}-${_recurrenceEndDate!.day.toString().padLeft(2, '0')}'),
                 ),
                 trailing: _recurrenceEndDate == null
                     ? null
                     : IconButton(
                         icon: const Icon(Icons.clear),
-                        tooltip: 'Clear end date',
+                        tooltip: context.l10n.clearEndDate,
                         onPressed: () =>
                             setState(() => _recurrenceEndDate = null),
                       ),
@@ -711,8 +793,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _tagInputController,
-                    decoration: const InputDecoration(
-                      labelText: 'Add tag',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.addTag,
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.tag),
                       isDense: true,
@@ -731,7 +813,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 const SizedBox(width: 8),
                 IconButton.filled(
                   icon: const Icon(Icons.add),
-                  tooltip: 'Add tag',
+                  tooltip: context.l10n.addTag,
                   onPressed: () {
                     final tag = _tagInputController.text.trim();
                     if (tag.isNotEmpty && !_tags.contains(tag)) {
@@ -748,8 +830,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
             // Notes
             TextFormField(
               controller: _notesController,
-              decoration: const InputDecoration(
-                labelText: 'Notes',
+              decoration: InputDecoration(
+                labelText: context.l10n.notes,
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.notes),
                 alignLabelWithHint: true,
@@ -778,7 +860,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           ),
                           trailing: IconButton(
                             icon: const Icon(Icons.close, size: 18),
-                            tooltip: 'Remove link',
+                            tooltip: context.l10n.removeLink,
                             onPressed: () => setState(() => _links.remove(link)),
                           ),
                           dense: true,
@@ -792,8 +874,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 Expanded(
                   child: TextFormField(
                     controller: _linkUrlController,
-                    decoration: const InputDecoration(
-                      labelText: 'Add link (URL)',
+                    decoration: InputDecoration(
+                      labelText: context.l10n.addLinkUrl,
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.add_link),
                       isDense: true,
@@ -826,7 +908,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Sub-tasks',
+                  context.l10n.subTasks,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -834,7 +916,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 TextButton.icon(
                   onPressed: _addSubTask,
                   icon: const Icon(Icons.add),
-                  label: const Text('Add'),
+                  label: Text(context.l10n.add),
                 ),
               ],
             ),
@@ -842,7 +924,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  'No sub-tasks',
+                  context.l10n.noSubTasks,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(
                       context,
@@ -870,10 +952,10 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                       ),
                       title: TextFormField(
                         controller: _subTaskControllers[subTask.id],
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           isDense: true,
                           border: InputBorder.none,
-                          hintText: 'Sub-task title',
+                          hintText: context.l10n.subTaskTitle,
                         ),
                         style: TextStyle(
                           decoration: subTask.isCompleted
@@ -886,7 +968,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         children: [
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            tooltip: 'Delete sub-task',
+                            tooltip: context.l10n.deleteSubTask,
                             onPressed: () => _removeSubTask(subTask.id),
                           ),
                           ReorderableDragStartListener(
@@ -910,7 +992,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         child: FilledButton.icon(
           onPressed: _saveTask,
           icon: const Icon(Icons.save),
-          label: Text(widget.taskToEdit != null ? 'Update Task' : 'Save Task'),
+          label: Text(widget.taskToEdit != null ? context.l10n.updateTask : context.l10n.saveTask),
         ),
       ),
     );

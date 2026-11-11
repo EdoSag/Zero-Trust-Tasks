@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// What Tasks needs of a ZT Notes note. Read from the encrypted Notes
 /// items; tolerant of fields newer versions add.
@@ -19,7 +20,7 @@ class LinkedNote {
   String get displayTitle {
     if (title.trim().isNotEmpty) return title.trim();
     final firstLine = body.trim().split('\n').first.trim();
-    return firstLine.isEmpty ? 'Untitled note' : firstLine;
+    return firstLine.isEmpty ? currentL10n.untitledNote : firstLine;
   }
 
   /// The first line of the body that isn't the title.

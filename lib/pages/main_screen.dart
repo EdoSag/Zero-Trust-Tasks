@@ -7,6 +7,7 @@ import 'package:zero_trust_tasks/components/legacy_import_banner.dart';
 import 'package:zero_trust_tasks/components/settings_page.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class MainScreen extends ConsumerStatefulWidget {
   const MainScreen({super.key});
@@ -57,40 +58,40 @@ class _MainScreenState extends ConsumerState<MainScreen> {
                 ),
                 actions: [
                   IconButton(
-                    tooltip: 'Encrypted: how your data is protected',
+                    tooltip: context.l10n.encryptedHowYourDataIs,
                     icon: Icon(
                       Icons.verified_user,
                       color: theme.colorScheme.primary,
                     ),
                     onPressed: _showDataProtection,
                   ),
-                  const SizedBox(width: 4),
+                  SizedBox(width: 4),
                 ],
               ),
         body: Column(
           children: [
-            const LegacyImportBanner(),
+            LegacyImportBanner(),
             Expanded(child: pages[_selectedIndex]),
           ],
         ),
         bottomNavigationBar: NavigationBar(
           selectedIndex: _selectedIndex,
           onDestinationSelected: _onDestinationSelected,
-          destinations: const [
+          destinations: [
             NavigationDestination(
               icon: Icon(Icons.dashboard_outlined),
               selectedIcon: Icon(Icons.dashboard),
-              label: 'Dashboard',
+              label: context.l10n.dashboard,
             ),
             NavigationDestination(
               icon: Icon(Icons.list_outlined),
               selectedIcon: Icon(Icons.list),
-              label: 'Tasks',
+              label: context.l10n.tasks,
             ),
             NavigationDestination(
               icon: Icon(Icons.settings_outlined),
               selectedIcon: Icon(Icons.settings),
-              label: 'Settings',
+              label: context.l10n.settings,
             ),
           ],
         ),

@@ -8,6 +8,7 @@
     <uses-permission android:name="android.permission.VIBRATE"/>
     
     <application
+        android:supportsRtl="true"
         android:label="ZT Tasks"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
@@ -32,6 +33,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+            <!-- Shared-list invites: https://zerotrust.bz/join/tasks#zt1.tasks.… -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="zerotrust.bz" android:pathPrefix="/join/tasks"/>
+            </intent-filter>
+            <!-- Text shared from other apps (ZT Browser's "Read later in ZT
+                 Tasks", or any share sheet) opens the task editor filled in. -->
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="text/plain"/>
             </intent-filter>
         </activity>
 

@@ -104,7 +104,7 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             }
         }
         editor.putInt("tasks_widget_count", rows.size)
-        editor.putString("tasks_widget_summary", "Done. Saved when you next open the app")
+        editor.putString("tasks_widget_summary", WidgetText.get(context, prefs, "done_saved", R.string.widget_done_saved))
         editor.apply()
 
         val manager = AppWidgetManager.getInstance(context)
@@ -124,11 +124,17 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
         val roomForLock = height == 0 || height >= 100
         views.setViewVisibility(R.id.locked, if (locked && roomForLock) View.VISIBLE else View.GONE)
         views.setViewVisibility(R.id.rows, if (locked || maxRows == 0) View.GONE else View.VISIBLE)
-        views.setTextViewText(R.id.list_name, prefs.getString("tasks_widget_title", null) ?: "Your tasks")
+        views.setTextViewText(R.id.list_name, prefs.getString("tasks_widget_title", null)
+            ?: WidgetText.get(context, prefs, "your_tasks", R.string.widget_your_tasks))
         views.setTextViewText(
             R.id.summary,
-            prefs.getString("tasks_widget_summary", null) ?: "Open the app to see your tasks",
+            prefs.getString("tasks_widget_summary", null)
+                ?: WidgetText.get(context, prefs, "open_app_summary", R.string.widget_open_app_summary),
         )
+        views.setTextViewText(R.id.locked_text, WidgetText.get(context, prefs, "open_to_see", R.string.widget_open_to_see))
+        views.setContentDescription(R.id.add_button, WidgetText.get(context, prefs, "add_task", R.string.widget_add_task))
+        val completeTask = WidgetText.get(context, prefs, "complete_task", R.string.widget_complete_task)
+        CHECK_IDS.forEach { views.setContentDescription(it, completeTask) }
         views.setOnClickPendingIntent(
             R.id.header,
             HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse("zerotrusttasks://open")),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,6 +7,8 @@ import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/app/app_gate.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 
 /// Store name stays "Zero-Trust Tasks"; the launcher shows "ZT Tasks".
 const tasksAppConfig = ZtAppConfig(appId: 'tasks', displayName: 'Zero-Trust Tasks');
@@ -23,12 +24,16 @@ Future<void> main() async {
     }
     await Supabase.initialize(url: url, anonKey: key);
     final prefs = await SharedPreferences.getInstance();
+    // English or Hebrew, as picked in Settings, from the first frame.
+    await ZtLanguageController.preload();
     await NotificationService.instance.init();
     runApp(
       ProviderScope(
         overrides: [
           ztAppConfigProvider.overrideWithValue(tasksAppConfig),
           sharedPreferencesProvider.overrideWithValue(prefs),
+          // Shared lists: only owners rename a list (enforced by the server too).
+          ztSpacePolicyProvider.overrideWithValue(tasksSpacePolicy),
         ],
         child: const ZeroTrustTasksApp(),
       ),
@@ -52,13 +57,10 @@ class ZeroTrustTasksApp extends ConsumerWidget {
         darkTheme: darkTheme,
         themeMode: mode,
         debugShowCheckedModeBanner: false,
-        localizationsDelegates: const [
-          ZtL10n.delegate,
-          GlobalMaterialLocalizations.delegate,
-          GlobalWidgetsLocalizations.delegate,
-          GlobalCupertinoLocalizations.delegate,
-        ],
-        supportedLocales: const [Locale('en')],
+        // English (default) or Hebrew, from Settings → Appearance → Language.
+        locale: ref.watch(ztLanguageProvider),
+        supportedLocales: ZtLanguages.supported,
+        localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
         home: home,
         // Any touch on any screen, pushed routes and dialogs included,
         // counts as activity for auto-lock.

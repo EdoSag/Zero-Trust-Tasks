@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:zero_trust_core/zero_trust_core.dart' show ZtLanguages;
 import 'package:zero_trust_tasks/components/linked_items_section.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/suite/linked_apps.dart';
 import 'package:zero_trust_tasks/suite/linked_items.dart';
@@ -45,6 +47,7 @@ Future<void> _pump(WidgetTester tester, {List<String> noteIds = const [], List<S
       linkedContactsProvider.overrideWith((ref) => Stream.value(_contacts)),
     ],
     child: MaterialApp(
+      localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
       home: Scaffold(body: SingleChildScrollView(child: _Host(noteIds: noteIds, contactIds: contactIds))),
     ),
   ));
@@ -104,8 +107,8 @@ void main() {
 
     await tester.tap(find.text('Dana Levi'));
     await tester.pumpAndSettle();
-    expect(find.text('Call +972 50 000 0000'), findsOneWidget);
-    expect(find.text('Email dana@example.com'), findsOneWidget);
+    expect(find.text('Call ${ltr('+972 50 000 0000')}'), findsOneWidget);
+    expect(find.text('Email ${ltr('dana@example.com')}'), findsOneWidget);
     expect(find.text('Open ZT Contacts'), findsOneWidget);
     await tester.tapAt(const Offset(10, 10));
     await tester.pumpAndSettle();

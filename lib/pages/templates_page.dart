@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Displays saved [TaskTemplate]s and lets the user apply or delete them
 /// (item 32).
@@ -29,19 +30,19 @@ class _TemplatesPageState extends ConsumerState<TemplatesPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dCtx) => AlertDialog(
-        title: const Text('Delete template?'),
-        content: Text('"${template.title}" will be removed.'),
+        title: Text(context.l10n.deleteTemplate),
+        content: Text(context.l10n.willBeRemoved(template.title)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dCtx, false),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dCtx, true),
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(dCtx).colorScheme.error,
             ),
-            child: const Text('Delete'),
+            child: Text(context.l10n.delete),
           ),
         ],
       ),
@@ -55,7 +56,7 @@ class _TemplatesPageState extends ConsumerState<TemplatesPage> {
   Widget build(BuildContext context) {
     final provider = ref.watch(templateProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Templates')),
+      appBar: AppBar(title: Text(context.l10n.templates)),
       body: provider.isLoading
           ? const Center(child: CircularProgressIndicator())
           : provider.templates.isEmpty
@@ -116,7 +117,7 @@ class _TemplateCard extends StatelessWidget {
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete_outline),
-                  tooltip: 'Delete template',
+                  tooltip: context.l10n.deleteTemplate2,
                   color: theme.colorScheme.error,
                   onPressed: onDelete,
                 ),
@@ -148,7 +149,7 @@ class _TemplateCard extends StatelessWidget {
                   ),
                 if (template.subTaskTitles.isNotEmpty)
                   Chip(
-                    label: Text('${template.subTaskTitles.length} sub-tasks'),
+                    label: Text(context.l10n.nSubtasks(template.subTaskTitles.length)),
                     avatar: const Icon(Icons.checklist, size: 14),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                     padding: EdgeInsets.zero,
@@ -170,7 +171,7 @@ class _TemplateCard extends StatelessWidget {
               child: FilledButton.icon(
                 onPressed: onUse,
                 icon: const Icon(Icons.add_task, size: 18),
-                label: const Text('Use template'),
+                label: Text(context.l10n.useTemplate),
               ),
             ),
           ],
@@ -200,12 +201,12 @@ class _EmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              'No templates yet',
+              context.l10n.noTemplatesYet,
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
             Text(
-              'Open a task and use "Save as template" from the menu to create one.',
+              context.l10n.openATaskAndUse,
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: Theme.of(context)

@@ -5,10 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/app/auth_providers.dart';
 import 'package:zero_trust_tasks/app/tasks_hooks.dart';
+import 'package:zero_trust_tasks/app/share_intake.dart';
 import 'package:zero_trust_tasks/app/widget_launch.dart';
 import 'package:zero_trust_tasks/core/services/home_widget_service.dart';
 import 'package:zero_trust_tasks/pages/main_screen.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zero_trust_tasks/suite/linked_apps.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Routes between the shared account screens and the app.
 ///
@@ -29,18 +32,23 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
   late bool _signingIn = ref.read(currentUserProvider) == null;
   UnlockResult? _awaitingRecoveryKey;
   late final WidgetLaunchListener _widgetLaunches = WidgetLaunchListener(ref);
+  late final ShareIntake _shares = ShareIntake(ref);
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (ref.read(platformHooksEnabledProvider)) unawaited(_widgetLaunches.start());
+    if (ref.read(platformHooksEnabledProvider)) {
+      unawaited(_widgetLaunches.start());
+      unawaited(_shares.start());
+    }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _widgetLaunches.dispose();
+    _shares.dispose();
     super.dispose();
   }
 
@@ -86,7 +94,11 @@ class _AppGateState extends ConsumerState<AppGate> with WidgetsBindingObserver {
     ref.listen(currentUserProvider, (_, user) {
       if (user == null) {
         ref.read(vaultControllerProvider.notifier).lock();
-        if (ref.read(platformHooksEnabledProvider)) unawaited(const HomeWidgetService().clear());
+        if (ref.read(platformHooksEnabledProvider)) {
+          unawaited(const HomeWidgetService().clear());
+          // Stop watching this account's places on the phone.
+          unawaited(ref.read(placeRemindersProvider.notifier).clearPhone());
+        }
         setState(() => _signingIn = true);
       }
     });
@@ -158,12 +170,12 @@ class TasksHome extends ConsumerWidget {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Couldn\'t open your tasks on this device. ${ztErrorMessage(error)}',
+                  Text(context.l10n.cantOpenTasks(ztErrorMessage(error)),
                       textAlign: TextAlign.center),
                   const SizedBox(height: 16),
                   FilledButton(
                     onPressed: () => ref.invalidate(ztLocalStoreProvider),
-                    child: const Text('Try again'),
+                    child: Text(context.l10n.tryAgain),
                   ),
                 ],
               ),

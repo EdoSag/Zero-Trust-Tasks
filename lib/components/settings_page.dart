@@ -11,6 +11,7 @@ import 'package:zero_trust_tasks/legacy/legacy_tasks_import.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/pages/templates_page.dart';
 import 'package:zero_trust_tasks/pages/trash_page.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// The shared Zero-Trust settings (account, security, appearance, other
 /// apps, delete account) with Tasks' own rows.
@@ -28,64 +29,60 @@ class SettingsPage extends ConsumerWidget {
       backupSection: [
         ListTile(
           leading: const Icon(Icons.move_to_inbox_outlined),
-          title: const Text('Import from Google Tasks'),
-          subtitle: const Text('Your Google Takeout .zip or Tasks.json'),
+          title: Text(context.l10n.importFromGoogleTasks),
+          subtitle: Text(context.l10n.yourGoogleTakeoutZipOr),
           onTap: () => _importGoogle(context, ref),
         ),
         ListTile(
           leading: const Icon(Icons.file_upload_outlined),
-          title: const Text('Export backup file'),
-          subtitle: const Text('Encrypted; only your account can open it'),
+          title: Text(context.l10n.exportBackupFile),
+          subtitle: Text(context.l10n.encryptedOnlyYourAccountCan),
           onTap: () => _export(context, ref),
         ),
         ListTile(
           leading: const Icon(Icons.file_download_outlined),
-          title: const Text('Import backup file'),
-          subtitle: const Text('Adds tasks from a .ztasks file, including older versions\''),
+          title: Text(context.l10n.importBackupFile),
+          subtitle: Text(context.l10n.addsTasksFromAZtasks),
           onTap: () => _import(context, ref),
         ),
       ],
       appSection: [
         ListTile(
           leading: const Icon(Icons.article_outlined),
-          title: const Text('Templates'),
-          subtitle: const Text('Reusable task blueprints'),
+          title: Text(context.l10n.templates),
+          subtitle: Text(context.l10n.reusableTaskBlueprints),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context)
               .push(MaterialPageRoute<void>(builder: (_) => const TemplatesPage())),
         ),
         ListTile(
           leading: const Icon(Icons.delete_outline),
-          title: const Text('Trash'),
-          subtitle: const Text('Deleted tasks are kept for 30 days'),
+          title: Text(context.l10n.trash),
+          subtitle: Text(context.l10n.deletedTasksAreKeptFor),
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context)
               .push(MaterialPageRoute<void>(builder: (_) => const TrashPage())),
         ),
         SwitchListTile(
           secondary: const Icon(Icons.widgets_outlined),
-          title: const Text('Show details on the home screen'),
-          subtitle: const Text(
-            'Off: the widget shows counts only. On: the titles of your next tasks are '
-            'stored unencrypted on this phone for the home screen, so anyone holding '
-            'the unlocked phone can see them',
-          ),
+          title: Text(context.l10n.showDetailsOnTheHome),
+          subtitle: Text(context.l10n.widgetDetailsBody),
           value: settings.widgetShowTasks,
           onChanged: settings.setWidgetShowTasks,
         ),
         if (settings.widgetShowTasks)
           ListTile(
             leading: const SizedBox(width: 24),
-            title: const Text('Widget shows'),
+            title: Text(context.l10n.widgetShows),
             subtitle: Text(settings.widgetListId == null
-                ? 'All lists'
+                ? context.l10n.allLists
                 : ref.watch(taskListProvider).byId(settings.widgetListId).name),
             onTap: () => _pickWidgetList(context, ref),
           ),
         SwitchListTile(
           secondary: const Icon(Icons.notifications_outlined),
-          title: const Text('Show task details in notifications'),
-          subtitle: const Text('Off: reminders show generic text only (recommended)'),
+          title: Text(context.l10n.showTaskDetailsInNotifications),
+          subtitle: Text(context.l10n.offRemindersShowGenericText),
           value: settings.showTaskDetailsInNotifications,
           onChanged: settings.setShowTaskDetailsInNotifications,
         ),
@@ -99,11 +96,11 @@ class SettingsPage extends ConsumerWidget {
     final picked = await showDialog<String>(
       context: context,
       builder: (dialogContext) => SimpleDialog(
-        title: const Text('Widget shows'),
+        title: Text(context.l10n.widgetShows),
         children: [
           SimpleDialogOption(
             onPressed: () => Navigator.pop(dialogContext, ''),
-            child: Text(current == null ? 'All lists  ✓' : 'All lists'),
+            child: Text(current == null ? '${context.l10n.allLists}  ✓' : context.l10n.allLists),
           ),
           for (final l in lists)
             SimpleDialogOption(
@@ -121,7 +118,7 @@ class SettingsPage extends ConsumerWidget {
     final saved = await ref.read(vaultControllerProvider.notifier).whileShowingSystemUi(
           () => FilePicker.saveFile(fileName: export.fileName, bytes: export.zip),
         );
-    if (saved != null && context.mounted) _snack(context, 'Saved ${export.fileName}');
+    if (saved != null && context.mounted) _snack(context, context.l10n.savedFile(export.fileName));
   }
 
   Future<void> _importGoogle(BuildContext context, WidgetRef ref) async {
@@ -139,18 +136,19 @@ class SettingsPage extends ConsumerWidget {
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('Import from Google Tasks'),
+          title: Text(context.l10n.importFromGoogleTasks),
           content: Text([
-            '${parsed.tasks.length} tasks found'
-                '${parsed.lists.isEmpty ? '' : ' in ${parsed.lists.length} new ${parsed.lists.length == 1 ? 'list' : 'lists'}'}.',
-            if (preview.toAdd > 0) '${preview.toAdd} will be added.',
-            if (preview.toUpdate > 0) '${preview.toUpdate} already here will be updated.',
-            if (preview.toAdd == 0 && preview.toUpdate == 0) 'Everything is already here.',
-            'Nothing is uploaded to Google; your tasks are encrypted on this phone.',
+            parsed.lists.isEmpty
+                ? context.l10n.googleTasksFound(parsed.tasks.length)
+                : context.l10n.googleTasksFoundInLists(parsed.tasks.length, parsed.lists.length),
+            if (preview.toAdd > 0) context.l10n.willBeAdded(preview.toAdd),
+            if (preview.toUpdate > 0) context.l10n.willBeUpdated(preview.toUpdate),
+            if (preview.toAdd == 0 && preview.toUpdate == 0) context.l10n.everythingIsAlreadyHere,
+            context.l10n.nothingIsUploadedToGoogle,
           ].join('\n\n')),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Import')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(context.l10n.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(context.l10n.import)),
           ],
         ),
       );
@@ -161,12 +159,12 @@ class SettingsPage extends ConsumerWidget {
       }
       final written = await manager.importTasks(parsed.tasks);
       if (context.mounted) {
-        _snack(context, written == 0 ? 'Already up to date' : 'Imported $written tasks from Google Tasks');
+        _snack(context, written == 0 ? context.l10n.alreadyUpToDate : context.l10n.importedFromGoogle(written));
       }
     } on GoogleTasksImportException catch (e) {
       if (context.mounted) _snack(context, e.message);
     } on Object catch (e) {
-      if (context.mounted) _snack(context, 'Import failed: ${ztErrorMessage(e)}');
+      if (context.mounted) _snack(context, context.l10n.importFailed(ztErrorMessage(e)));
     }
   }
 
@@ -192,9 +190,9 @@ class SettingsPage extends ConsumerWidget {
               bytes: bytes,
             ),
           );
-      if (saved != null && context.mounted) _snack(context, 'Backup file saved');
+      if (saved != null && context.mounted) _snack(context, context.l10n.backupFileSaved);
     } on Object catch (e) {
-      if (context.mounted) _snack(context, 'Export failed: ${ztErrorMessage(e)}');
+      if (context.mounted) _snack(context, context.l10n.exportFailed(ztErrorMessage(e)));
     }
   }
 
@@ -227,16 +225,16 @@ class SettingsPage extends ConsumerWidget {
       final confirmed = await RestorePreviewDialog.show(
         context,
         preview: manager.previewImport(tasks),
-        confirmButtonLabel: 'Import',
+        confirmButtonLabel: context.l10n.import,
       );
       if (!confirmed) return;
       final written = await manager.importTasks(tasks);
       if (context.mounted) {
-        _snack(context, written == 0 ? 'Already up to date' : 'Imported $written tasks');
+        _snack(context, written == 0 ? context.l10n.alreadyUpToDate : context.l10n.importedTasks(written));
       }
     } on Object catch (e) {
       if (context.mounted) {
-        _snack(context, e is InvalidBackupFile ? e.message : 'Import failed: ${ztErrorMessage(e)}');
+        _snack(context, e is InvalidBackupFile ? e.message : context.l10n.importFailed(ztErrorMessage(e)));
       }
     }
   }
@@ -246,21 +244,21 @@ class SettingsPage extends ConsumerWidget {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Backup from an earlier version'),
+        title: Text(context.l10n.backupFromAnEarlierVersion),
         content: TextField(
           controller: controller,
           autofocus: true,
           obscureText: true,
-          decoration: const InputDecoration(
-            labelText: 'Password used when the backup was made',
+          decoration: InputDecoration(
+            labelText: context.l10n.passwordUsedWhenTheBackup,
           ),
           onSubmitted: (v) => Navigator.pop(context, v),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
           FilledButton(
             onPressed: () => Navigator.pop(context, controller.text),
-            child: const Text('Open'),
+            child: Text(context.l10n.open),
           ),
         ],
       ),

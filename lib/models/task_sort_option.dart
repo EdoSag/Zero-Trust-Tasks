@@ -1,20 +1,21 @@
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 enum TaskSortOption { dueDateAsc, dueDateDesc, priority, createdDate, alphabetical, manual }
 
 extension TaskSortOptionExtension on TaskSortOption {
   String get displayName {
     switch (this) {
       case TaskSortOption.dueDateAsc:
-        return 'Due date (earliest first)';
+        return currentL10n.dueDateEarliestFirst;
       case TaskSortOption.dueDateDesc:
-        return 'Due date (latest first)';
+        return currentL10n.dueDateLatestFirst;
       case TaskSortOption.priority:
-        return 'Priority';
+        return currentL10n.priority;
       case TaskSortOption.createdDate:
-        return 'Date created';
+        return currentL10n.dateCreated;
       case TaskSortOption.alphabetical:
-        return 'Alphabetical';
+        return currentL10n.alphabetical;
       case TaskSortOption.manual:
-        return 'My order (drag to reorder)';
+        return currentL10n.myOrderDragToReorder;
     }
   }
 }

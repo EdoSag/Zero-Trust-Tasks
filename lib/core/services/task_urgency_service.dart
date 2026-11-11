@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Buckets a task's due date into an urgency tier so the UI can
 /// communicate urgency via color *and* icon/label (not color alone).
@@ -59,11 +60,11 @@ class TaskUrgencyService {
   static String getLabel(TaskUrgency urgency) {
     switch (urgency) {
       case TaskUrgency.overdue:
-        return 'Overdue';
+        return currentL10n.overdue;
       case TaskUrgency.dueToday:
-        return 'Due today';
+        return currentL10n.dueToday2;
       case TaskUrgency.dueSoon:
-        return 'Due soon';
+        return currentL10n.dueSoon;
       case TaskUrgency.normal:
         return '';
       case TaskUrgency.none:

@@ -1,0 +1,971 @@
+{
+  "@@locale": "en",
+  "cancel": "Cancel",
+  "confirm": "Confirm",
+  "save": "Save",
+  "delete": "Delete",
+  "done": "Done",
+  "add": "Add",
+  "open": "Open",
+  "import": "Import",
+  "restore": "Restore",
+  "undo": "Undo",
+  "retry": "Retry",
+  "tryAgain": "Try again",
+  "later": "Later",
+  "continueLabel": "Continue",
+  "apply": "Apply",
+  "empty": "Empty",
+  "toConfirmSuffix": " to confirm.",
+  "typePrefix": "Type ",
+  "overview": "Overview",
+  "totalTasks": "Total Tasks",
+  "allTasks": "All Tasks",
+  "pending": "Pending",
+  "pendingTasks": "Pending Tasks",
+  "completed": "Completed",
+  "completedTasks": "Completed Tasks",
+  "overdue": "Overdue",
+  "overdueTasks": "Overdue Tasks",
+  "priorityBreakdown": "Priority Breakdown",
+  "viewProductivityInsights": "View Productivity Insights",
+  "recentTasks": "Recent Tasks",
+  "noMatchingTasks": "No matching tasks",
+  "noTasksYet": "No tasks yet",
+  "noTasksMatchYourCurrent": "No tasks match your current search or filters",
+  "createYourFirstTaskTo": "Create your first task to get started",
+  "clearFilters": "Clear filters",
+  "createTask": "Create task",
+  "somethingWentWrong": "Something went wrong",
+  "moved1ItemFromThe": "Moved 1 item from the previous version",
+  "thatPasswordDidntOpenYour": "That password didn't open your earlier tasks. Use the password you had in the previous version of the app.",
+  "yourTasksFromThePrevious": "Your tasks from the previous version are ready to move over. Enter your password once to bring them here.",
+  "enterPassword": "Enter password",
+  "bringOverYourTasks": "Bring over your tasks",
+  "password": "Password",
+  "tryThePasswordFromThe": "Try the password from the previous version",
+  "showPassword": "Show password",
+  "hidePassword": "Hide password",
+  "linkedNotesAndContacts": "Linked notes and contacts",
+  "noteNotFoundItMay": "Note not found. It may have been deleted in ZT Notes.",
+  "contactNotFoundItMay": "Contact not found. It may have been deleted in ZT Contacts.",
+  "linkANote": "Link a note",
+  "linkAContact": "Link a contact",
+  "couldntLoadThisLink": "Couldn't load this link",
+  "loading": "Loading…",
+  "removeLink": "Remove link",
+  "thisNoteIsEmpty": "This note is empty.",
+  "openZtNotes": "Open ZT Notes",
+  "noAppOnThisPhone": "No app on this phone can do that.",
+  "openZtContacts": "Open ZT Contacts",
+  "linkNotes": "Link notes",
+  "linkContacts": "Link contacts",
+  "noNotesYetNotesYou": "No notes yet. Notes you write in ZT Notes with this account show up here.",
+  "noContactsYetPeopleYou": "No contacts yet. People you save in ZT Contacts with this account show up here.",
+  "taskAdded": "Task added",
+  "newTask": "New task",
+  "callMumTomorrow6pm": "Call mum tomorrow 6pm",
+  "keepAsTyped": "Keep as typed",
+  "savedExactlyAsTyped": "Saved exactly as typed.",
+  "readDates": "Read dates",
+  "removeStar": "Remove star",
+  "star": "Star",
+  "moreOptions": "More options",
+  "today": "Today",
+  "tomorrow": "Tomorrow",
+  "reviewBackup": "Review backup",
+  "applyingItWillMakeThe": "Applying it will make the following changes:",
+  "yourLocalDataIsAlready": "Your local data is already up to date.",
+  "importFromGoogleTasks": "Import from Google Tasks",
+  "yourGoogleTakeoutZipOr": "Your Google Takeout .zip or Tasks.json",
+  "exportBackupFile": "Export backup file",
+  "encryptedOnlyYourAccountCan": "Encrypted; only your account can open it",
+  "importBackupFile": "Import backup file",
+  "addsTasksFromAZtasks": "Adds tasks from a .ztasks file, including older versions'",
+  "templates": "Templates",
+  "reusableTaskBlueprints": "Reusable task blueprints",
+  "trash": "Trash",
+  "deletedTasksAreKeptFor": "Deleted tasks are kept for 30 days",
+  "showDetailsOnTheHome": "Show details on the home screen",
+  "widgetShows": "Widget shows",
+  "allLists": "All lists",
+  "showTaskDetailsInNotifications": "Show task details in notifications",
+  "offRemindersShowGenericText": "Off: reminders show generic text only (recommended)",
+  "everythingIsAlreadyHere": "Everything is already here.",
+  "nothingIsUploadedToGoogle": "Nothing is uploaded to Google; your tasks are encrypted on this phone.",
+  "alreadyUpToDate": "Already up to date",
+  "backupFileSaved": "Backup file saved",
+  "backupFromAnEarlierVersion": "Backup from an earlier version",
+  "passwordUsedWhenTheBackup": "Password used when the backup was made",
+  "month": "Month",
+  "noTasksDueOnThis": "No tasks due on this day",
+  "taskMarkedIncomplete": "Task marked incomplete",
+  "taskCompleted": "Task completed",
+  "filterSort": "Filter & sort",
+  "clearAll": "Clear all",
+  "status": "Status",
+  "priority": "Priority",
+  "category": "Category",
+  "sortBy": "Sort by",
+  "starred": "Starred",
+  "newList": "New list",
+  "moveToList": "Move to list",
+  "renameOrChangeColour": "Rename or change colour",
+  "deleteList": "Delete list",
+  "theDefaultListCantBe": "The default list can't be deleted",
+  "theListIsEmpty": "The list is empty.",
+  "makeASubtaskOf": "Make a subtask of…",
+  "noOtherOpenTasks": "No other open tasks",
+  "editList": "Edit list",
+  "listName": "List name",
+  "defaultColour": "Default colour",
+  "colour": "Colour",
+  "searchTasksDescriptionsCategories": "Search tasks, descriptions, categories...",
+  "clearSearch": "Clear search",
+  "editTask": "Edit Task",
+  "newTask2": "New Task",
+  "useATemplate": "Use a template",
+  "title": "Title *",
+  "titleIsRequired": "Title is required",
+  "chooseAList": "Choose a list",
+  "saveInList": "Save in list",
+  "description": "Description",
+  "noStartDate": "No start date",
+  "clearStartDate": "Clear start date",
+  "noDueDate": "No due date",
+  "clearDueDate": "Clear due date",
+  "noReminder": "No reminder",
+  "clearReminder": "Clear reminder",
+  "repeat": "Repeat",
+  "noRepeat": "No repeat",
+  "every": "Every",
+  "noEndDate": "No end date",
+  "clearEndDate": "Clear end date",
+  "addTag": "Add tag",
+  "notes": "Notes",
+  "addLinkUrl": "Add link (URL)",
+  "subTasks": "Sub-tasks",
+  "noSubTasks": "No sub-tasks",
+  "subTaskTitle": "Sub-task title",
+  "deleteSubTask": "Delete sub-task",
+  "updateTask": "Update Task",
+  "saveTask": "Save Task",
+  "insights": "Insights",
+  "activeTasksByPriority": "Active Tasks by Priority",
+  "active": "Active",
+  "doneStat": "Done",
+  "avgDay": "Avg/day",
+  "noActiveTasks": "No active tasks",
+  "encryptedHowYourDataIs": "Encrypted: how your data is protected",
+  "dashboard": "Dashboard",
+  "tasks": "Tasks",
+  "settings": "Settings",
+  "taskDetails": "Task Details",
+  "editTask2": "Edit task",
+  "duplicate": "Duplicate",
+  "saveAsTemplate": "Save as template",
+  "unarchive": "Unarchive",
+  "archive": "Archive",
+  "priority2": "Priority: ",
+  "category2": "Category: ",
+  "startDate": "Start Date: ",
+  "due": "Due: ",
+  "repeats": "Repeats: ",
+  "reminder": "Reminder: ",
+  "links": "Links",
+  "taskDuplicated": "Task duplicated",
+  "templateName": "Template name",
+  "templateSaved": "Template saved",
+  "taskUnarchived": "Task unarchived",
+  "taskArchived": "Task archived",
+  "taskDeleted": "Task deleted",
+  "saveCurrentFilter": "Save current filter",
+  "filterName": "Filter name",
+  "setCategory": "Set category",
+  "none": "None",
+  "setPriority": "Set priority",
+  "dueToday": "Due Today",
+  "upcomingTasks": "Upcoming Tasks",
+  "cancelSelection": "Cancel selection",
+  "selectTasks": "Select tasks",
+  "all": "All",
+  "filterAndSort": "Filter and sort",
+  "switchToFlatList": "Switch to flat list",
+  "switchToSectionedList": "Switch to sectioned list",
+  "switchToList": "Switch to list",
+  "switchToCalendar": "Switch to calendar",
+  "complete": "Complete",
+  "move": "Move",
+  "deleteTemplate": "Delete template?",
+  "deleteTemplate2": "Delete template",
+  "useTemplate": "Use template",
+  "noTemplatesYet": "No templates yet",
+  "openATaskAndUse": "Open a task and use \"Save as template\" from the menu to create one.",
+  "trashIsEmpty": "Trash is empty",
+  "deletedTasksAreKeptFor2": "Deleted tasks are kept for 30 days.",
+  "tasksArePermanentlyDeletedAfter": "Tasks are permanently deleted after 30 days.",
+  "deleteForever": "Delete forever",
+  "taskRestored": "Task restored",
+  "deleteForever2": "Delete forever?",
+  "emptyTrash": "Empty trash?",
+  "movedItems": "Moved {count} items from the previous version",
+  "@movedItems": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "legacyFailed": "Couldn't bring over your tasks from the previous version yet. {error}",
+  "@legacyFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "legacyExplain": "Your earlier tasks were encrypted with your password. It is used on this phone only, to open them once.",
+  "callNumber": "Call {number}",
+  "@callNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "textNumber": "Text {number}",
+  "@textNumber": {
+    "placeholders": {
+      "number": {
+        "type": "String"
+      }
+    }
+  },
+  "emailAddress": "Email {address}",
+  "@emailAddress": {
+    "placeholders": {
+      "address": {
+        "type": "String"
+      }
+    }
+  },
+  "searchNotes": "Search notes",
+  "searchContacts": "Search contacts",
+  "cantLoadNotes": "Couldn't load your notes. {error}",
+  "@cantLoadNotes": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "cantLoadContacts": "Couldn't load your contacts. {error}",
+  "@cantLoadContacts": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "openApp": "Open {app}",
+  "@openApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "nothingMatches": "Nothing matches \"{query}\".",
+  "@nothingMatches": {
+    "placeholders": {
+      "query": {
+        "type": "String"
+      }
+    }
+  },
+  "priorityTasks": "{priority} Priority Tasks",
+  "@priorityTasks": {
+    "placeholders": {
+      "priority": {
+        "type": "String"
+      }
+    }
+  },
+  "taskAddedDue": "Task added, due {when}",
+  "@taskAddedDue": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "cantAddTask": "Couldn't add the task: {error}",
+  "@cantAddTask": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "quickAddHelp": "Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag",
+  "titleIs": "Title: {title}",
+  "@titleIs": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "listIs": "List: {list}",
+  "@listIs": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "everyNDays": "Every {n} days",
+  "@everyNDays": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "everyNWeeks": "Every {n} weeks",
+  "@everyNWeeks": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "everyNMonths": "Every {n} months",
+  "@everyNMonths": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "everyNYears": "Every {n} years",
+  "@everyNYears": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "backupContains": "{count, plural, =1{This backup contains 1 task. Applying it will make the following changes:} other{This backup contains {count} tasks. Applying it will make the following changes:}}",
+  "@backupContains": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksAdded": "{count, plural, =1{1 task added} other{{count} tasks added}}",
+  "@tasksAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksUpdated": "{count, plural, =1{1 task updated} other{{count} tasks updated}}",
+  "@tasksUpdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "tasksRemoved": "{count, plural, =1{1 task removed} other{{count} tasks removed}}",
+  "@tasksRemoved": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "widgetDetailsBody": "Off: the widget shows counts only. On: the titles of your next tasks are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them",
+  "savedFile": "Saved {file}",
+  "@savedFile": {
+    "placeholders": {
+      "file": {
+        "type": "String"
+      }
+    }
+  },
+  "googleTasksFound": "{count} tasks found.",
+  "@googleTasksFound": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "googleTasksFoundInLists": "{count} tasks found in {lists, plural, =1{1 new list} other{{lists} new lists}}.",
+  "@googleTasksFoundInLists": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "lists": {
+        "type": "int"
+      }
+    }
+  },
+  "willBeAdded": "{count} will be added.",
+  "@willBeAdded": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "willBeUpdated": "{count} already here will be updated.",
+  "@willBeUpdated": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importedFromGoogle": "Imported {count} tasks from Google Tasks",
+  "@importedFromGoogle": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "importFailed": "Import failed: {error}",
+  "@importFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "exportFailed": "Export failed: {error}",
+  "@exportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "importedTasks": "Imported {count} tasks",
+  "@importedTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "markNotCompleted": "Mark \"{title}\" as not completed",
+  "@markNotCompleted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "markCompleted": "Mark \"{title}\" as completed",
+  "@markCompleted": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "removeStarFrom": "Remove star from \"{title}\"",
+  "@removeStarFrom": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "starTask": "Star \"{title}\"",
+  "@starTask": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "starredCount": "Starred {count}",
+  "@starredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deleteListQ": "Delete \"{name}\"?",
+  "@deleteListQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "listTasksToTrash": "{count, plural, =1{Its 1 task goes to Trash, where it stays for 30 days.} other{Its {count} tasks go to Trash, where they stay for 30 days.}}",
+  "@listTasksToTrash": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cantOpenTasks": "Couldn't open your tasks on this device. {error}",
+  "@cantOpenTasks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "savedChanges": "{count, plural, =1{Saved 1 change from a reminder or widget} other{Saved {count} changes from reminders or the widget}}",
+  "@savedChanges": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "startOn": "Start: {date}",
+  "@startOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "dueOn": "Due: {date}",
+  "@dueOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "remindOn": "Remind: {date}",
+  "@remindOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "endsOn": "Ends: {date}",
+  "@endsOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "everyN": " every {n}",
+  "@everyN": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
+  "subtasksProgress": "Sub-tasks ({done}/{total})",
+  "@subtasksProgress": {
+    "placeholders": {
+      "done": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "promoteSubtask": "Make \"{title}\" a task of its own",
+  "@promoteSubtask": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "createdOn": "Created: {date}",
+  "@createdOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "updatedOn": "Last updated: {date}",
+  "@updatedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "movedTo": "Moved to {list}",
+  "@movedTo": {
+    "placeholders": {
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "nowSubtaskOf": "Now a subtask of \"{title}\"",
+  "@nowSubtaskOf": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nowOwnTask": "\"{title}\" is now a task of its own",
+  "@nowOwnTask": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "updateFailed": "Failed to update task: {error}",
+  "@updateFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteFailed": "Failed to delete task: {error}",
+  "@deleteFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "completionsLastDays": "Completions – Last {days} Days",
+  "@completionsLastDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "nCompleted": "{count} completed",
+  "@nCompleted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nTasks": "{count} tasks",
+  "@nTasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dayDone": "{day}\n{count} done",
+  "@dayDone": {
+    "placeholders": {
+      "day": {
+        "type": "String"
+      },
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "movedTasksTo": "{count, plural, =1{Moved 1 task to {list}} other{Moved {count} tasks to {list}}}",
+  "@movedTasksTo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "tasksTrashed": "{count} tasks moved to trash",
+  "@tasksTrashed": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nSelected": "{count} selected",
+  "@nSelected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "willBeRemoved": "\"{title}\" will be removed.",
+  "@willBeRemoved": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "nSubtasks": "{count} sub-tasks",
+  "@nSubtasks": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletedDaysLeft": "{count, plural, =1{Deleted {date} · 1 day left} other{Deleted {date} · {count} days left}}",
+  "@deletedDaysLeft": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "permDeleteOne": "\"{title}\" will be permanently deleted and cannot be recovered.",
+  "@permDeleteOne": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "permDeleteAll": "{count, plural, =1{The 1 task will be permanently deleted.} other{All {count} tasks will be permanently deleted.}}",
+  "@permDeleteAll": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "deletePhrase": "DELETE",
+  "daily": "Daily",
+  "weekly": "Weekly",
+  "monthly": "Monthly",
+  "yearly": "Yearly",
+  "upcoming": "Upcoming",
+  "dueDateEarliestFirst": "Due date (earliest first)",
+  "dueDateLatestFirst": "Due date (latest first)",
+  "dateCreated": "Date created",
+  "alphabetical": "Alphabetical",
+  "myOrderDragToReorder": "My order (drag to reorder)",
+  "dueToday2": "Due today",
+  "critical": "Critical",
+  "high": "High",
+  "medium": "Medium",
+  "low": "Low",
+  "dueSoon": "Due soon",
+  "nothingToDo": "Nothing to do",
+  "allTasks2": "All tasks",
+  "yourTasks": "Your tasks",
+  "signedOut": "Signed out",
+  "taskReminders": "Task Reminders",
+  "remindersForYourTasks": "Reminders for your tasks",
+  "snooze1Hour": "Snooze 1 hour",
+  "taskReminder": "Task reminder",
+  "youHaveATaskReminder": "You have a task reminder.",
+  "thisIsntAZeroTrust": "This isn't a Zero-Trust Tasks backup file.",
+  "thisBackupBelongsToAnother": "This backup belongs to another account.",
+  "thisBackupFileIsDamaged": "This backup file is damaged.",
+  "thatPasswordDoesntOpenThis": "That password doesn't open this backup.",
+  "thisBackupIsFromA": "This backup is from a newer version of the app.",
+  "untitledNote": "Untitled note",
+  "justNow": "just now",
+  "nOpen": "{count} open",
+  "@nOpen": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nDueToday": "{count} due today",
+  "@nDueToday": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "nOverdue": "{count} overdue",
+  "@nOverdue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "overdueLabel": "Overdue · {date}",
+  "@overdueLabel": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "minutesAgo": "{count, plural, =1{1 minute ago} other{{count} minutes ago}}",
+  "@minutesAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "hoursAgo": "{count, plural, =1{1 hour ago} other{{count} hours ago}}",
+  "@hoursAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "daysAgo": "{count, plural, =1{1 day ago} other{{count} days ago}}",
+  "@daysAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "monthsAgo": "{count, plural, =1{1 month ago} other{{count} months ago}}",
+  "@monthsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "yearsAgo": "{count, plural, =1{1 year ago} other{{count} years ago}}",
+  "@yearsAgo": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cantReadTasks": "Couldn't read your tasks: {error}",
+  "@cantReadTasks": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "copyOf": "{title} (Copy)",
+  "@copyOf": {
+    "placeholders": {
+      "title": {
+        "type": "String"
+      }
+    }
+  },
+  "widgetAddTask": "Add a task",
+  "widgetCompleteTask": "Complete task",
+  "widgetOpenToSee": "Open ZT Tasks to see your tasks",
+  "widgetOpenAppSummary": "Open the app to see your tasks",
+  "widgetDoneSaved": "Done. Saved when you next open the app",
+  "shareListQ": "Share \"{name}\"",
+  "@shareListQ": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "shareList": "Share list",
+  "newSharedList": "New shared list",
+  "joinSharedList": "Join a shared list",
+  "joinListChip": "Join",
+  "sharingNeedsInternet": "Couldn't reach the server. Sharing needs an internet connection.",
+  "waitingToJoin": "Waiting to join",
+  "sharedListE2e": "End-to-end encrypted. Everyone here can add, edit and tick off tasks; owners can also rename the list and invite or remove people.",
+  "youName": "{name} (you)",
+  "@youName": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "invitePeople": "Invite people",
+  "joinRequestFor": "{name} wants to join \"{list}\"",
+  "@joinRequestFor": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "list": {
+        "type": "String"
+      }
+    }
+  },
+  "joinRequestHint": "Tap to compare codes and let them in",
+  "join": "Join",
+  "sharedWith": "Shared with {names}",
+  "@sharedWith": {
+    "placeholders": {
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "sharedListOptions": "People and sharing",
+  "onlyOwnersRename": "Only owners can rename this list",
+  "locationReminder": "Location reminder",
+  "noLocationReminder": "No location reminder",
+  "remindArriveAt": "When I arrive at {place}",
+  "@remindArriveAt": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "remindLeave": "When I leave {place}",
+  "@remindLeave": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "clearLocationReminder": "Remove location reminder",
+  "arrivedAt": "You arrived at {place}",
+  "@arrivedAt": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "leftPlace": "You left {place}",
+  "@leftPlace": {
+    "placeholders": {
+      "place": {
+        "type": "String"
+      }
+    }
+  },
+  "placeRemindersChannel": "Location reminders",
+  "placeRemindersChannelHint": "Task reminders when you arrive at or leave a place",
+  "locationStaysOnPhone": "Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.",
+  "aPlace": "a place"
+}

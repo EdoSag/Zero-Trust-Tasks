@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 /// Shows a diff of what applying a backup would change, then requires the
 /// user to type a confirmation phrase before proceeding (item 25).
@@ -8,19 +9,19 @@ class RestorePreviewDialog extends StatefulWidget {
     super.key,
     required this.preview,
     this.confirmPhrase = 'RESTORE',
-    this.confirmButtonLabel = 'Restore',
+    this.confirmButtonLabel,
   });
 
   final BackupPreview preview;
   final String confirmPhrase;
-  final String confirmButtonLabel;
+  final String? confirmButtonLabel;
 
   /// Returns `true` if the user confirmed after reviewing the preview.
   static Future<bool> show(
     BuildContext context, {
     required BackupPreview preview,
     String confirmPhrase = 'RESTORE',
-    String confirmButtonLabel = 'Restore',
+    String? confirmButtonLabel,
   }) async {
     final result = await showDialog<bool>(
       context: context,
@@ -62,36 +63,35 @@ class _RestorePreviewDialogState extends State<RestorePreviewDialog> {
     final preview = widget.preview;
 
     return AlertDialog(
-      title: const Text('Review backup'),
+      title: Text(context.l10n.reviewBackup),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'This backup contains ${preview.backupTaskCount} task${preview.backupTaskCount == 1 ? '' : 's'}. '
-              'Applying it will make the following changes:',
+              context.l10n.backupContains(preview.backupTaskCount),
             ),
             const SizedBox(height: 12),
             _ChangeRow(
               icon: Icons.add_circle_outline,
               color: Colors.green,
-              label: '${preview.toAdd} task${preview.toAdd == 1 ? '' : 's'} added',
+              label: context.l10n.tasksAdded(preview.toAdd),
             ),
             _ChangeRow(
               icon: Icons.edit_outlined,
               color: theme.colorScheme.primary,
-              label: '${preview.toUpdate} task${preview.toUpdate == 1 ? '' : 's'} updated',
+              label: context.l10n.tasksUpdated(preview.toUpdate),
             ),
             _ChangeRow(
               icon: Icons.remove_circle_outline,
               color: theme.colorScheme.error,
-              label: '${preview.toRemove} task${preview.toRemove == 1 ? '' : 's'} removed',
+              label: context.l10n.tasksRemoved(preview.toRemove),
             ),
             if (!preview.hasChanges) ...[
               const SizedBox(height: 8),
               Text(
-                'Your local data is already up to date.',
+                context.l10n.yourLocalDataIsAlready,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
                 ),
@@ -102,12 +102,12 @@ class _RestorePreviewDialogState extends State<RestorePreviewDialog> {
               TextSpan(
                 style: theme.textTheme.bodyMedium,
                 children: [
-                  const TextSpan(text: 'Type '),
+                  TextSpan(text: context.l10n.typePrefix),
                   TextSpan(
                     text: widget.confirmPhrase,
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
-                  const TextSpan(text: ' to confirm.'),
+                  TextSpan(text: context.l10n.toConfirmSuffix),
                 ],
               ),
             ),
@@ -127,7 +127,7 @@ class _RestorePreviewDialogState extends State<RestorePreviewDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Cancel'),
+          child: Text(context.l10n.cancel),
         ),
         FilledButton(
           onPressed: _isMatch ? () => Navigator.pop(context, true) : null,
@@ -135,7 +135,7 @@ class _RestorePreviewDialogState extends State<RestorePreviewDialog> {
             backgroundColor: theme.colorScheme.error,
             foregroundColor: theme.colorScheme.onError,
           ),
-          child: Text(widget.confirmButtonLabel),
+          child: Text(widget.confirmButtonLabel ?? context.l10n.restore),
         ),
       ],
     );

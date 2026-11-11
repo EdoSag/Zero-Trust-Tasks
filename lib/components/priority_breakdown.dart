@@ -3,6 +3,7 @@ import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/models/task_filter_state.dart';
 import 'package:zero_trust_tasks/pages/tasks_list_page.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 
 class PriorityBreakdown extends StatelessWidget {
   const PriorityBreakdown({super.key, required this.priorities});
@@ -27,7 +28,7 @@ class PriorityBreakdown extends StatelessWidget {
                   MaterialPageRoute(
                     builder: (context) => TasksListPage(
                       initialFilter: TaskFilterState.priorityFilter(priority),
-                      title: '${priority.displayName} Priority Tasks',
+                      title: context.l10n.priorityTasks(priority.displayName),
                     ),
                   ),
                 );

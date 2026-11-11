@@ -1,16 +1,17 @@
+import 'package:zero_trust_tasks/l10n/l10n.dart';
 enum RecurrenceFrequency { daily, weekly, monthly, yearly }
 
 extension RecurrenceFrequencyExtension on RecurrenceFrequency {
   String get displayName {
     switch (this) {
       case RecurrenceFrequency.daily:
-        return 'Daily';
+        return currentL10n.daily;
       case RecurrenceFrequency.weekly:
-        return 'Weekly';
+        return currentL10n.weekly;
       case RecurrenceFrequency.monthly:
-        return 'Monthly';
+        return currentL10n.monthly;
       case RecurrenceFrequency.yearly:
-        return 'Yearly';
+        return currentL10n.yearly;
     }
   }
 }

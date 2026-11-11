@@ -12,6 +12,9 @@ import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/places/task_place_reminders.dart';
+import 'package:zt_places/zt_places.dart';
 
 enum _TaskAction { moveToList, makeSubtask, duplicate, saveAsTemplate, archive, delete }
 
@@ -34,24 +37,24 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       (t) => t.id == widget.task.id,
       orElse: () => widget.task,
     );
-    final dateFormat = DateFormat('MMM dd, yyyy');
+    final dateFormat = DateFormat.yMMMd();
     final urgency = TaskUrgencyService.getUrgency(currentTask);
     final urgencyColor = TaskUrgencyService.getColor(urgency, context);
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task Details'),
+        title: Text(context.l10n.taskDetails),
         actions: [
           IconButton(
             icon: Icon(
               currentTask.starred ? Icons.star : Icons.star_border,
               color: currentTask.starred ? Colors.amber.shade700 : null,
             ),
-            tooltip: currentTask.starred ? 'Remove star' : 'Star',
+            tooltip: currentTask.starred ? context.l10n.removeStar : context.l10n.star,
             onPressed: () => context.taskManager.toggleStar(currentTask.id),
           ),
           IconButton(
             icon: const Icon(Icons.edit),
-            tooltip: 'Edit task',
+            tooltip: context.l10n.editTask2,
             onPressed: () {
               Navigator.push(
                 context,
@@ -79,35 +82,35 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
               }
             },
             itemBuilder: (_) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _TaskAction.moveToList,
                 child: ListTile(
                   leading: Icon(Icons.drive_file_move_outline),
-                  title: Text('Move to list'),
+                  title: Text(context.l10n.moveToList),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _TaskAction.makeSubtask,
                 child: ListTile(
                   leading: Icon(Icons.format_indent_increase),
-                  title: Text('Make a subtask of…'),
+                  title: Text(context.l10n.makeASubtaskOf),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _TaskAction.duplicate,
                 child: ListTile(
                   leading: Icon(Icons.copy_outlined),
-                  title: Text('Duplicate'),
+                  title: Text(context.l10n.duplicate),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _TaskAction.saveAsTemplate,
                 child: ListTile(
                   leading: Icon(Icons.article_outlined),
-                  title: Text('Save as template'),
+                  title: Text(context.l10n.saveAsTemplate),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -119,15 +122,15 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         ? Icons.unarchive_outlined
                         : Icons.archive_outlined,
                   ),
-                  title: Text(currentTask.isArchived ? 'Unarchive' : 'Archive'),
+                  title: Text(currentTask.isArchived ? context.l10n.unarchive : context.l10n.archive),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: _TaskAction.delete,
                 child: ListTile(
                   leading: Icon(Icons.delete_outline, color: Colors.red),
-                  title: Text('Delete', style: TextStyle(color: Colors.red)),
+                  title: Text(context.l10n.delete, style: TextStyle(color: Colors.red)),
                   contentPadding: EdgeInsets.zero,
                 ),
               ),
@@ -142,8 +145,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
             children: [
               Semantics(
                 label: currentTask.isCompleted
-                    ? 'Mark "${currentTask.title}" as not completed'
-                    : 'Mark "${currentTask.title}" as completed',
+                    ? context.l10n.markNotCompleted(currentTask.title)
+                    : context.l10n.markCompleted(currentTask.title),
                 child: Checkbox(
                   value: currentTask.isCompleted,
                   onChanged: (value) => _toggleComplete(context, currentTask),
@@ -177,7 +180,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                 children: [
                   if (currentTask.description != null) ...[
                     Text(
-                      'Description',
+                      context.l10n.description,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -191,7 +194,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       const Icon(Icons.flag, size: 20.0),
                       const SizedBox(width: 8.0),
                       Text(
-                        'Priority: ',
+                        context.l10n.priority2,
                         style: Theme.of(context).textTheme.titleSmall,
                       ),
                       Container(
@@ -233,7 +236,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         const Icon(Icons.label, size: 20.0),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Category: ',
+                          context.l10n.category2,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(currentTask.category!),
@@ -247,7 +250,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         const Icon(Icons.play_circle_outline, size: 20.0),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Start Date: ',
+                          context.l10n.startDate,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(dateFormat.format(currentTask.startDate!)),
@@ -268,7 +271,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         ),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Due: ',
+                          context.l10n.due,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(
@@ -314,12 +317,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         const Icon(Icons.repeat, size: 20.0),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Repeats: ',
+                          context.l10n.repeats,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
                         Text(currentTask.recurrence!.frequency.displayName),
                         if (currentTask.recurrence!.interval > 1)
-                          Text(' every ${currentTask.recurrence!.interval}'),
+                          Text(context.l10n.everyN(currentTask.recurrence!.interval)),
                       ],
                     ),
                   ],
@@ -330,10 +333,26 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                         const Icon(Icons.notifications_outlined, size: 20.0),
                         const SizedBox(width: 8.0),
                         Text(
-                          'Reminder: ',
+                          context.l10n.reminder,
                           style: Theme.of(context).textTheme.titleSmall,
                         ),
-                        Text(DateFormat('MMM dd, yyyy • h:mm a').format(currentTask.reminderAt!)),
+                        Text(DateFormat.yMMMd().add_jm().format(currentTask.reminderAt!)),
+                      ],
+                    ),
+                  ],
+                  if (ref.watch(placeRemindersProvider).forTask(currentTask.id) case final place?) ...[
+                    const SizedBox(height: 12.0),
+                    Row(
+                      children: [
+                        const Icon(Icons.place_outlined, size: 20.0),
+                        const SizedBox(width: 8.0),
+                        Expanded(
+                          child: Text(
+                            place.trigger == ZtPlaceTrigger.arrive
+                                ? context.l10n.remindArriveAt(place.place.name.isEmpty ? context.l10n.aPlace : place.place.name)
+                                : context.l10n.remindLeave(place.place.name.isEmpty ? context.l10n.aPlace : place.place.name),
+                          ),
+                        ),
                       ],
                     ),
                   ],
@@ -358,7 +377,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                   if (currentTask.notes != null) ...[
                     const SizedBox(height: 12.0),
                     Text(
-                      'Notes',
+                      context.l10n.notes,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -369,7 +388,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                   if (currentTask.links.isNotEmpty) ...[
                     const SizedBox(height: 12.0),
                     Text(
-                      'Links',
+                      context.l10n.links,
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -415,7 +434,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
           if (currentTask.subTasks.isNotEmpty) ...[
             const SizedBox(height: 24.0),
             Text(
-              'Sub-tasks (${currentTask.completedSubTasksCount}/${currentTask.subTasks.length})',
+              context.l10n.subtasksProgress(currentTask.completedSubTasksCount, currentTask.subTasks.length),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -429,7 +448,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                   controlAffinity: ListTileControlAffinity.leading,
                   secondary: IconButton(
                     icon: const Icon(Icons.format_indent_decrease),
-                    tooltip: 'Make "${subTask.title}" a task of its own',
+                    tooltip: context.l10n.promoteSubtask(subTask.title),
                     onPressed: () => _promoteSubTask(context, currentTask, subTask.id),
                   ),
                   onChanged: (value) {
@@ -456,11 +475,11 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Created: ${dateFormat.format(currentTask.createdAt)}',
+                    context.l10n.createdOn(dateFormat.format(currentTask.createdAt)),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                   Text(
-                    'Last updated: ${dateFormat.format(currentTask.updatedAt)}',
+                    context.l10n.updatedOn(dateFormat.format(currentTask.updatedAt)),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -478,7 +497,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     await context.taskManager.moveToList({task.id}, listId);
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Moved to ${context.taskLists.byId(listId).name}')),
+        SnackBar(content: Text(context.l10n.movedTo(context.taskLists.byId(listId).name))),
       );
     }
   }
@@ -492,12 +511,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     final messenger = ScaffoldMessenger.of(context);
     Navigator.pop(context);
     messenger.showSnackBar(SnackBar(
-      content: Text('Now a subtask of "${parent.title}"'),
+      content: Text(context.l10n.nowSubtaskOf(parent.title)),
       // Flutter keeps a snackbar with a button until dismissed unless told
       // otherwise.
       persist: false,
       action: SnackBarAction(
-        label: 'Undo',
+        label: context.l10n.undo,
         onPressed: () async {
           final current = manager.tasks.where((t) => t.id == parent.id).firstOrNull;
           if (current != null) await manager.updateTask(parent.copyWith(subTasks: current.subTasks.take(parent.subTasks.length).toList()));
@@ -511,7 +530,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     final promoted = await context.taskManager.promoteSubTask(task.id, subTaskId);
     if (promoted != null && context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('"${promoted.title}" is now a task of its own')),
+        SnackBar(content: Text(context.l10n.nowOwnTask(promoted.title))),
       );
     }
   }
@@ -521,7 +540,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     if (context.mounted) {
       Navigator.pop(context);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Task duplicated')),
+        SnackBar(content: Text(context.l10n.taskDuplicated)),
       );
     }
   }
@@ -531,21 +550,21 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     final name = await showDialog<String>(
       context: context,
       builder: (dCtx) => AlertDialog(
-        title: const Text('Save as template'),
+        title: Text(context.l10n.saveAsTemplate),
         content: TextField(
           controller: nameCtrl,
-          decoration: const InputDecoration(labelText: 'Template name'),
+          decoration: InputDecoration(labelText: context.l10n.templateName),
           autofocus: true,
           onSubmitted: (v) => Navigator.pop(dCtx, v.trim()),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dCtx),
-            child: const Text('Cancel'),
+            child: Text(context.l10n.cancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dCtx, nameCtrl.text.trim()),
-            child: const Text('Save'),
+            child: Text(context.l10n.save),
           ),
         ],
       ),
@@ -570,7 +589,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
 
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Template saved')),
+        SnackBar(content: Text(context.l10n.templateSaved)),
       );
     }
   }
@@ -581,7 +600,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       await taskManager.unarchiveTask(task.id);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Task unarchived')),
+          SnackBar(content: Text(context.l10n.taskUnarchived)),
         );
       }
     } else {
@@ -589,7 +608,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       if (context.mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Task archived')),
+          SnackBar(content: Text(context.l10n.taskArchived)),
         );
       }
     }
@@ -598,8 +617,8 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
   String _formatDueDate(DateTime date) {
     final hasTime = date.hour != 0 || date.minute != 0;
     return hasTime
-        ? DateFormat('MMM dd, yyyy • h:mm a').format(date)
-        : DateFormat('MMM dd, yyyy').format(date);
+        ? DateFormat.yMMMd().add_jm().format(date)
+        : DateFormat.yMMMd().format(date);
   }
 
   Future<void> _launchUrl(String url) async {
@@ -619,7 +638,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       if (context.mounted) {
         SnackbarHelper.showError(
           context,
-          'Failed to update task: ${e.toString()}',
+          context.l10n.updateFailed(e.toString()),
           onRetry: () => _toggleComplete(context, task),
         );
       }
@@ -630,12 +649,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     }
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(wasCompleted ? 'Task marked incomplete' : 'Task completed'),
+        content: Text(wasCompleted ? context.l10n.taskMarkedIncomplete : context.l10n.taskCompleted),
         // Flutter keeps a snackbar with a button until dismissed unless told
         // otherwise.
         persist: false,
         action: SnackBarAction(
-          label: 'Undo',
+          label: context.l10n.undo,
           onPressed: () {
             taskManager.toggleTaskComplete(task.id);
           },
@@ -652,7 +671,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
       if (context.mounted) {
         SnackbarHelper.showError(
           context,
-          'Failed to delete task: ${e.toString()}',
+          context.l10n.deleteFailed(e.toString()),
           onRetry: () => _deleteTask(context, task),
         );
       }
@@ -664,12 +683,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Task deleted'),
+        content: Text(context.l10n.taskDeleted),
         // Flutter keeps a snackbar with a button until dismissed unless told
         // otherwise.
         persist: false,
         action: SnackBarAction(
-          label: 'Undo',
+          label: context.l10n.undo,
           onPressed: () {
             taskManager.undoDelete();
           },

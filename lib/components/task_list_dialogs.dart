@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 
 /// Dialogs shared by the Tasks tab, task details and the editor for
 /// creating, picking and managing task lists.
@@ -25,9 +29,41 @@ class TaskListDialogs {
     return updated;
   }
 
+  /// "New list": a list of the account's own, or (when sharing works) a
+  /// new shared list. Returns the new list's id.
+  static Future<String?> newList(BuildContext context, WidgetRef ref) async {
+    if (!ref.read(sharedListsProvider).available) return (await edit(context))?.id;
+    final shared = await showModalBottomSheet<bool>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.playlist_add),
+              title: Text(context.l10n.newList),
+              onTap: () => Navigator.pop(sheetContext, false),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_add_outlined),
+              title: Text(context.l10n.newSharedList),
+              subtitle: Text(context.l10n.sharedListE2e),
+              onTap: () => Navigator.pop(sheetContext, true),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (shared == null || !context.mounted) return null;
+    if (!shared) return (await edit(context))?.id;
+    return newSharedList(context, ref);
+  }
+
   /// Picks a list (or makes a new one). Returns its id, or null if cancelled.
-  static Future<String?> pick(BuildContext context, {String? currentId, String title = 'Move to list'}) {
-    final lists = context.taskLists.lists;
+  static Future<String?> pick(BuildContext context, {String? currentId, String? title}) {
+    // A list still waiting for its owner can't take tasks yet.
+    final lists = context.taskLists.lists.where((l) => l.shared?.waiting != true).toList();
     final current = currentId ?? TaskList.defaultId;
     return showModalBottomSheet<String>(
       context: context,
@@ -37,8 +73,8 @@ class TaskListDialogs {
           shrinkWrap: true,
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text(title, style: Theme.of(sheetContext).textTheme.titleMedium),
+              padding: const EdgeInsetsDirectional.fromSTEB(24, 0, 24, 8),
+              child: Text(title ?? context.l10n.moveToList, style: Theme.of(sheetContext).textTheme.titleMedium),
             ),
             for (final list in lists)
               ListTile(
@@ -49,7 +85,7 @@ class TaskListDialogs {
               ),
             ListTile(
               leading: const Icon(Icons.add),
-              title: const Text('New list'),
+              title: Text(context.l10n.newList),
               onTap: () async {
                 final created = await edit(sheetContext);
                 if (created != null && sheetContext.mounted) Navigator.pop(sheetContext, created.id);
@@ -61,8 +97,10 @@ class TaskListDialogs {
     );
   }
 
-  /// Rename, recolour or delete [list].
+  /// Rename, recolour or delete [list]; share it, or manage a shared one.
   static Future<void> showOptions(BuildContext context, TaskList list, {VoidCallback? onDeleted}) {
+    if (list.isShared) return _sharedOptions(context, list, onDeleted: onDeleted);
+    final canShare = ProviderScope.containerOf(context, listen: false).read(sharedListsProvider).available;
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
@@ -76,16 +114,27 @@ class TaskListDialogs {
             ),
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('Rename or change colour'),
+              title: Text(context.l10n.renameOrChangeColour),
               onTap: () async {
                 Navigator.pop(sheetContext);
                 await edit(context, existing: list);
               },
             ),
+            if (canShare && !list.isDefault)
+              Consumer(
+                builder: (_, ref, _) => ListTile(
+                  leading: const Icon(Icons.group_add_outlined),
+                  title: Text(context.l10n.shareList),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await shareList(context, ref, list);
+                  },
+                ),
+              ),
             if (!list.isDefault)
               ListTile(
                 leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
-                title: Text('Delete list', style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
+                title: Text(context.l10n.deleteList, style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
                 onTap: () async {
                   Navigator.pop(sheetContext);
                   await _delete(context, list);
@@ -93,10 +142,50 @@ class TaskListDialogs {
                 },
               )
             else
-              const ListTile(
+              ListTile(
                 leading: Icon(Icons.info_outline),
-                title: Text('The default list can\'t be deleted'),
+                title: Text(context.l10n.theDefaultListCantBe),
                 enabled: false,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Future<void> _sharedOptions(BuildContext context, TaskList list, {VoidCallback? onDeleted}) {
+    final info = list.shared!;
+    return showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+              child: Text(info.waiting ? context.l10n.waitingToJoin : list.name,
+                  style: Theme.of(sheetContext).textTheme.titleMedium),
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_outlined),
+              title: Text(context.l10n.sharedListOptions),
+              onTap: () async {
+                Navigator.pop(sheetContext);
+                await openSharedList(context, info.spaceId);
+                if (context.mounted && !context.taskLists.lists.any((l) => l.id == list.id)) onDeleted?.call();
+              },
+            ),
+            if (!info.waiting)
+              ListTile(
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(context.l10n.renameOrChangeColour),
+                subtitle: info.isAdmin ? null : Text(context.l10n.onlyOwnersRename),
+                enabled: info.isAdmin,
+                onTap: () async {
+                  Navigator.pop(sheetContext);
+                  await edit(context, existing: list);
+                },
               ),
           ],
         ),
@@ -112,14 +201,13 @@ class TaskListDialogs {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('Delete "${list.name}"?'),
+        title: Text(context.l10n.deleteListQ(list.name)),
         content: Text(count == 0
-            ? 'The list is empty.'
-            : 'Its $count ${count == 1 ? 'task goes' : 'tasks go'} to Trash, where '
-                '${count == 1 ? 'it stays' : 'they stay'} for 30 days.'),
+            ? context.l10n.theListIsEmpty
+            : context.l10n.listTasksToTrash(count)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Cancel')),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Delete')),
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(context.l10n.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(context.l10n.delete)),
         ],
       ),
     );
@@ -151,11 +239,11 @@ class TaskListDialogs {
             children: [
               Padding(
                 padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-                child: Text('Make a subtask of…', style: Theme.of(sheetContext).textTheme.titleMedium),
+                child: Text(context.l10n.makeASubtaskOf, style: Theme.of(sheetContext).textTheme.titleMedium),
               ),
               Expanded(
                 child: candidates.isEmpty
-                    ? const Center(child: Text('No other open tasks'))
+                    ? Center(child: Text(context.l10n.noOtherOpenTasks))
                     : ListView(
                         children: [
                           for (final t in candidates)
@@ -204,7 +292,7 @@ class _EditListDialogState extends State<_EditListDialog> {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     return AlertDialog(
-      title: Text(widget.existing == null ? 'New list' : 'Edit list'),
+      title: Text(widget.existing == null ? context.l10n.newList : context.l10n.editList),
       content: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -213,7 +301,7 @@ class _EditListDialogState extends State<_EditListDialog> {
             controller: _name,
             autofocus: true,
             textCapitalization: TextCapitalization.sentences,
-            decoration: const InputDecoration(labelText: 'List name'),
+            decoration: InputDecoration(labelText: context.l10n.listName),
             onSubmitted: (_) => _submit(),
           ),
           const SizedBox(height: 16),
@@ -234,8 +322,8 @@ class _EditListDialogState extends State<_EditListDialog> {
         ],
       ),
       actions: [
-        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-        FilledButton(onPressed: _submit, child: const Text('Save')),
+        TextButton(onPressed: () => Navigator.pop(context), child: Text(context.l10n.cancel)),
+        FilledButton(onPressed: _submit, child: Text(context.l10n.save)),
       ],
     );
   }
@@ -254,7 +342,7 @@ class _Swatch extends StatelessWidget {
     return Semantics(
       button: true,
       selected: selected,
-      label: color == null ? 'Default colour' : 'Colour',
+      label: color == null ? context.l10n.defaultColour : context.l10n.colour,
       child: InkWell(
         customBorder: const CircleBorder(),
         onTap: onTap,

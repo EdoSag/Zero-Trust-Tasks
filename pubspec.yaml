@@ -32,7 +32,7 @@ dependencies:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_places
-      ref: 6f397423bdc8d1a5313da870cc89677e40e93277
+      ref: 7deeccb707ca6542e2ef17cf1b041a6716ff670f
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0

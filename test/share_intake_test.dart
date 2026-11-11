@@ -21,4 +21,16 @@ void main() {
     expect(t.title, 'https://x.org');
     expect(t.links, ['https://x.org']);
   });
+
+  test('punctuation around an address in prose is not part of the link', () {
+    final t = sharedTaskDraft(text: 'Read this: https://example.com/article. (https://x.org/a)');
+    expect(t.links, ['https://example.com/article', 'https://x.org/a']);
+    expect(t.description, isNull);
+    expect(t.title, 'Read this:');
+  });
+
+  test('brackets that belong to the address stay', () {
+    final t = sharedTaskDraft(text: 'https://en.wikipedia.org/wiki/Tel_Aviv_(city)');
+    expect(t.links, ['https://en.wikipedia.org/wiki/Tel_Aviv_(city)']);
+  });
 }

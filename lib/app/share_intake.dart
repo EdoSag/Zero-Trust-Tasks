@@ -12,10 +12,16 @@ import 'package:zero_trust_tasks/models/task.dart';
 /// the person taps Save in the editor.
 Task sharedTaskDraft({String? subject, String? text}) {
   final body = (text ?? '').trim();
-  final urls = <String>[for (final m in RegExp(r'https?://[^\s<>"]+').allMatches(body)) m.group(0)!];
+  final urls = <String>[];
+  final prose = body.replaceAllMapped(_url, (m) {
+    final (url, rest) = _trimUrl(m.group(0)!);
+    urls.add(url);
+    return rest;
+  });
   final lines = <String>[
-    for (final line in body.replaceAll(RegExp(r'https?://[^\s<>"]+'), '').split('\n'))
-      if (line.trim().isNotEmpty) line.trim(),
+    for (final line in prose.split('\n'))
+      // What an address leaves behind ("see ." or "()") is dropped.
+      if (_words(line).isNotEmpty) _words(line),
   ];
   var title = (subject ?? '').trim();
   if (title.isEmpty && lines.isNotEmpty) title = lines.first;
@@ -25,6 +31,30 @@ Task sharedTaskDraft({String? subject, String? text}) {
       if (l != title) l,
   ].join('\n');
   return Task.create(title: title, description: rest.isEmpty ? null : rest, links: urls.toSet().toList());
+}
+
+String _words(String line) =>
+    line.split(RegExp(r'\s+')).where((w) => RegExp(r'[\p{L}\p{N}]', unicode: true).hasMatch(w)).join(' ');
+
+final _url = RegExp(r'https?://[^\s<>"]+');
+
+/// A web address found in prose, without the sentence's punctuation after
+/// it ("see https://x.org/a." or "(https://x.org/a)"); a closing bracket
+/// that pairs with one inside the address stays (Wikipedia-style links).
+(String, String) _trimUrl(String match) {
+  var url = match;
+  var cut = '';
+  while (url.isNotEmpty) {
+    final last = url[url.length - 1];
+    final close = {')': '(', ']': '[', '}': '{'}[last];
+    if ('.,;:!?\'"'.contains(last) || (close != null && close.allMatches(url).length < last.allMatches(url).length)) {
+      cut = last + cut;
+      url = url.substring(0, url.length - 1);
+    } else {
+      break;
+    }
+  }
+  return (url, cut);
 }
 
 /// Text shared to ZT Tasks, from MainActivity over `zt_tasks/share`: on a

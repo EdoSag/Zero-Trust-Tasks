@@ -11,8 +11,10 @@ import 'package:zero_trust_tasks/models/pending_task_action.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
-import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
+import 'package:zt_sharing_ui/zt_sharing_ui.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+
+import 'support/fake_account_backend.dart';
 
 const alice = '00000000-0000-4000-8000-00000000000a';
 const bob = '00000000-0000-4000-8000-00000000000b';
@@ -51,8 +53,12 @@ class Phone {
   late final ProviderContainer container;
   final Map<String, ZtLocalStore> spaceStores = {};
 
+  /// Runs on the vault before the app starts.
+  Future<void> Function(ZtLocalStore vault)? before;
+
   Future<Phone> start() async {
     vault = await ZtLocalStore.open(appKey: key(seed));
+    await before?.call(vault);
     spaces = SharedSpaces(
       app: 'tasks',
       myUserId: userId,
@@ -68,6 +74,9 @@ class Phone {
       overrides: [
         tasksStoreProvider.overrideWithValue(vault),
         ztSharedSpacesProvider.overrideWith((ref) async => spaces),
+        accountServiceProvider.overrideWithValue(_SignedIn(userId)),
+        ztLocalStoreProvider.overrideWith((ref) async => vault),
+        ztSyncControllerProvider.overrideWith(() => _StoreSync(vault)),
         remindersEnabledProvider.overrideWithValue(false),
       ],
     );
@@ -301,7 +310,10 @@ void main() {
     test('sharing a list drops only the private copies of its tasks', () async {
       final own = MemoryWriter();
       final manager = TaskManager(reminders: false)
-        ..attach(source: () => Stream.value([task('Milk', listId: 'l1')]), writer: own)
+        ..attach(
+          source: () => Stream.value([task('Milk', listId: 'l1')]),
+          writer: own,
+        )
         ..setShared([task('Milk', listId: TaskList.sharedId('s1'))], writer: MemoryShared());
       await pump();
       expect(manager.tasks.length, 2);
@@ -328,6 +340,24 @@ void main() {
     });
   });
 
+  test('the name saved by Tasks 0.4.0 moves to the shared one every app reads', () async {
+    final server = InMemorySpaceServer();
+    final a = Phone(server, alice, 1);
+    a.before = (vault) => vault.put(
+      LocalItem(
+        itemId: legacySharingNameItemId,
+        updatedAt: DateTime.now().toUtc(),
+        json: {'kind': legacySharingNameItemId, 'name': 'Alice'},
+      ),
+    );
+    await a.start();
+    await pump();
+    expect(await a.container.read(ztSharingNameProvider).read(), 'Alice');
+    expect((await a.vault.get(legacySharingNameItemId))!.deleted, isTrue);
+    expect(a.manager.tasks, isEmpty, reason: 'neither name item is read as a task');
+    await a.dispose();
+  });
+
   for (final lang in ['en', 'he']) {
     testWidgets('people screen ($lang): members, then invite, then leave, top to bottom', (tester) async {
       late Phone a;
@@ -343,27 +373,31 @@ void main() {
         await a.sync();
         await b.dispose();
       });
-      await tester.pumpWidget(UncontrolledProviderScope(
-        container: a.container,
-        child: MaterialApp(
-          locale: Locale(lang),
-          supportedLocales: AppL10n.supportedLocales,
-          localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
-          home: SharedListPage(spaceId: spaceId),
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: a.container,
+          child: MaterialApp(
+            locale: Locale(lang),
+            supportedLocales: AppL10n.supportedLocales,
+            localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
+            home: ZtSpacePage(spaceId: spaceId, title: 'Groceries'),
+          ),
         ),
-      ));
+      );
       await tester.runAsync(() => pump());
       await tester.pump();
-      final l = lookupAppL10n(Locale(lang));
+      final s = ZtSharingStrings.forLocale(Locale(lang));
       expect(find.text('Groceries'), findsOneWidget);
-      final aliceRow = find.text(l.youName('Alice'));
+      final aliceRow = find.text(s.youName('Alice'));
       final bobRow = find.text('Bob');
-      final invite = find.text(l.invitePeople);
-      final leave = find.text(l.leaveList);
+      final invite = find.text(s.invitePeople);
+      final leave = find.text(s.leave);
       for (final f in [aliceRow, bobRow, invite, leave]) {
         expect(f, findsOneWidget);
       }
-      final ys = [for (final f in [aliceRow, bobRow, invite, leave]) tester.getCenter(f).dy];
+      final ys = [
+        for (final f in [aliceRow, bobRow, invite, leave]) tester.getCenter(f).dy,
+      ];
       expect(ys, orderedEquals([...ys]..sort()), reason: 'stacked in this order');
       // Nothing overlaps: each row starts below the one before.
       expect(tester.getTopLeft(bobRow).dy, greaterThanOrEqualTo(tester.getBottomLeft(aliceRow).dy));
@@ -375,4 +409,27 @@ void main() {
       await tester.runAsync(() => a.dispose());
     });
   }
+}
+
+/// The signed-in account, for screens that ask who "you" are.
+class _SignedIn extends AccountService {
+  _SignedIn(this.id) : super(FakeAccountBackend(onUserChanged: (_) {}));
+  final String id;
+  @override
+  String? get currentUserId => id;
+}
+
+/// Saves straight into the vault (no server), for code that saves through
+/// the sync controller.
+class _StoreSync extends SyncController {
+  _StoreSync(this.vault);
+  final ZtLocalStore vault;
+  @override
+  SyncStatus build() => const SyncStatus();
+  @override
+  Future<void> save(String itemId, Map<String, Object?> json) =>
+      vault.put(LocalItem(itemId: itemId, updatedAt: DateTime.now().toUtc(), json: json));
+  @override
+  Future<void> delete(String itemId) =>
+      vault.put(LocalItem(itemId: itemId, updatedAt: DateTime.now().toUtc(), deleted: true));
 }

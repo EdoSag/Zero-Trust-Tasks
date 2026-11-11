@@ -97,9 +97,7 @@ class TaskListBar extends ConsumerWidget {
                 label: Text(context.l10n.joinListChip),
                 tooltip: context.l10n.joinSharedList,
                 visualDensity: VisualDensity.compact,
-                onPressed: () => Navigator.of(context).push(
-                  MaterialPageRoute<void>(builder: (_) => const JoinListPage()),
-                ),
+                onPressed: () => joinSharedList(context),
               ),
             ),
         ],

@@ -175,14 +175,20 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       if (!mounted) return;
       final settings = ref.read(settingsProvider);
       final lists = ref.read(taskListProvider);
-      final scopes = HomeWidgetService.scopesFor(
-        tasks: ref.read(taskManagerProvider).tasks,
-        lists: lists.lists,
-        showTasks: settings.widgetShowTasks,
-        resolveList: (id) => lists.byId(id).id,
-      );
+      final now = DateTime.now();
+      Map<String, WidgetContent> scopesAt(DateTime at) => HomeWidgetService.scopesFor(
+            tasks: ref.read(taskManagerProvider).tasks,
+            lists: lists.lists,
+            showTasks: settings.widgetShowTasks,
+            now: at,
+            resolveList: (id) => lists.byId(id).id,
+          );
       unawaited(const HomeWidgetService().writeScopes(
-        scopes: scopes,
+        scopes: scopesAt(now),
+        // What the widgets switch to after midnight, so Today stays right
+        // while the app is closed.
+        scopesTomorrow: scopesAt(DateTime(now.year, now.month, now.day + 1)),
+        day: now,
         lists: lists.lists,
         showTasks: settings.widgetShowTasks,
         defaultListId: settings.widgetListId,

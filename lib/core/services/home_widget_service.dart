@@ -67,6 +67,10 @@ class HomeWidgetService {
     };
   }
 
+  /// The day [writeScopes] wrote for, as `TaskListWidgetProvider` compares it.
+  static String dayKey(DateTime d) =>
+      '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   /// Writes every scope, the list names for the widget's list picker (only
   /// with details on) and the scope of widgets placed before the picker.
   Future<void> writeScopes({
@@ -74,14 +78,20 @@ class HomeWidgetService {
     required List<TaskList> lists,
     required bool showTasks,
     String? defaultListId,
+    Map<String, WidgetContent>? scopesTomorrow,
+    DateTime? day,
   }) async {
     if (!isSupported) return;
+    String encode(Map<String, WidgetContent> s) =>
+        jsonEncode({for (final MapEntry(:key, :value) in s.entries) key: value.toJson()});
     try {
       await HomeWidget.saveWidgetData<bool>('tasks_widget_locked', false);
+      await HomeWidget.saveWidgetData<String>('tasks_widget_scopes', encode(scopes));
       await HomeWidget.saveWidgetData<String>(
-        'tasks_widget_scopes',
-        jsonEncode({for (final MapEntry(:key, :value) in scopes.entries) key: value.toJson()}),
+        'tasks_widget_scopes_next',
+        scopesTomorrow == null ? null : encode(scopesTomorrow),
       );
+      await HomeWidget.saveWidgetData<String>('tasks_widget_day', day == null ? null : dayKey(day));
       await HomeWidget.saveWidgetData<String>(
         'tasks_widget_default_scope',
         scopeKey(WidgetFilter.list, defaultListId),
@@ -140,7 +150,8 @@ class HomeWidgetService {
       WidgetFilter.list => open,
     };
     final dueToday = open.where((t) => t.dueDate != null && isToday(t.dueDate!)).length;
-    final overdue = open.where((t) => t.isOverdue && !isToday(t.dueDate!)).length;
+    // Against [today], not the clock: tomorrow's scopes are worked out ahead.
+    final overdue = open.where((t) => t.dueDate != null && today.isAfter(t.dueDate!) && !isToday(t.dueDate!)).length;
     // With details off a list's widget counts every list (its name is
     // hidden, so a count of one list would be a puzzle); Today and Starred
     // count their own tasks.
@@ -192,6 +203,8 @@ class HomeWidgetService {
     try {
       await HomeWidget.saveWidgetData<bool>('tasks_widget_locked', true);
       await HomeWidget.saveWidgetData<String>('tasks_widget_scopes', null);
+      await HomeWidget.saveWidgetData<String>('tasks_widget_scopes_next', null);
+      await HomeWidget.saveWidgetData<String>('tasks_widget_day', null);
       await HomeWidget.saveWidgetData<String>('tasks_widget_lists', null);
       await _clearOldRows();
       await _saveTexts();

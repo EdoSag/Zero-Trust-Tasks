@@ -375,6 +375,19 @@ void main() {
       expect(HomeWidgetService.scopeKey(WidgetFilter.list), 'all');
       expect(HomeWidgetService.scopeKey(WidgetFilter.list, 'x'), 'list:x');
     });
+
+    test("tomorrow's scopes, for after midnight: Today moves on a day", () {
+      final tomorrow = HomeWidgetService.scopesFor(
+        tasks: [...tasks, task('Next', due: DateTime(2026, 5, 11, 8)), task('Later', due: DateTime(2026, 5, 13))],
+        lists: const [],
+        showTasks: true,
+        now: DateTime(2026, 5, 11),
+      );
+      expect(tomorrow['today']!.rows.map((r) => r.title), ['Late', 'Today', 'Next']);
+      expect(tomorrow['today']!.rows[1].due, 'Overdue · Sun 10 May');
+      expect(tomorrow['today']!.summary, '3 open · 1 due today · 2 overdue');
+      expect(HomeWidgetService.dayKey(DateTime(2026, 5, 9, 23, 59)), '2026-05-09');
+    });
   });
 
   test('subtask JSON unchanged', () {

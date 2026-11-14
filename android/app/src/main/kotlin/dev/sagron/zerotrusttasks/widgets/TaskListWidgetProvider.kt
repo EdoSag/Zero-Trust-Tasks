@@ -1,5 +1,6 @@
 package dev.sagron.zerotrusttasks.widgets
 
+import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
@@ -17,6 +18,7 @@ import es.antonborri.home_widget.HomeWidgetPlugin
 import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONArray
 import org.json.JSONObject
+import java.util.Calendar
 
 /**
  * Open tasks on the home screen, with a tick circle per task and a + to add
@@ -39,6 +41,7 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
     companion object {
         const val ACTION_TICK = "dev.sagron.zerotrusttasks.widgets.TICK"
         const val EXTRA_TASK_ID = "task_id"
+        private const val ACTION_MIDNIGHT = "dev.sagron.zerotrusttasks.widgets.MIDNIGHT"
         private const val MAX_ROWS = 5
         private val ROW_IDS = intArrayOf(R.id.row_0, R.id.row_1, R.id.row_2, R.id.row_3, R.id.row_4)
         private val CHECK_IDS = intArrayOf(R.id.row_0_check, R.id.row_1_check, R.id.row_2_check, R.id.row_3_check, R.id.row_4_check)
@@ -47,6 +50,65 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
         private val DUE_IDS = intArrayOf(R.id.row_0_due, R.id.row_1_due, R.id.row_2_due, R.id.row_3_due, R.id.row_4_due)
 
         private const val SCOPES_KEY = "tasks_widget_scopes"
+
+        /** The same scopes worked out for tomorrow, used once the day changes. */
+        private const val SCOPES_NEXT_KEY = "tasks_widget_scopes_next"
+
+        private fun dayKey(c: Calendar) = String.format(
+            java.util.Locale.ROOT,
+            "%04d-%02d-%02d",
+            c.get(Calendar.YEAR),
+            c.get(Calendar.MONTH) + 1,
+            c.get(Calendar.DAY_OF_MONTH),
+        )
+
+        /**
+         * Which scopes are current: the app writes today's and tomorrow's, so
+         * Today (and "due today") stay right past midnight while it is closed.
+         */
+        private fun currentScopesKey(prefs: SharedPreferences): String {
+            val written = prefs.getString("tasks_widget_day", null) ?: return SCOPES_KEY
+            if (written >= dayKey(Calendar.getInstance())) return SCOPES_KEY
+            return if (prefs.getString(SCOPES_NEXT_KEY, null) != null) SCOPES_NEXT_KEY else SCOPES_KEY
+        }
+
+        private fun readScopes(prefs: SharedPreferences): JSONObject? = try {
+            prefs.getString(currentScopesKey(prefs), null)?.let { JSONObject(it) }
+        } catch (e: Exception) {
+            null
+        }
+
+        /**
+         * A widget whose list was deleted falls back to the default list's
+         * scope, then all lists, instead of staying empty for good.
+         */
+        private fun resolveScope(prefs: SharedPreferences, scopes: JSONObject?, widgetId: Int): String {
+            val picked = scopeOf(prefs, widgetId)
+            if (scopes == null || scopes.has(picked)) return picked
+            val fallback = prefs.getString("tasks_widget_default_scope", null)
+            return if (fallback != null && scopes.has(fallback)) fallback else "all"
+        }
+
+        /** Redraws at the next midnight, when tomorrow's scopes take over. */
+        private fun scheduleMidnight(context: Context) {
+            val next = Calendar.getInstance().apply {
+                add(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 5)
+                set(Calendar.MILLISECOND, 0)
+            }
+            val intent = Intent(context, TaskListWidgetProvider::class.java).setAction(ACTION_MIDNIGHT)
+            val pending = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
+            val alarms = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+            // Inexact is fine: a few minutes late costs nothing.
+            alarms.set(AlarmManager.RTC, next.timeInMillis, pending)
+        }
 
         fun scopeKey(widgetId: Int) = "tasks_widget_${widgetId}_scope"
 
@@ -69,13 +131,8 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
 
         private data class Content(val title: String?, val summary: String?, val rows: List<Row>)
 
-        private fun readContent(prefs: SharedPreferences, scope: String): Content? {
-            val all = try {
-                JSONObject(prefs.getString(SCOPES_KEY, null) ?: return null)
-            } catch (e: Exception) {
-                return null
-            }
-            val one = all.optJSONObject(scope) ?: return null
+        private fun readContent(all: JSONObject?, scope: String): Content? {
+            val one = all?.optJSONObject(scope) ?: return null
             val rows = one.optJSONArray("r") ?: JSONArray()
             return Content(
                 title = one.optString("t").ifEmpty { null },
@@ -95,8 +152,9 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             val showAppRow = height == 0 || height >= 160
             val maxRows = rowsFor(height, showAppRow)
             val locked = prefs.getBoolean("tasks_widget_locked", false)
-            val scope = scopeOf(prefs, widgetId)
-            val content = if (locked) null else readContent(prefs, scope)
+            val scopes = if (locked) null else readScopes(prefs)
+            val scope = resolveScope(prefs, scopes, widgetId)
+            val content = readContent(scopes, scope)
             views.setViewVisibility(R.id.app_row, if (showAppRow) View.VISIBLE else View.GONE)
             // Signed out: a lock and one line, unless only the header fits.
             val roomForLock = height == 0 || height >= 100
@@ -193,6 +251,7 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
         appWidgetIds: IntArray,
         widgetData: SharedPreferences,
     ) {
+        scheduleMidnight(context)
         appWidgetIds.forEach { widgetId ->
             appWidgetManager.updateAppWidget(
                 widgetId,
@@ -220,6 +279,11 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             tick(context, taskId)
             return
         }
+        if (intent.action == ACTION_MIDNIGHT) {
+            scheduleMidnight(context)
+            updateAll(context)
+            return
+        }
         super.onReceive(context, intent)
     }
 
@@ -236,15 +300,34 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
      */
     private fun tick(context: Context, taskId: String) {
         val prefs = HomeWidgetPlugin.getData(context)
-        val scopes = try {
-            prefs.getString(SCOPES_KEY, null)?.let { JSONObject(it) }
-        } catch (e: Exception) {
-            null
-        } ?: return
         // Only a task a widget shows can be ticked: the provider has to be
         // exported for the launcher, so another app could send this too.
-        var shown = false
+        val current = currentScopesKey(prefs)
         val doneSaved = WidgetText.get(context, prefs, "done_saved", R.string.widget_done_saved)
+        val editor = prefs.edit()
+        var shown = false
+        for (key in listOf(SCOPES_KEY, SCOPES_NEXT_KEY)) {
+            val scopes = try {
+                prefs.getString(key, null)?.let { JSONObject(it) }
+            } catch (e: Exception) {
+                null
+            } ?: continue
+            if (removeTask(scopes, taskId, doneSaved)) {
+                if (key == current) shown = true
+                editor.putString(key, scopes.toString())
+            }
+        }
+        if (!shown) return
+        val pending = prefs.getString("widget_pending_ticks", null).orEmpty()
+        editor
+            .putString("widget_pending_ticks", if (pending.isEmpty()) taskId else "$pending\n$taskId")
+            .apply()
+        updateAll(context)
+    }
+
+    /** Takes [taskId] off every scope in [scopes]; true if any showed it. */
+    private fun removeTask(scopes: JSONObject, taskId: String, doneSaved: String): Boolean {
+        var removed = false
         for (key in scopes.keys()) {
             val scope = scopes.optJSONObject(key) ?: continue
             val rows = scope.optJSONArray("r") ?: continue
@@ -254,17 +337,11 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
                 if (row.optString("id") != taskId) kept.put(row)
             }
             if (kept.length() != rows.length()) {
-                shown = true
+                removed = true
                 scope.put("r", kept)
                 scope.put("s", doneSaved)
             }
         }
-        if (!shown) return
-        val pending = prefs.getString("widget_pending_ticks", null).orEmpty()
-        prefs.edit()
-            .putString("widget_pending_ticks", if (pending.isEmpty()) taskId else "$pending\n$taskId")
-            .putString(SCOPES_KEY, scopes.toString())
-            .apply()
-        updateAll(context)
+        return removed
     }
 }

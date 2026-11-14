@@ -188,6 +188,11 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
         // What the widgets switch to after midnight, so Today stays right
         // while the app is closed.
         scopesTomorrow: scopesAt(DateTime(now.year, now.month, now.day + 1)),
+        // And the rest of the week, for when it stays closed longer.
+        scopesLater: {
+          for (var i = 2; i <= HomeWidgetService.daysAhead; i++)
+            if (DateTime(now.year, now.month, now.day + i) case final day) day: scopesAt(day),
+        },
         day: now,
         lists: lists.lists,
         showTasks: settings.widgetShowTasks,

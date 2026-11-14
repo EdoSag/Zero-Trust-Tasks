@@ -802,7 +802,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get widgetDetailsBody =>
-      'Off: the widget shows counts only. On: the titles of your next tasks are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them';
+      'Off: task widgets show counts only. On: the titles of your next tasks and the names of your lists are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them. Each widget shows the list you pick when you place it';
 
   @override
   String savedFile(String file) {
@@ -1363,4 +1363,8 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get aPlace => 'a place';
+
+  @override
+  String get widgetPickListHint =>
+      'To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings';
 }

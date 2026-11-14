@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="task_list_widget_description">המשימות הפתוחות שלך: לסמן כבוצעו או להוסיף חדשה</string>
+    <string name="task_list_widget_description">המשימות הפתוחות שלך מרשימה אחת, מהיום או מהמסומנות בכוכב: לסמן כבוצעו או להוסיף חדשה</string>
     <string name="widget_all_tasks">כל המשימות</string>
     <string name="widget_add_task">הוספת משימה</string>
     <string name="widget_complete_task">השלמת המשימה</string>
@@ -8,4 +8,13 @@
     <string name="widget_your_tasks">המשימות שלך</string>
     <string name="widget_open_app_summary">יש לפתוח את האפליקציה כדי לראות את המשימות</string>
     <string name="widget_done_saved">בוצע. יישמר בפתיחה הבאה של האפליקציה</string>
+    <string name="quick_add_task_widget_label">הוספת משימה</string>
+    <string name="quick_add_task_widget_description">הקשה אחת להוספת משימה</string>
+    <string name="widget_all_lists">כל הרשימות</string>
+    <string name="widget_today">היום</string>
+    <string name="widget_starred">מסומנות בכוכב</string>
+    <string name="widget_signed_out">מנותק</string>
+    <string name="widget_pick_title">הווידג\'ט מציג</string>
+    <string name="widget_cancel">ביטול</string>
+    <string name="widget_pick_hint">כדי לבחור רשימה אחת, יש להפעיל את \"הצגת פרטים במסך הבית\" בהגדרות של ZT Tasks</string>
 </resources>

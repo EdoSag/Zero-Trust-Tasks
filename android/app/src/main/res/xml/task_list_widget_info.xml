@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Resizable from 2x1 (title, counts, +) up to the whole screen; more
+<!-- Each widget shows the list picked when it is placed (W6); the launcher's
+     widget settings pick again. Resizable from 2x1 (title, counts, +) up to the whole screen; more
      tasks show as it grows. The header (14dp padding twice plus the 40dp
      + button) needs 72dp, so that is the shortest it goes. See TaskListWidgetProvider.rowsFor. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
@@ -13,6 +14,8 @@
     android:initialLayout="@layout/widget_task_list"
     android:previewLayout="@layout/widget_task_list_preview"
     android:description="@string/task_list_widget_description"
+    android:configure="dev.sagron.zerotrusttasks.widgets.TaskListWidgetConfigureActivity"
+    android:widgetFeatures="reconfigurable"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen">
 </appwidget-provider>

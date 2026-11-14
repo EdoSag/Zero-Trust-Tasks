@@ -54,6 +54,15 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
         /** The same scopes worked out for tomorrow, used once the day changes. */
         private const val SCOPES_NEXT_KEY = "tasks_widget_scopes_next"
 
+        /**
+         * The days after tomorrow, `{"yyyy-MM-dd": scopes}`, for when the app
+         * stays closed longer than a day.
+         */
+        private const val SCOPES_LATER_KEY = "tasks_widget_scopes_later"
+
+        /** [currentScopesKey] for a day in [SCOPES_LATER_KEY]. */
+        private const val LATER_PREFIX = "later:"
+
         private fun dayKey(c: Calendar) = String.format(
             java.util.Locale.ROOT,
             "%04d-%02d-%02d",
@@ -62,18 +71,38 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
             c.get(Calendar.DAY_OF_MONTH),
         )
 
+        private fun readLater(prefs: SharedPreferences): JSONObject? = try {
+            prefs.getString(SCOPES_LATER_KEY, null)?.let { JSONObject(it) }
+        } catch (e: Exception) {
+            null
+        }
+
         /**
-         * Which scopes are current: the app writes today's and tomorrow's, so
-         * Today (and "due today") stay right past midnight while it is closed.
+         * Which scopes are current: the app writes today's, tomorrow's and the
+         * rest of the week's, so Today (and "due today") stay right past
+         * midnight while it is closed. Past the last day written, the last
+         * one stays.
          */
         private fun currentScopesKey(prefs: SharedPreferences): String {
             val written = prefs.getString("tasks_widget_day", null) ?: return SCOPES_KEY
-            if (written >= dayKey(Calendar.getInstance())) return SCOPES_KEY
+            val today = dayKey(Calendar.getInstance())
+            if (written >= today) return SCOPES_KEY
+            val later = readLater(prefs)
+            if (later != null) {
+                if (later.has(today)) return LATER_PREFIX + today
+                val last = later.keys().asSequence().filter { it < today }.maxOrNull()
+                if (last != null) return LATER_PREFIX + last
+            }
             return if (prefs.getString(SCOPES_NEXT_KEY, null) != null) SCOPES_NEXT_KEY else SCOPES_KEY
         }
 
         private fun readScopes(prefs: SharedPreferences): JSONObject? = try {
-            prefs.getString(currentScopesKey(prefs), null)?.let { JSONObject(it) }
+            val key = currentScopesKey(prefs)
+            if (key.startsWith(LATER_PREFIX)) {
+                readLater(prefs)?.optJSONObject(key.removePrefix(LATER_PREFIX))
+            } else {
+                prefs.getString(key, null)?.let { JSONObject(it) }
+            }
         } catch (e: Exception) {
             null
         }
@@ -316,6 +345,17 @@ class TaskListWidgetProvider : HomeWidgetProvider() {
                 if (key == current) shown = true
                 editor.putString(key, scopes.toString())
             }
+        }
+        readLater(prefs)?.let { later ->
+            var changed = false
+            for (day in later.keys().asSequence().toList()) {
+                val scopes = later.optJSONObject(day) ?: continue
+                if (removeTask(scopes, taskId, doneSaved)) {
+                    if (LATER_PREFIX + day == current) shown = true
+                    changed = true
+                }
+            }
+            if (changed) editor.putString(SCOPES_LATER_KEY, later.toString())
         }
         if (!shown) return
         val pending = prefs.getString("widget_pending_ticks", null).orEmpty()

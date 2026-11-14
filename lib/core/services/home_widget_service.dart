@@ -29,6 +29,10 @@ class HomeWidgetService {
   static const quickAddProviderName = 'dev.sagron.zerotrusttasks.widgets.QuickAddTaskWidgetProvider';
   static const maxRows = 5;
 
+  /// Days ahead the widget content is worked out, so Today and the due
+  /// labels stay right while the app is closed for up to a week.
+  static const daysAhead = 7;
+
   /// Lists beyond this many get no scope of their own (picker and content).
   static const maxListScopes = 30;
 
@@ -79,6 +83,7 @@ class HomeWidgetService {
     required bool showTasks,
     String? defaultListId,
     Map<String, WidgetContent>? scopesTomorrow,
+    Map<DateTime, Map<String, WidgetContent>>? scopesLater,
     DateTime? day,
   }) async {
     if (!isSupported) return;
@@ -90,6 +95,19 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<String>(
         'tasks_widget_scopes_next',
         scopesTomorrow == null ? null : encode(scopesTomorrow),
+      );
+      // The days after tomorrow, keyed by [dayKey], for when the app stays
+      // closed longer than a day.
+      await HomeWidget.saveWidgetData<String>(
+        'tasks_widget_scopes_later',
+        scopesLater == null || scopesLater.isEmpty
+            ? null
+            : jsonEncode({
+                for (final MapEntry(key: date, value: daysScopes) in scopesLater.entries)
+                  dayKey(date): {
+                    for (final MapEntry(:key, :value) in daysScopes.entries) key: value.toJson(),
+                  },
+              }),
       );
       await HomeWidget.saveWidgetData<String>('tasks_widget_day', day == null ? null : dayKey(day));
       await HomeWidget.saveWidgetData<String>(
@@ -204,6 +222,7 @@ class HomeWidgetService {
       await HomeWidget.saveWidgetData<bool>('tasks_widget_locked', true);
       await HomeWidget.saveWidgetData<String>('tasks_widget_scopes', null);
       await HomeWidget.saveWidgetData<String>('tasks_widget_scopes_next', null);
+      await HomeWidget.saveWidgetData<String>('tasks_widget_scopes_later', null);
       await HomeWidget.saveWidgetData<String>('tasks_widget_day', null);
       await HomeWidget.saveWidgetData<String>('tasks_widget_lists', null);
       await _clearOldRows();

@@ -1,0 +1,27 @@
+Zero-Trust Tasks keeps your to-dos, errands and plans in one simple list, with reminders that arrive on time. Every task is encrypted on your phone, so your plans stay yours.
+
+WHAT IT DOES
+• Several lists with their own colours; move tasks between them.
+• Subtasks: drag a task onto another to indent it, and drag to reorder.
+• Star the important ones and see them all in one Starred view.
+• Quick add in plain words: "call mum tomorrow 6pm" (English and Hebrew).
+• Reminders with Complete and Snooze buttons right on the notification.
+• Location reminders: get reminded when you arrive or leave a place. Your location never leaves the phone.
+• Repeating tasks and due dates that show up in Zero-Trust Calendar.
+• Link a task to a note or a contact in the other Zero-Trust apps.
+• Shared lists with family or friends who use Zero-Trust, still end-to-end encrypted.
+• Home-screen widget: see your list, tick off tasks and add new ones.
+• Import from Google Tasks (Google Takeout).
+
+WHY ZERO-TRUST
+• End-to-end encrypted: everything is encrypted on your phone before it syncs. We can't read it, and neither can anyone who breaks into the server.
+• One private account for every Zero-Trust app, unlocked with your fingerprint or face.
+• Works offline and syncs across your devices when you're back online.
+• No ads, no trackers, no analytics, no data sold. Ever.
+• Open source (AGPL-3.0), so anyone can check what the app does.
+• English and Hebrew, with full right-to-left support.
+
+Part of the Zero-Trust suite: Notes, Tasks, Calendar, Contacts, Phone, Fitness, Meds, Time and Browser. One account opens them all.
+
+Privacy policy: https://zerotrust.bz/privacy/
+Support: support@zerotrust.bz

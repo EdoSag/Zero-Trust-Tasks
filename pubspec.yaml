@@ -1,7 +1,7 @@
 name: zero_trust_tasks
 description: End-to-end encrypted tasks and reminders, part of the Zero-Trust apps.
 publish_to: none
-version: 0.4.1+12
+version: 0.5.1+14
 environment:
   sdk: ^3.8.0
 
@@ -63,6 +63,13 @@ dependencies:
   flutter_localizations:
     sdk: flutter
 dev_dependencies:
+  # Release checks every Zero-Trust app runs in CI (keys, sync, sign-in, app
+  # setup, database). Independent of zero_trust_core, so it may be newer.
+  zt_release_checks:
+    git:
+      url: https://github.com/EdoSag/Zero-Trust-Core.git
+      path: packages/zt_release_checks
+      ref: b43fcd045722bc364ef2eaa739db181f9dac144f
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0

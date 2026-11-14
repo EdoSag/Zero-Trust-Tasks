@@ -45,6 +45,15 @@ void notificationActionInBackground(NotificationResponse response) {
   unawaited(_handleAction(response, FlutterLocalNotificationsPlugin()));
 }
 
+/// Exact when "Alarms & reminders" is allowed; otherwise a few minutes late
+/// rather than failing (zonedSchedule throws on exact without the permission).
+Future<AndroidScheduleMode> _scheduleMode(FlutterLocalNotificationsPlugin plugin) async {
+  final android = plugin
+      .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+  final exact = await android?.canScheduleExactNotifications() ?? true;
+  return exact ? AndroidScheduleMode.exactAllowWhileIdle : AndroidScheduleMode.inexactAllowWhileIdle;
+}
+
 Future<bool> _handleAction(NotificationResponse response, FlutterLocalNotificationsPlugin plugin) async {
   final actionId = response.actionId;
   if (actionId != _completeAction && actionId != _snoozeAction) return false;
@@ -69,7 +78,7 @@ Future<bool> _handleAction(NotificationResponse response, FlutterLocalNotificati
       tz.TZDateTime.from(until, tz.UTC),
       _details,
       payload: response.payload,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(plugin),
       uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
     );
   }
@@ -166,7 +175,14 @@ class NotificationService {
         .resolvePlatformSpecificImplementation<
             AndroidFlutterLocalNotificationsPlugin>();
     if (android != null) {
-      return await android.requestNotificationsPermission() ?? false;
+      final granted = await android.requestNotificationsPermission() ?? false;
+      // Google Play only allows USE_EXACT_ALARM for alarm clock and calendar
+      // apps, so Tasks asks for "Alarms & reminders" (SCHEDULE_EXACT_ALARM),
+      // which Android 14+ leaves off until the user turns it on.
+      if (granted && !(await android.canScheduleExactNotifications() ?? true)) {
+        await android.requestExactAlarmsPermission();
+      }
+      return granted;
     }
     final ios = _plugin
         .resolvePlatformSpecificImplementation<
@@ -203,7 +219,7 @@ class NotificationService {
       scheduledTime,
       _details,
       payload: _ReminderPayload(task.id, title, body).encode(),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: await _scheduleMode(_plugin),
       uiLocalNotificationDateInterpretation:
           UILocalNotificationDateInterpretation.absoluteTime,
     );

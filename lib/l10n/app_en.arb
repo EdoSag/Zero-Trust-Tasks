@@ -388,7 +388,7 @@
       }
     }
   },
-  "widgetDetailsBody": "Off: the widget shows counts only. On: the titles of your next tasks are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them",
+  "widgetDetailsBody": "Off: task widgets show counts only. On: the titles of your next tasks and the names of your lists are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them. Each widget shows the list you pick when you place it",
   "savedFile": "Saved {file}",
   "@savedFile": {
     "placeholders": {
@@ -967,5 +967,6 @@
   "placeRemindersChannel": "Location reminders",
   "placeRemindersChannelHint": "Task reminders when you arrive at or leave a place",
   "locationStaysOnPhone": "Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.",
-  "aPlace": "a place"
+  "aPlace": "a place",
+  "widgetPickListHint": "To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings"
 }

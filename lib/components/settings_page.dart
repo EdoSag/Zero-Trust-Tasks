@@ -70,15 +70,6 @@ class SettingsPage extends ConsumerWidget {
           value: settings.widgetShowTasks,
           onChanged: settings.setWidgetShowTasks,
         ),
-        if (settings.widgetShowTasks)
-          ListTile(
-            leading: const SizedBox(width: 24),
-            title: Text(context.l10n.widgetShows),
-            subtitle: Text(settings.widgetListId == null
-                ? context.l10n.allLists
-                : ref.watch(taskListProvider).byId(settings.widgetListId).name),
-            onTap: () => _pickWidgetList(context, ref),
-          ),
         SwitchListTile(
           secondary: const Icon(Icons.notifications_outlined),
           title: Text(context.l10n.showTaskDetailsInNotifications),
@@ -88,30 +79,6 @@ class SettingsPage extends ConsumerWidget {
         ),
       ],
     );
-  }
-
-  Future<void> _pickWidgetList(BuildContext context, WidgetRef ref) async {
-    final lists = ref.read(taskListProvider).lists;
-    final current = ref.read(settingsProvider).widgetListId;
-    final picked = await showDialog<String>(
-      context: context,
-      builder: (dialogContext) => SimpleDialog(
-        title: Text(context.l10n.widgetShows),
-        children: [
-          SimpleDialogOption(
-            onPressed: () => Navigator.pop(dialogContext, ''),
-            child: Text(current == null ? '${context.l10n.allLists}  ✓' : context.l10n.allLists),
-          ),
-          for (final l in lists)
-            SimpleDialogOption(
-              onPressed: () => Navigator.pop(dialogContext, l.id),
-              child: Text(current == l.id ? '${l.name}  ✓' : l.name),
-            ),
-        ],
-      ),
-    );
-    if (picked == null) return;
-    await ref.read(settingsProvider).setWidgetListId(picked.isEmpty ? null : picked);
   }
 
   Future<void> _saveExport(BuildContext context, WidgetRef ref, ZtExport export) async {

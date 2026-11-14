@@ -54,3 +54,6 @@ app.*.map.json
 *.jks
 *.keystore
 /android/key.properties
+
+# Written and removed by `dart run zt_release_checks`.
+test/zt_release_checks_test.dart

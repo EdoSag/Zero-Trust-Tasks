@@ -3,7 +3,7 @@
      widget uses the language picked in the app's Settings instead (see
      WidgetText.kt). -->
 <resources>
-    <string name="task_list_widget_description">Your open tasks: tick them off or add a new one</string>
+    <string name="task_list_widget_description">Your open tasks from one list, Today or Starred: tick them off or add a new one</string>
     <string name="widget_all_tasks">All tasks</string>
     <string name="widget_add_task">Add a task</string>
     <string name="widget_complete_task">Complete task</string>
@@ -11,4 +11,13 @@
     <string name="widget_your_tasks">Your tasks</string>
     <string name="widget_open_app_summary">Open the app to see your tasks</string>
     <string name="widget_done_saved">Done. Saved when you next open the app</string>
+    <string name="quick_add_task_widget_label">Add a task</string>
+    <string name="quick_add_task_widget_description">One tap to add a task</string>
+    <string name="widget_all_lists">All lists</string>
+    <string name="widget_today">Today</string>
+    <string name="widget_starred">Starred</string>
+    <string name="widget_signed_out">Signed out</string>
+    <string name="widget_pick_title">Widget shows</string>
+    <string name="widget_cancel">Cancel</string>
+    <string name="widget_pick_hint">To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings</string>
 </resources>

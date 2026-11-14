@@ -311,6 +311,70 @@ void main() {
       );
       expect(mine.rows.map((r) => r.title), ['Orphan']);
     });
+
+    test('Today shows tasks due today and overdue; Starred only starred ones', () {
+      final starred = task('Star').copyWith(starred: true);
+      final today = HomeWidgetService.contentFor(
+        tasks: [...tasks, starred],
+        list: null,
+        showTasks: true,
+        now: now,
+        filter: WidgetFilter.today,
+      );
+      expect(today.title, 'Today');
+      expect(today.rows.map((r) => r.title), ['Late', 'Today']);
+      expect(today.summary, '2 open · 1 due today · 1 overdue');
+
+      final star = HomeWidgetService.contentFor(
+        tasks: [...tasks, starred],
+        list: null,
+        showTasks: true,
+        now: now,
+        filter: WidgetFilter.starred,
+      );
+      expect(star.title, 'Starred');
+      expect(star.rows.map((r) => r.title), ['Star']);
+    });
+
+    test('with details off no scope has titles or list names', () {
+      final work = TaskList.create(name: 'Secret project');
+      final scopes = HomeWidgetService.scopesFor(
+        tasks: [...tasks, task('Plan', listId: work.id)],
+        lists: [TaskList.fallbackDefault, work],
+        showTasks: false,
+        now: now,
+      );
+      expect(scopes.keys, ['all', 'today', 'starred', 'list:default', 'list:${work.id}']);
+      for (final content in scopes.values) {
+        expect(content.rows, isEmpty);
+      }
+      expect(scopes.toString(), isNot(contains('Secret project')));
+      expect(scopes['list:${work.id}']!.title, 'All tasks');
+      expect(scopes['today']!.title, 'Today');
+    });
+
+    test('every scope at once, in the form the widget reads', () {
+      final work = TaskList.create(name: 'Work');
+      final scopes = HomeWidgetService.scopesFor(
+        tasks: [...tasks, task('Plan', listId: work.id)],
+        lists: [TaskList.fallbackDefault, work],
+        showTasks: true,
+        now: now,
+      );
+      expect(scopes['list:${work.id}']!.toJson(), {
+        't': 'Work',
+        's': '1 open · 1 due today · 1 overdue',
+        'r': [
+          {'id': 'plan', 't': 'Plan'},
+        ],
+      });
+      expect(scopes['today']!.toJson()['r'], [
+        {'id': 'late', 't': 'Late', 'd': 'Overdue · Fri 8 May'},
+        {'id': 'today', 't': 'Today', 'd': 'Today'},
+      ]);
+      expect(HomeWidgetService.scopeKey(WidgetFilter.list), 'all');
+      expect(HomeWidgetService.scopeKey(WidgetFilter.list, 'x'), 'list:x');
+    });
   });
 
   test('subtask JSON unchanged', () {

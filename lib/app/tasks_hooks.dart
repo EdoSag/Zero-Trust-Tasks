@@ -175,14 +175,18 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       if (!mounted) return;
       final settings = ref.read(settingsProvider);
       final lists = ref.read(taskListProvider);
-      final listId = settings.widgetListId;
-      final content = HomeWidgetService.contentFor(
+      final scopes = HomeWidgetService.scopesFor(
         tasks: ref.read(taskManagerProvider).tasks,
-        list: listId == null ? null : lists.byId(listId),
+        lists: lists.lists,
         showTasks: settings.widgetShowTasks,
         resolveList: (id) => lists.byId(id).id,
       );
-      unawaited(const HomeWidgetService().write(content));
+      unawaited(const HomeWidgetService().writeScopes(
+        scopes: scopes,
+        lists: lists.lists,
+        showTasks: settings.widgetShowTasks,
+        defaultListId: settings.widgetListId,
+      ));
     });
   }
 
@@ -200,7 +204,12 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     if (uri == null) return;
     final navigator = Navigator.of(context);
     if (uri.host == 'new-task') {
-      showQuickAdd(context);
+      // From a list's or Starred widget: the new task goes there.
+      showQuickAdd(
+        context,
+        listId: uri.queryParameters['list'],
+        starred: uri.queryParameters['starred'] == '1',
+      );
     } else if (uri.host == 'shared') {
       // Text shared from another app: the editor opens filled in, and
       // nothing is saved until Save.

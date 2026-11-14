@@ -1504,7 +1504,7 @@ abstract class AppL10n {
   /// No description provided for @widgetDetailsBody.
   ///
   /// In en, this message translates to:
-  /// **'Off: the widget shows counts only. On: the titles of your next tasks are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them'**
+  /// **'Off: task widgets show counts only. On: the titles of your next tasks and the names of your lists are stored unencrypted on this phone for the home screen, so anyone holding the unlocked phone can see them. Each widget shows the list you pick when you place it'**
   String get widgetDetailsBody;
 
   /// No description provided for @savedFile.
@@ -2226,6 +2226,12 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'a place'**
   String get aPlace;
+
+  /// No description provided for @widgetPickListHint.
+  ///
+  /// In en, this message translates to:
+  /// **'To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings'**
+  String get widgetPickListHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

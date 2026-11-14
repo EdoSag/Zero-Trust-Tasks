@@ -60,6 +60,28 @@
                 android:resource="@xml/task_list_widget_info"/>
         </receiver>
 
+        <!-- 1x1 "Add a task" (W6). -->
+        <receiver android:name=".widgets.QuickAddTaskWidgetProvider"
+            android:label="@string/quick_add_task_widget_label"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/quick_add_task_widget_info"/>
+        </receiver>
+
+        <!-- Picks what a task widget shows (W6). Exported: the launcher starts it. -->
+        <activity
+            android:name=".widgets.TaskListWidgetConfigureActivity"
+            android:exported="true"
+            android:excludeFromRecents="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
+            </intent-filter>
+        </activity>
+
         <!-- flutter_local_notifications: without these, scheduled reminders
              never appear and the Complete/Snooze buttons do nothing. -->
         <receiver android:exported="false" android:name="com.dexterous.flutterlocalnotifications.ActionBroadcastReceiver" />

@@ -1,7 +1,7 @@
 name: zero_trust_tasks
 description: End-to-end encrypted tasks and reminders, part of the Zero-Trust apps.
 publish_to: none
-version: 0.5.1+14
+version: 0.5.2+15
 environment:
   sdk: ^3.8.0
 
@@ -25,21 +25,21 @@ dependencies:
       # invite links per app (Core PR #37). Every app that shares must be on
       # this commit or later: older ones cannot read the new member records.
       # Switch to the release tag once one is pushed.
-      ref: cb397d13efd868e34a34d465251a7f705b49f9e1
+      ref: 08eccf33e5989c0efceba67d351159b979ae0740
   # Location reminders (T11), watched by the phone itself: no Google Play
   # services, the location never leaves the phone.
   zt_places:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_places
-      ref: cb397d13efd868e34a34d465251a7f705b49f9e1
+      ref: 08eccf33e5989c0efceba67d351159b979ae0740
   # The shared sharing screens (people, invite, join, compare codes), the
   # same in every Zero-Trust app.
   zt_sharing_ui:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_sharing_ui
-      ref: cb397d13efd868e34a34d465251a7f705b49f9e1
+      ref: 08eccf33e5989c0efceba67d351159b979ae0740
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0

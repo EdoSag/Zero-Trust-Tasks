@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,7 @@ import 'package:zero_trust_tasks/core/services/notification_service.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'app/email_links.dart';
 
 /// Store name stays "Zero-Trust Tasks"; the launcher shows "ZT Tasks".
 const tasksAppConfig = ZtAppConfig(appId: 'tasks', displayName: 'Zero-Trust Tasks');
@@ -23,6 +25,7 @@ Future<void> main() async {
       throw StateError('SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env');
     }
     await Supabase.initialize(url: url, anonKey: key);
+    unawaited(EmailLinks.listen());
     final prefs = await SharedPreferences.getInstance();
     // English or Hebrew, as picked in Settings, from the first frame.
     await ZtLanguageController.preload();

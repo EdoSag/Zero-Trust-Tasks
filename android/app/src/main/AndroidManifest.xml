@@ -36,6 +36,13 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Password-reset emails: https://zerotrust.bz/auth/tasks/?code=… (see EmailLinks). -->
+            <intent-filter android:autoVerify="true">
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="https" android:host="zerotrust.bz" android:pathPrefix="/auth/tasks/"/>
+            </intent-filter>
             <!-- Shared-list invites: https://zerotrust.bz/join/tasks#zt1.tasks.… -->
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW"/>

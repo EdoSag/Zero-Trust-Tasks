@@ -7,6 +7,7 @@ import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/components/planner_fields.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({
@@ -326,6 +327,7 @@ class TaskCard extends StatelessWidget {
                           ],
                         ),
                       ],
+                      PlannedChip(task: task),
                       if (hasSubTasks) ...[
                         const SizedBox(height: 8.0),
                         ClipRRect(

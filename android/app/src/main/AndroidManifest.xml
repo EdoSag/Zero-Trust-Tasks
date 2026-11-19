@@ -131,8 +131,10 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="http"/>
         </intent>
-        <!-- "Open ZT Notes / ZT Contacts" from a task's linked note or contact. -->
+        <!-- "Open ZT Notes / ZT Contacts" from a task's linked note or contact,
+             "Open ZT Calendar" from a planned task. -->
         <package android:name="dev.sagron.zerotrustnotes"/>
         <package android:name="dev.sagron.zerotrustcontacts"/>
+        <package android:name="dev.sagron.zerotrustcalendar"/>
     </queries>
 </manifest>

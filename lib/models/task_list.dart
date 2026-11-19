@@ -79,6 +79,20 @@ class TaskList {
   final SharedListInfo? shared;
 
   bool get isDefault => id == defaultId;
+
+  /// Every new task in this list is planned by ZT Calendar's Planner
+  /// (`planAuto` on the list, kept like any key an older version doesn't
+  /// know). Not offered for shared lists: the Planner doesn't plan them yet.
+  bool get autoPlan => !isShared && extra['planAuto'] == true;
+
+  /// The same list with [autoPlan] switched [on] or off.
+  TaskList withAutoPlan(bool on) => copyWith(
+        extra: {
+          for (final e in extra.entries)
+            if (e.key != 'planAuto') e.key: e.value,
+          if (on) 'planAuto': true,
+        },
+      );
   bool get isShared => shared != null;
 
   /// The list id of the shared list kept in space [spaceId].
@@ -101,13 +115,19 @@ class TaskList {
         'updatedAt': updatedAt.toIso8601String(),
       };
 
-  TaskList copyWith({String? name, int? color, bool clearColor = false, double? position}) =>
+  TaskList copyWith({
+    String? name,
+    int? color,
+    bool clearColor = false,
+    double? position,
+    Map<String, dynamic>? extra,
+  }) =>
       TaskList(
         id: id,
         name: name ?? this.name,
         color: clearColor ? null : (color ?? this.color),
         position: position ?? this.position,
-        extra: extra,
+        extra: extra ?? this.extra,
         createdAt: createdAt,
         updatedAt: DateTime.now(),
         shared: shared,

@@ -26,10 +26,30 @@ and backup files.
 The "New Task" button opens one line (`QuickAddSheet`). `QuickAddParser`
 reads dates, times, repeats, `!priority` and `#tags` from it, in English
 and Hebrew ("call mum tomorrow 6pm", "להתקשר לאמא מחר ב-18:00"), all on
-the device. A time of day also sets the reminder. "Keep as typed" turns
-the reading off; "More options" opens the full editor.
+the device. A time of day also sets the reminder. A length ("2h", "45 min",
+"שעה וחצי") is kept for ZT Calendar's Planner. "Keep as typed" turns the
+reading off; "More options" opens the full editor.
 
-## Links to ZT Notes and ZT Contacts
+## ZT Calendar's Planner
+
+ZT Calendar can plan time for tasks in its calendar. The task editor has
+**Length** and **Auto-schedule**, and under "Planner options" the shortest
+and longest block and work or personal hours. A list can plan every new
+task added to it (list options, "Plan new tasks in ZT Calendar"; not for
+shared lists, which the Planner doesn't read yet).
+
+These are the keys `planMinutes`, `planAuto`, `planMinChunk`,
+`planMaxChunk` and `planHours` on the task (`lib/models/task_plan.dart`).
+They are written only when set and kept with the keys an older version
+doesn't know, so tasks that never used them are unchanged. ZT Calendar
+writes the same keys from its own Planner screen.
+
+Once a task has one of them, Tasks also reads ZT Calendar's Planned
+calendar, read-only like Notes and Contacts (`lib/suite/planned_times.dart`),
+and shows "Planned: Tomorrow 10:00 · 1 h of 3 h done" on the task and its
+page.
+
+## Links to ZT Notes and ZT Contacts (and the Planner's times)
 
 A task can link to notes and contacts from the same account (`noteIds`,
 `contactIds`, the key names ZT Calendar uses). At unlock the app derives

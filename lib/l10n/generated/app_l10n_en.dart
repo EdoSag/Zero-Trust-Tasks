@@ -722,7 +722,7 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get quickAddHelp =>
-      'Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag';
+      'Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag, 2h';
 
   @override
   String titleIs(String title) {
@@ -1367,4 +1367,121 @@ class AppL10nEn extends AppL10n {
   @override
   String get widgetPickListHint =>
       'To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings';
+
+  @override
+  String lengthMinutes(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String lengthHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String lengthHoursMinutes(int hours, int minutes) {
+    return '$hours h $minutes min';
+  }
+
+  @override
+  String get noLength => 'No length';
+
+  @override
+  String lengthIs(String length) {
+    return 'Length: $length';
+  }
+
+  @override
+  String get lengthHint => 'How long it takes, for ZT Calendar\'s Planner';
+
+  @override
+  String get clearLength => 'Clear length';
+
+  @override
+  String get taskLength => 'Task length';
+
+  @override
+  String get autoSchedule => 'Auto-schedule';
+
+  @override
+  String get autoScheduleOn => 'ZT Calendar\'s Planner finds time for it';
+
+  @override
+  String get autoScheduleOff => 'Never planned';
+
+  @override
+  String get autoScheduleUnset =>
+      'Planned only when ZT Calendar plans every task';
+
+  @override
+  String get plannerOptions => 'Planner options';
+
+  @override
+  String get shortestBlock => 'Shortest block';
+
+  @override
+  String get longestBlock => 'Longest block';
+
+  @override
+  String get plannerUsual => 'Usual';
+
+  @override
+  String get plannerHours => 'Plan in';
+
+  @override
+  String get workHours => 'Work hours';
+
+  @override
+  String get personalHours => 'Personal hours';
+
+  @override
+  String plannedAt(String when) {
+    return 'Planned: $when';
+  }
+
+  @override
+  String plannedDone(String done) {
+    return '$done done';
+  }
+
+  @override
+  String plannedDoneOf(String done, String total) {
+    return '$done of $total done';
+  }
+
+  @override
+  String plannedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count more',
+      one: '1 more',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lengthLabel => 'Length: ';
+
+  @override
+  String get autoScheduleLabel => 'Auto-schedule: ';
+
+  @override
+  String get plannedLabel => 'Planned: ';
+
+  @override
+  String get planSwitchedOn => 'On';
+
+  @override
+  String get planSwitchedOff => 'Off';
+
+  @override
+  String get openZtCalendar => 'Open ZT Calendar';
+
+  @override
+  String get listAutoPlan => 'Plan new tasks in ZT Calendar';
+
+  @override
+  String get listAutoPlanHint =>
+      'Every task added to this list gets Auto-schedule';
 }

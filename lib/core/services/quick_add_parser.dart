@@ -10,6 +10,7 @@ class QuickAdd {
     this.recurrence,
     this.priority,
     this.tags = const [],
+    this.minutes,
   });
 
   /// The text with every recognised date, time, repeat, priority and tag
@@ -23,6 +24,10 @@ class QuickAdd {
   final TaskPriority? priority;
   final List<String> tags;
 
+  /// How long the task takes ("2h", "45 min", "שעה וחצי"), for ZT
+  /// Calendar's Planner.
+  final int? minutes;
+
   bool get isEmpty => title.isEmpty;
 }
 
@@ -34,11 +39,13 @@ class QuickAdd {
 /// "next week / month", dates ("12/5", "12.5.2027", "may 12", "12 may"),
 /// times ("6pm", "6:30 pm", "18:00", "at 6", noon, midnight, morning,
 /// afternoon, evening), repeats ("every day", "weekly", "every 2 weeks"),
-/// priority ("!high", "!low", "!urgent") and tags ("#home").
+/// priority ("!high", "!low", "!urgent"), tags ("#home") and how long it
+/// takes ("2h", "1.5h", "1h30", "45 min", "for 2 hours").
 ///
 /// Hebrew: היום, הערב, מחר, מחרתיים, יום ראשון … שבת (with ב), בעוד 3 ימים,
 /// שבוע הבא, בשעה 18:00 / ב-18:00, בבוקר, בצהריים, אחר הצהריים, בערב,
-/// כל יום / שבוע / חודש / שנה.
+/// כל יום / שבוע / חודש / שנה, and lengths: 2 שעות, 45 דקות, שעתיים, חצי
+/// שעה, רבע שעה, שעה וחצי.
 ///
 /// Numeric dates are read day first (12/5 is 12 May) unless that can't be
 /// a date.
@@ -113,6 +120,7 @@ class QuickAddParser {
     RecurrenceRule? recurrence;
     TaskPriority? priority;
     final tags = <String>[];
+    int? minutes;
     // "every monday" typed on a Monday starts today, unless a time was
     // given and it has already passed.
     var repeatStartsToday = false;
@@ -219,6 +227,35 @@ class QuickAddParser {
       final n = dual != null ? 2 : (int.tryParse(m.group(1) ?? '') ?? 1);
       return _applyOffset(dual ?? _unitsHe[word]!, n, today, addMonths, setDate, (d) => offset = d);
     });
+
+    // How long it takes: "2h", "1.5h", "1h30", "45 min", "for 2 hours".
+    // After "in 2 hours" (a due time), which is gone by now.
+    bool setMinutes(num m) {
+      if (minutes != null || m < 5 || m > 7 * 24 * 60) return false;
+      minutes = m.round();
+      return true;
+    }
+
+    const hoursEn = 'h|hr|hrs|hour|hours';
+    const minutesEn = 'min|mins|minute|minutes';
+    take(_re('(?:for\\s+)?(\\d{1,2})\\s*(?:$hoursEn)\\s*(?:and\\s+)?(\\d{1,2})\\s*(?:$minutesEn|m)'), (m) {
+      return setMinutes(int.parse(m.group(1)!) * 60 + int.parse(m.group(2)!));
+    });
+    take(_re('(\\d{1,2})h(\\d{2})'), (m) => setMinutes(int.parse(m.group(1)!) * 60 + int.parse(m.group(2)!)));
+    take(_re('(?:for\\s+)?(\\d{1,2}(?:[.,]\\d{1,2})?)\\s*(?:$hoursEn)'), (m) {
+      return setMinutes(double.parse(m.group(1)!.replaceAll(',', '.')) * 60);
+    });
+    take(_re('(?:for\\s+)?(\\d{1,3})(?:\\s*(?:$minutesEn)|m)'), (m) => setMinutes(int.parse(m.group(1)!)));
+    take(_re('שעתיים\\s+וחצי'), (_) => setMinutes(150));
+    take(_re('שעה\\s+וחצי'), (_) => setMinutes(90));
+    take(_re('שעה\\s+ורבע'), (_) => setMinutes(75));
+    take(_re('חצי\\s+שעה'), (_) => setMinutes(30));
+    take(_re('רבע\\s+שעה'), (_) => setMinutes(15));
+    take(_re('שעתיים'), (_) => setMinutes(120));
+    take(_re('(\\d{1,2}(?:[.,]\\d{1,2})?)\\s*(?:שעות|שעה|ש\')'), (m) {
+      return setMinutes(double.parse(m.group(1)!.replaceAll(',', '.')) * 60);
+    });
+    take(_re('(\\d{1,3})\\s*(?:דקות|דקה|דק\')'), (m) => setMinutes(int.parse(m.group(1)!)));
 
     // "tomorrow morning": a part of the day only counts next to a day (or
     // with "in the" / "this", below), so "morning run" keeps its title.
@@ -335,13 +372,13 @@ class QuickAddParser {
     }
 
     // Nothing was read from it: the title is exactly what was typed.
-    if (due == null && recurrence == null && priority == null && tags.isEmpty) {
+    if (due == null && recurrence == null && priority == null && tags.isEmpty && minutes == null) {
       return QuickAdd(title: input.trim());
     }
     // Tidy the gaps left behind.
     var title = text.replaceAll(RegExp(r'\s+'), ' ').trim();
     title = title.replaceAll(RegExp(r'^[\s,;:-]+|[\s,;:-]+$'), '');
-    if (title.isEmpty && (due != null || tags.isNotEmpty)) {
+    if (title.isEmpty && (due != null || tags.isNotEmpty || minutes != null)) {
       // Only a date was typed ("tomorrow"): keep it as the title.
       return QuickAdd(title: input.trim());
     }
@@ -352,6 +389,7 @@ class QuickAddParser {
       recurrence: recurrence,
       priority: priority,
       tags: tags,
+      minutes: minutes,
     );
   }
 

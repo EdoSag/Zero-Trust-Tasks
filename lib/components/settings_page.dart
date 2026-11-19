@@ -24,6 +24,9 @@ class SettingsPage extends ConsumerWidget {
     return ZtSettingsPage(
       showSyncStatus: true,
       onSignedOut: () {},
+      privacyPolicyUrl: Uri.parse('https://zerotrust.bz/privacy/'),
+      termsUrl: Uri.parse('https://zerotrust.bz/terms/'),
+      supportUrl: Uri.parse('https://zerotrust.bz/support/'),
       onOpenUrl: (url) => launchUrl(url, mode: LaunchMode.externalApplication),
       onDataExported: (file, export) => _saveExport(context, ref, export),
       backupSection: [

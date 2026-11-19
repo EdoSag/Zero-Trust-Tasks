@@ -7,6 +7,8 @@ import 'package:zero_trust_tasks/models/sub_task.dart';
 import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/models/task_plan.dart';
+import 'package:zero_trust_tasks/components/planner_fields.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
@@ -99,6 +101,13 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
   String? _listId;
   bool _starred = false;
 
+  /// ZT Calendar's Planner fields as the task will store them (see
+  /// [TaskPlan]).
+  Map<String, Object?> _plan = {};
+
+  /// Auto-schedule was switched by hand: a change of list leaves it alone.
+  bool _planAutoTouched = false;
+
   final Map<String, TextEditingController> _subTaskControllers = {};
 
   @override
@@ -115,6 +124,8 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       _placeTrigger = existing?.trigger ?? ZtPlaceTrigger.arrive;
     }
     _starred = source?.starred ?? widget.initialStarred;
+    _plan = {...?source?.planFields};
+    if (widget.taskToEdit == null) _applyListPlan();
     if (source != null) {
       final task = source;
       _titleController.text = task.title;
@@ -167,6 +178,21 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
       );
     }
   }
+
+  /// A new task in a list that plans its new tasks starts with
+  /// Auto-schedule on (unless it was set already, or by hand).
+  void _applyListPlan() {
+    if (_planAutoTouched || widget.draft?.planAuto != null) return;
+    final list = context.taskLists.byId(_listId);
+    if (list.autoPlan) {
+      _plan[TaskPlan.autoKey] = true;
+    } else {
+      _plan.remove(TaskPlan.autoKey);
+    }
+  }
+
+  /// [task] with the Planner's fields as the editor has them.
+  Task _withPlan(Task task) => task.withPlan({for (final k in TaskPlan.keys) k: _plan[k]});
 
   @override
   void dispose() {
@@ -249,7 +275,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         // A task moved to another list goes to the bottom of its order.
         clearPosition: (widget.taskToEdit!.listId ?? TaskList.defaultId) != (_listId ?? TaskList.defaultId),
       );
-      await taskManager.updateTask(updatedTask);
+      await taskManager.updateTask(_withPlan(updatedTask));
       await _savePlace(updatedTask.id);
     } else {
       final newTask = Task.create(
@@ -274,7 +300,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
         listId: _listId == TaskList.defaultId ? null : _listId,
         starred: _starred,
       );
-      await taskManager.addTask(newTask);
+      await taskManager.addTask(_withPlan(newTask));
       await _savePlace(newTask.id);
     }
     if (mounted) {
@@ -405,7 +431,11 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   tooltip: context.l10n.chooseAList,
                   onPressed: () async {
                     final picked = await TaskListDialogs.pick(context, currentId: _listId, title: context.l10n.saveInList);
-                    if (picked != null) setState(() => _listId = picked);
+                    if (picked == null) return;
+                    setState(() {
+                      _listId = picked;
+                      if (widget.taskToEdit == null) _applyListPlan();
+                    });
                   },
                 );
               }),
@@ -642,6 +672,17 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            // The Planner doesn't plan shared lists yet.
+            if (TaskList.spaceIdOf(_listId) == null) ...[
+              PlannerFieldsSection(
+                fields: _plan,
+                onChanged: (next) => setState(() {
+                  if (next[TaskPlan.autoKey] != _plan[TaskPlan.autoKey]) _planAutoTouched = true;
+                  _plan = next;
+                }),
+              ),
+              const SizedBox(height: 12),
+            ],
             DropdownButtonFormField<RecurrenceFrequency?>(
               initialValue: _recurrenceFrequency,
               decoration: InputDecoration(

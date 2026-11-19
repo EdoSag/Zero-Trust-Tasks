@@ -23,8 +23,17 @@ class TaskListDialogs {
     final (name, color) = result;
     final lists = context.taskLists;
     if (existing == null) return lists.create(name, color: color);
+    // The list as stored now: the options sheet's "plan new tasks" switch
+    // may have changed it after [existing] was read, and saving the old
+    // copy would undo that. Looked up by its exact id: byId falls back to
+    // the default list, and a list deleted on another device meanwhile
+    // must not rename the default one instead.
+    final current = existing.isShared
+        ? existing
+        : lists.lists.where((l) => l.id == existing.id).firstOrNull;
+    if (current == null) return null;
     // Renaming the default list stores it for the first time.
-    final updated = existing.copyWith(name: name, color: color, clearColor: color == null);
+    final updated = current.copyWith(name: name, color: color, clearColor: color == null);
     await lists.save(updated);
     return updated;
   }
@@ -120,6 +129,7 @@ class TaskListDialogs {
                 await edit(context, existing: list);
               },
             ),
+            _AutoPlanSwitch(list: list),
             if (canShare && !list.isDefault)
               Consumer(
                 builder: (_, ref, _) => ListTile(
@@ -362,4 +372,39 @@ class _Swatch extends StatelessWidget {
       ),
     );
   }
+}
+
+/// "Plan new tasks in ZT Calendar": every task added to the list from now
+/// on gets Auto-schedule. Tasks already in it stay as they are.
+class _AutoPlanSwitch extends StatefulWidget {
+  const _AutoPlanSwitch({required this.list});
+  final TaskList list;
+
+  @override
+  State<_AutoPlanSwitch> createState() => _AutoPlanSwitchState();
+}
+
+class _AutoPlanSwitchState extends State<_AutoPlanSwitch> {
+  late TaskList _list = widget.list;
+
+  @override
+  Widget build(BuildContext context) => SwitchListTile(
+        key: const ValueKey('list-auto-plan'),
+        secondary: const Icon(Icons.auto_awesome_outlined),
+        title: Text(context.l10n.listAutoPlan),
+        subtitle: Text(context.l10n.listAutoPlanHint),
+        value: _list.autoPlan,
+        onChanged: (on) async {
+          final messenger = ScaffoldMessenger.of(context);
+          final before = _list;
+          final updated = _list.withAutoPlan(on);
+          setState(() => _list = updated);
+          try {
+            await context.taskLists.save(updated);
+          } on Object catch (e) {
+            if (mounted) setState(() => _list = before);
+            messenger.showSnackBar(SnackBar(content: Text('$e')));
+          }
+        },
+      );
 }

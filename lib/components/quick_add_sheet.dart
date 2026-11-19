@@ -4,6 +4,8 @@ import 'package:zero_trust_tasks/core/services/quick_add_parser.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
 import 'package:zero_trust_tasks/models/task.dart';
+import 'package:zero_trust_tasks/models/task_plan.dart';
+import 'package:zero_trust_tasks/components/planner_fields.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
@@ -50,7 +52,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       ? QuickAddParser.parse(_controller.text)
       : QuickAdd(title: _controller.text.trim());
 
-  Task _build(QuickAdd parsed) => Task.create(
+  Task _build(QuickAdd parsed) => _plan(parsed, Task.create(
         title: parsed.title,
         dueDate: parsed.due,
         // A time of day is a reminder; a bare date isn't.
@@ -60,7 +62,14 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
         tags: parsed.tags,
         listId: widget.listId,
         starred: _starred,
-      );
+      ));
+
+  /// The length read from the text, and Auto-schedule when the list plans
+  /// its new tasks.
+  Task _plan(QuickAdd parsed, Task task) {
+    final timed = parsed.minutes == null ? task : task.withPlan({TaskPlan.minutesKey: parsed.minutes});
+    return timed.forNewIn(context.taskLists.byId(widget.listId));
+  }
 
   Future<void> _save() async {
     final parsed = _parsed;
@@ -102,7 +111,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     final parsed = _parsed;
     final theme = Theme.of(context);
     final found = _readDates &&
-        (parsed.due != null || parsed.recurrence != null || parsed.priority != null || parsed.tags.isNotEmpty);
+        (parsed.due != null ||
+            parsed.recurrence != null ||
+            parsed.priority != null ||
+            parsed.tags.isNotEmpty ||
+            parsed.minutes != null);
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 12 + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
@@ -145,6 +158,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   Chip(
                     avatar: Icon(parsed.priority!.icon, size: 18),
                     label: Text(parsed.priority!.displayName),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (parsed.minutes != null)
+                  Chip(
+                    key: const ValueKey('quick-add-length'),
+                    avatar: const Icon(Icons.timelapse, size: 18),
+                    label: Text(context.l10n.lengthIs(formatPlanLength(context.l10n, parsed.minutes!))),
                     visualDensity: VisualDensity.compact,
                   ),
                 for (final tag in parsed.tags)

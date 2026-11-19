@@ -1438,7 +1438,7 @@ abstract class AppL10n {
   /// No description provided for @quickAddHelp.
   ///
   /// In en, this message translates to:
-  /// **'Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag'**
+  /// **'Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag, 2h'**
   String get quickAddHelp;
 
   /// No description provided for @titleIs.
@@ -2232,6 +2232,192 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings'**
   String get widgetPickListHint;
+
+  /// No description provided for @lengthMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String lengthMinutes(int minutes);
+
+  /// No description provided for @lengthHours.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h'**
+  String lengthHours(int hours);
+
+  /// No description provided for @lengthHoursMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours} h {minutes} min'**
+  String lengthHoursMinutes(int hours, int minutes);
+
+  /// No description provided for @noLength.
+  ///
+  /// In en, this message translates to:
+  /// **'No length'**
+  String get noLength;
+
+  /// No description provided for @lengthIs.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: {length}'**
+  String lengthIs(String length);
+
+  /// No description provided for @lengthHint.
+  ///
+  /// In en, this message translates to:
+  /// **'How long it takes, for ZT Calendar\'s Planner'**
+  String get lengthHint;
+
+  /// No description provided for @clearLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear length'**
+  String get clearLength;
+
+  /// No description provided for @taskLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Task length'**
+  String get taskLength;
+
+  /// No description provided for @autoSchedule.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-schedule'**
+  String get autoSchedule;
+
+  /// No description provided for @autoScheduleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'ZT Calendar\'s Planner finds time for it'**
+  String get autoScheduleOn;
+
+  /// No description provided for @autoScheduleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Never planned'**
+  String get autoScheduleOff;
+
+  /// No description provided for @autoScheduleUnset.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned only when ZT Calendar plans every task'**
+  String get autoScheduleUnset;
+
+  /// No description provided for @plannerOptions.
+  ///
+  /// In en, this message translates to:
+  /// **'Planner options'**
+  String get plannerOptions;
+
+  /// No description provided for @shortestBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Shortest block'**
+  String get shortestBlock;
+
+  /// No description provided for @longestBlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Longest block'**
+  String get longestBlock;
+
+  /// No description provided for @plannerUsual.
+  ///
+  /// In en, this message translates to:
+  /// **'Usual'**
+  String get plannerUsual;
+
+  /// No description provided for @plannerHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan in'**
+  String get plannerHours;
+
+  /// No description provided for @workHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Work hours'**
+  String get workHours;
+
+  /// No description provided for @personalHours.
+  ///
+  /// In en, this message translates to:
+  /// **'Personal hours'**
+  String get personalHours;
+
+  /// No description provided for @plannedAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned: {when}'**
+  String plannedAt(String when);
+
+  /// No description provided for @plannedDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} done'**
+  String plannedDone(String done);
+
+  /// No description provided for @plannedDoneOf.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} done'**
+  String plannedDoneOf(String done, String total);
+
+  /// No description provided for @plannedMore.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 more} other{{count} more}}'**
+  String plannedMore(int count);
+
+  /// No description provided for @lengthLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Length: '**
+  String get lengthLabel;
+
+  /// No description provided for @autoScheduleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-schedule: '**
+  String get autoScheduleLabel;
+
+  /// No description provided for @plannedLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Planned: '**
+  String get plannedLabel;
+
+  /// No description provided for @planSwitchedOn.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get planSwitchedOn;
+
+  /// No description provided for @planSwitchedOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get planSwitchedOff;
+
+  /// No description provided for @openZtCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Open ZT Calendar'**
+  String get openZtCalendar;
+
+  /// No description provided for @listAutoPlan.
+  ///
+  /// In en, this message translates to:
+  /// **'Plan new tasks in ZT Calendar'**
+  String get listAutoPlan;
+
+  /// No description provided for @listAutoPlanHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Every task added to this list gets Auto-schedule'**
+  String get listAutoPlanHint;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

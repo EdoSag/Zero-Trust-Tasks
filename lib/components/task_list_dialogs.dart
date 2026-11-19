@@ -25,8 +25,13 @@ class TaskListDialogs {
     if (existing == null) return lists.create(name, color: color);
     // The list as stored now: the options sheet's "plan new tasks" switch
     // may have changed it after [existing] was read, and saving the old
-    // copy would undo that.
-    final current = existing.isShared ? existing : lists.byId(existing.id);
+    // copy would undo that. Looked up by its exact id: byId falls back to
+    // the default list, and a list deleted on another device meanwhile
+    // must not rename the default one instead.
+    final current = existing.isShared
+        ? existing
+        : lists.lists.where((l) => l.id == existing.id).firstOrNull;
+    if (current == null) return null;
     // Renaming the default list stores it for the first time.
     final updated = current.copyWith(name: name, color: color, clearColor: color == null);
     await lists.save(updated);

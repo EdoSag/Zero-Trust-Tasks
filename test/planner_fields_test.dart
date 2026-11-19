@@ -465,6 +465,53 @@ void main() {
       expect(saved.last.autoPlan, isTrue);
     });
 
+    testWidgets('renaming a list deleted meanwhile changes no other list', (tester) async {
+      final saved = <TaskList>[];
+      lists.attach(save: (l) async => saved.add(l), delete: (_) async {});
+      final home = TaskList.create(name: 'Home');
+      await lists.save(home);
+      saved.clear();
+      await tester.pumpWidget(host(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => TaskListDialogs.edit(context, existing: home),
+            child: const Text('rename'),
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('rename'));
+      await tester.pumpAndSettle();
+      // Deleted on another device while the dialog is open.
+      await lists.remove(home.id);
+      await tester.enterText(find.byType(TextField), 'House');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved, isEmpty, reason: 'the default list must not be renamed');
+      expect(lists.byId(TaskList.defaultId).name, isNot('House'));
+    });
+
+    testWidgets('the default list can still be renamed before it is stored', (tester) async {
+      final saved = <TaskList>[];
+      lists.attach(save: (l) async => saved.add(l), delete: (_) async {});
+      await tester.pumpWidget(host(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => TaskListDialogs.edit(context, existing: lists.byId(null)),
+            child: const Text('rename'),
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('rename'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Inbox');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved.single.id, TaskList.defaultId);
+      expect(saved.single.name, 'Inbox');
+    });
+
     testWidgets('Hebrew: the editor section reads right to left', (tester) async {
       tester.view.physicalSize = const Size(1080, 4000);
       tester.view.devicePixelRatio = 2;

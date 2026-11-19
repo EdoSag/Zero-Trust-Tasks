@@ -454,6 +454,62 @@ void main() {
       expect(saved.single.autoPlan, isTrue);
       expect(saved.single.name, 'Work');
       expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+
+      // Renaming from the same sheet keeps the switch as it now is.
+      await tester.tap(find.text(l.renameOrChangeColour));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Office');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved.last.name, 'Office');
+      expect(saved.last.autoPlan, isTrue);
+    });
+
+    testWidgets('renaming a list deleted meanwhile changes no other list', (tester) async {
+      final saved = <TaskList>[];
+      lists.attach(save: (l) async => saved.add(l), delete: (_) async {});
+      final home = TaskList.create(name: 'Home');
+      await lists.save(home);
+      saved.clear();
+      await tester.pumpWidget(host(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => TaskListDialogs.edit(context, existing: home),
+            child: const Text('rename'),
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('rename'));
+      await tester.pumpAndSettle();
+      // Deleted on another device while the dialog is open.
+      await lists.remove(home.id);
+      await tester.enterText(find.byType(TextField), 'House');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved, isEmpty, reason: 'the default list must not be renamed');
+      expect(lists.byId(TaskList.defaultId).name, isNot('House'));
+    });
+
+    testWidgets('the default list can still be renamed before it is stored', (tester) async {
+      final saved = <TaskList>[];
+      lists.attach(save: (l) async => saved.add(l), delete: (_) async {});
+      await tester.pumpWidget(host(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => TaskListDialogs.edit(context, existing: lists.byId(null)),
+            child: const Text('rename'),
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('rename'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Inbox');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved.single.id, TaskList.defaultId);
+      expect(saved.single.name, 'Inbox');
     });
 
     testWidgets('Hebrew: the editor section reads right to left', (tester) async {

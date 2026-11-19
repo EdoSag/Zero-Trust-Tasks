@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/components/linked_items_section.dart';
+import 'package:zero_trust_tasks/components/planner_fields.dart';
 import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
@@ -356,6 +357,7 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       ],
                     ),
                   ],
+                  PlannerDetailsRows(task: currentTask),
                   if (currentTask.tags.isNotEmpty) ...[
                     const SizedBox(height: 12.0),
                     Wrap(

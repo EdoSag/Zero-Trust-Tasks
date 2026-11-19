@@ -717,7 +717,7 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get quickAddHelp =>
-      'תאריכים ושעות מזוהים תוך כדי הקלדה, בעברית או באנגלית. וגם: כל שבוע, ‎!high‏, ‎#tag';
+      'תאריכים ושעות מזוהים תוך כדי הקלדה, בעברית או באנגלית. וגם: כל שבוע, ‎!high‏, ‎#tag‏, שעתיים';
 
   @override
   String titleIs(String title) {
@@ -1362,4 +1362,121 @@ class AppL10nHe extends AppL10n {
   @override
   String get widgetPickListHint =>
       'כדי לבחור רשימה אחת, יש להפעיל את \"הצגת פרטים במסך הבית\" בהגדרות של ZT Tasks';
+
+  @override
+  String lengthMinutes(int minutes) {
+    return '$minutes דק\'';
+  }
+
+  @override
+  String lengthHours(int hours) {
+    return '$hours ש\'';
+  }
+
+  @override
+  String lengthHoursMinutes(int hours, int minutes) {
+    return '$hours ש\' $minutes דק\'';
+  }
+
+  @override
+  String get noLength => 'בלי משך';
+
+  @override
+  String lengthIs(String length) {
+    return 'משך: $length';
+  }
+
+  @override
+  String get lengthHint => 'כמה זמן זה לוקח, בשביל המתכנן של ZT Calendar';
+
+  @override
+  String get clearLength => 'ניקוי המשך';
+
+  @override
+  String get taskLength => 'משך המשימה';
+
+  @override
+  String get autoSchedule => 'תזמון אוטומטי';
+
+  @override
+  String get autoScheduleOn => 'המתכנן של ZT Calendar מוצא לה זמן';
+
+  @override
+  String get autoScheduleOff => 'לא מתוכננת אף פעם';
+
+  @override
+  String get autoScheduleUnset =>
+      'מתוכננת רק כש-ZT Calendar מתכנן את כל המשימות';
+
+  @override
+  String get plannerOptions => 'אפשרויות המתכנן';
+
+  @override
+  String get shortestBlock => 'הבלוק הקצר ביותר';
+
+  @override
+  String get longestBlock => 'הבלוק הארוך ביותר';
+
+  @override
+  String get plannerUsual => 'כרגיל';
+
+  @override
+  String get plannerHours => 'לתכנן בשעות';
+
+  @override
+  String get workHours => 'שעות עבודה';
+
+  @override
+  String get personalHours => 'שעות פרטיות';
+
+  @override
+  String plannedAt(String when) {
+    return 'מתוכננת: $when';
+  }
+
+  @override
+  String plannedDone(String done) {
+    return '$done בוצעו';
+  }
+
+  @override
+  String plannedDoneOf(String done, String total) {
+    return '$done מתוך $total בוצעו';
+  }
+
+  @override
+  String plannedMore(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ועוד $count',
+      one: 'ועוד אחד',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get lengthLabel => 'משך: ';
+
+  @override
+  String get autoScheduleLabel => 'תזמון אוטומטי: ';
+
+  @override
+  String get plannedLabel => 'מתוכנן: ';
+
+  @override
+  String get planSwitchedOn => 'פועל';
+
+  @override
+  String get planSwitchedOff => 'כבוי';
+
+  @override
+  String get openZtCalendar => 'פתיחת ZT Calendar';
+
+  @override
+  String get listAutoPlan => 'לתכנן משימות חדשות ב-ZT Calendar';
+
+  @override
+  String get listAutoPlanHint =>
+      'כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי';
 }

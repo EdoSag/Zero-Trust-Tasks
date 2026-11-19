@@ -283,6 +283,7 @@ class Task {
     bool clearPosition = false,
     List<String>? noteIds,
     List<String>? contactIds,
+    Map<String, dynamic>? extra,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -309,7 +310,7 @@ class Task {
       position: clearPosition ? null : (position ?? this.position),
       noteIds: noteIds ?? this.noteIds,
       contactIds: contactIds ?? this.contactIds,
-      extra: extra,
+      extra: extra ?? this.extra,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

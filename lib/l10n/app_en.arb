@@ -307,7 +307,7 @@
       }
     }
   },
-  "quickAddHelp": "Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag",
+  "quickAddHelp": "Dates and times are read as you type, in English or Hebrew. Also: every week, !high, #tag, 2h",
   "titleIs": "Title: {title}",
   "@titleIs": {
     "placeholders": {
@@ -968,5 +968,98 @@
   "placeRemindersChannelHint": "Task reminders when you arrive at or leave a place",
   "locationStaysOnPhone": "Your phone watches the place itself. Your location is never sent anywhere, and the place is kept encrypted in your vault, not in shared lists.",
   "aPlace": "a place",
-  "widgetPickListHint": "To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings"
+  "widgetPickListHint": "To pick one list, turn on \"Show details on the home screen\" in ZT Tasks settings",
+  "lengthMinutes": "{minutes} min",
+  "@lengthMinutes": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "lengthHours": "{hours} h",
+  "@lengthHours": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      }
+    }
+  },
+  "lengthHoursMinutes": "{hours} h {minutes} min",
+  "@lengthHoursMinutes": {
+    "placeholders": {
+      "hours": {
+        "type": "int"
+      },
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "noLength": "No length",
+  "lengthIs": "Length: {length}",
+  "@lengthIs": {
+    "placeholders": {
+      "length": {
+        "type": "String"
+      }
+    }
+  },
+  "lengthHint": "How long it takes, for ZT Calendar's Planner",
+  "clearLength": "Clear length",
+  "taskLength": "Task length",
+  "autoSchedule": "Auto-schedule",
+  "autoScheduleOn": "ZT Calendar's Planner finds time for it",
+  "autoScheduleOff": "Never planned",
+  "autoScheduleUnset": "Planned only when ZT Calendar plans every task",
+  "plannerOptions": "Planner options",
+  "shortestBlock": "Shortest block",
+  "longestBlock": "Longest block",
+  "plannerUsual": "Usual",
+  "plannerHours": "Plan in",
+  "workHours": "Work hours",
+  "personalHours": "Personal hours",
+  "plannedAt": "Planned: {when}",
+  "@plannedAt": {
+    "placeholders": {
+      "when": {
+        "type": "String"
+      }
+    }
+  },
+  "plannedDone": "{done} done",
+  "@plannedDone": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      }
+    }
+  },
+  "plannedDoneOf": "{done} of {total} done",
+  "@plannedDoneOf": {
+    "placeholders": {
+      "done": {
+        "type": "String"
+      },
+      "total": {
+        "type": "String"
+      }
+    }
+  },
+  "plannedMore": "{count, plural, =1{1 more} other{{count} more}}",
+  "@plannedMore": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "lengthLabel": "Length: ",
+  "autoScheduleLabel": "Auto-schedule: ",
+  "plannedLabel": "Planned: ",
+  "planSwitchedOn": "On",
+  "planSwitchedOff": "Off",
+  "openZtCalendar": "Open ZT Calendar",
+  "listAutoPlan": "Plan new tasks in ZT Calendar",
+  "listAutoPlanHint": "Every task added to this list gets Auto-schedule"
 }

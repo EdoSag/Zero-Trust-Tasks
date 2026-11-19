@@ -7,11 +7,13 @@ import 'package:zero_trust_core/zero_trust_core.dart';
 
 import 'package:zero_trust_tasks/suite/linked_items.dart';
 
-/// The sibling apps a task can link to: a note in ZT Notes, a person in
-/// ZT Contacts. Tasks only ever reads them.
+/// The sibling apps Tasks reads: a note in ZT Notes or a person in ZT
+/// Contacts that a task links to, and the times ZT Calendar's Planner set
+/// aside for a task. Tasks only ever reads them.
 enum LinkedApp {
   notes('notes', 'dev.sagron.zerotrustnotes', 'ZT Notes'),
-  contacts('contacts', 'dev.sagron.zerotrustcontacts', 'ZT Contacts');
+  contacts('contacts', 'dev.sagron.zerotrustcontacts', 'ZT Contacts'),
+  calendar('calendar', 'dev.sagron.zerotrustcalendar', 'ZT Calendar');
 
   const LinkedApp(this.appId, this.androidPackage, this.label);
 
@@ -66,7 +68,7 @@ class LinkedKeys extends Notifier<Map<LinkedApp, Uint8List>> {
 }
 
 /// Lets the engine pull another app's items but never upload: Tasks only
-/// reads Notes and Contacts.
+/// reads Notes, Contacts and Calendar.
 class ReadOnlySyncBackend implements SyncBackend {
   ReadOnlySyncBackend(this.inner);
   final SyncBackend inner;
@@ -197,6 +199,9 @@ class LinkedMirror {
     return controller.stream;
   }
 }
+
+/// [app]'s items as Tasks' mirror holds them, kept current.
+Stream<List<LocalItem>> linkedItems(Ref ref, LinkedApp app) => _items(ref, app);
 
 Stream<List<LocalItem>> _items(Ref ref, LinkedApp app) async* {
   final mirror = await ref.watch(linkedMirrorProvider(app).future);

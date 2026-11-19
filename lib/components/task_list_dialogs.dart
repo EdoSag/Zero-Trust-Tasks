@@ -23,8 +23,12 @@ class TaskListDialogs {
     final (name, color) = result;
     final lists = context.taskLists;
     if (existing == null) return lists.create(name, color: color);
+    // The list as stored now: the options sheet's "plan new tasks" switch
+    // may have changed it after [existing] was read, and saving the old
+    // copy would undo that.
+    final current = existing.isShared ? existing : lists.byId(existing.id);
     // Renaming the default list stores it for the first time.
-    final updated = existing.copyWith(name: name, color: color, clearColor: color == null);
+    final updated = current.copyWith(name: name, color: color, clearColor: color == null);
     await lists.save(updated);
     return updated;
   }

@@ -454,6 +454,15 @@ void main() {
       expect(saved.single.autoPlan, isTrue);
       expect(saved.single.name, 'Work');
       expect(tester.widget<SwitchListTile>(toggle).value, isTrue);
+
+      // Renaming from the same sheet keeps the switch as it now is.
+      await tester.tap(find.text(l.renameOrChangeColour));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'Office');
+      await tester.tap(find.text(l.save));
+      await tester.pumpAndSettle();
+      expect(saved.last.name, 'Office');
+      expect(saved.last.autoPlan, isTrue);
     });
 
     testWidgets('Hebrew: the editor section reads right to left', (tester) async {

@@ -397,5 +397,12 @@
   "insertTaskDue": "תאריך יעד",
   "insertTaskTitleAndDue": "כותרת ותאריך יעד",
   "insertTaskChecklist": "רשימת תיוג",
-  "insertTaskLink": "קישור"
+  "insertTaskLink": "קישור",
+  "importFromOtherApps": "ייבוא מ-Todoist, מ-Microsoft To Do או מ-TickTick",
+  "importFromOtherAppsHint": "קובץ CSV או גיבוי ‎.zip של Todoist, ייצוא של Microsoft To Do ‏(‎.json) או גיבוי של TickTick ‏(‎.csv)",
+  "importFromApp": "ייבוא מ-{app}",
+  "importStaysOnPhone": "הקובץ נקרא בטלפון הזה. שום דבר לא נשלח אל {app}; המשימות מוצפנות כאן.",
+  "importedFromApp": "{count, plural, =1{יובאה משימה אחת מ-{app}} other{יובאו {count} משימות מ-{app}}}",
+  "importNotRecognised": "הקובץ הזה אינו ייצוא של Todoist,‏ Microsoft To Do או TickTick.",
+  "importNoTasksInFile": "לא נמצאו משימות בקובץ."
 }

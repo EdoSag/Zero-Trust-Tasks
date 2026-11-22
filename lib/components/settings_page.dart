@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/backup_file_helper.dart';
 import 'package:zero_trust_tasks/core/services/google_tasks_import.dart';
+import 'package:zero_trust_tasks/core/services/other_apps_import.dart';
 import 'package:zero_trust_tasks/components/restore_preview_dialog.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_import.dart';
@@ -35,6 +36,12 @@ class SettingsPage extends ConsumerWidget {
           title: Text(context.l10n.importFromGoogleTasks),
           subtitle: Text(context.l10n.yourGoogleTakeoutZipOr),
           onTap: () => _importGoogle(context, ref),
+        ),
+        ListTile(
+          leading: const Icon(Icons.move_down_outlined),
+          title: Text(context.l10n.importFromOtherApps),
+          subtitle: Text(context.l10n.importFromOtherAppsHint),
+          onTap: () => _importOther(context, ref),
         ),
         ListTile(
           leading: const Icon(Icons.file_upload_outlined),
@@ -133,6 +140,65 @@ class SettingsPage extends ConsumerWidget {
       }
     } on GoogleTasksImportException catch (e) {
       if (context.mounted) _snack(context, e.message);
+    } on Object catch (e) {
+      if (context.mounted) _snack(context, context.l10n.importFailed(ztErrorMessage(e)));
+    }
+  }
+
+  /// Todoist, Microsoft To Do or TickTick: the file says which.
+  Future<void> _importOther(BuildContext context, WidgetRef ref) async {
+    try {
+      final file = await ref
+          .read(vaultControllerProvider.notifier)
+          .whileShowingSystemUi(() => FilePicker.pickFile(type: FileType.any));
+      if (file == null) return;
+      final bytes = await file.readAsBytes();
+      final lists = ref.read(taskListProvider);
+      final parsed = const OtherAppsImporter().parse(bytes, fileName: file.name, existingLists: lists.lists);
+      if (!context.mounted) return;
+      final l10n = context.l10n;
+      final app = switch (parsed.source) {
+        ImportSource.todoist => 'Todoist',
+        ImportSource.microsoftToDo => 'Microsoft To Do',
+        ImportSource.tickTick => 'TickTick',
+      };
+      final manager = ref.read(taskManagerProvider);
+      final preview = manager.previewImport(parsed.tasks);
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(l10n.importFromApp(app)),
+          content: Text([
+            parsed.lists.isEmpty
+                ? l10n.googleTasksFound(parsed.tasks.length)
+                : l10n.googleTasksFoundInLists(parsed.tasks.length, parsed.lists.length),
+            if (preview.toAdd > 0) l10n.willBeAdded(preview.toAdd),
+            if (preview.toUpdate > 0) l10n.willBeUpdated(preview.toUpdate),
+            if (preview.toAdd == 0 && preview.toUpdate == 0) l10n.everythingIsAlreadyHere,
+            l10n.importStaysOnPhone(app),
+          ].join('\n\n')),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(l10n.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(l10n.import)),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
+      final existingIds = lists.lists.map((l) => l.id).toSet();
+      for (final list in parsed.lists) {
+        if (!existingIds.contains(list.id)) await lists.save(list);
+      }
+      final written = await manager.importTasks(parsed.tasks);
+      if (context.mounted) {
+        _snack(context, written == 0 ? context.l10n.alreadyUpToDate : context.l10n.importedFromApp(written, app));
+      }
+    } on OtherAppsImportException catch (e) {
+      if (context.mounted) {
+        _snack(
+          context,
+          e.problem == ImportProblem.empty ? context.l10n.importNoTasksInFile : context.l10n.importNotRecognised,
+        );
+      }
     } on Object catch (e) {
       if (context.mounted) _snack(context, context.l10n.importFailed(ztErrorMessage(e)));
     }

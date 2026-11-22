@@ -430,5 +430,17 @@
   "logInZtTime": "רישום ב-ZT Time",
   "focusLoggedInTime": "נרשם ב-ZT Time",
   "ztTimeNotInstalled": "ZT Time לא מותקנת בטלפון הזה.",
-  "getZtTime": "להורדה"
+  "getZtTime": "להורדה",
+  "assignedTo": "משויכת אל",
+  "nobody": "אף אחד",
+  "you": "את/ה",
+  "comments": "תגובות",
+  "noCommentsYet": "אין עדיין תגובות. כל מי שברשימה רואה אותן.",
+  "addAComment": "הוספת תגובה",
+  "deleteComment": "מחיקת תגובה",
+  "send": "שליחה",
+  "assignedToYouTitle": "{name} שייך/ה אליך משימה",
+  "assignedToYouBody": "אפשר לפתוח את ZT Tasks כדי לראות אותה.",
+  "sharedListsChannel": "רשימות משותפות",
+  "sharedListsChannelDescription": "כשמישהו משייך אליך משימה ברשימה משותפת"
 }

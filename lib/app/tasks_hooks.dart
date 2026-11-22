@@ -18,6 +18,8 @@ import 'package:zero_trust_tasks/platform/links.dart';
 import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zt_places/zt_places.dart';
 import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
 final platformHooksEnabledProvider = Provider<bool>((ref) => true);
@@ -204,6 +206,29 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     });
   }
 
+  /// Tasks of shared lists someone else just assigned to this account: a
+  /// notification each, once.
+  Future<void> _announceAssignments(SharedListsState shared) async {
+    if (!_platform || !shared.ready) return;
+    final me = ref.read(sharedListsProvider.notifier).myUserId;
+    if (me.isEmpty) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final seen = (prefs.getStringList(_assignedSeenKey) ?? const <String>[]).toSet();
+    final fresh = newAssignments(shared.tasks, myUserId: me, seen: seen, now: DateTime.now());
+    if (fresh.isEmpty) return;
+    final names = <String, String>{
+      for (final l in shared.lists)
+        for (final m in l.shared?.members ?? const []) m.userId: m.name,
+    };
+    for (final t in fresh) {
+      await NotificationService.instance.showAssigned(t, names[t.assignedBy] ?? '?');
+    }
+    final kept = [...seen, ...fresh.map(assignmentKey)];
+    await prefs.setStringList(_assignedSeenKey, kept.length > 300 ? kept.sublist(kept.length - 300) : kept);
+  }
+
+  static const _assignedSeenKey = 'assigned_tasks_announced';
+
   /// ZT Keyboard's "Insert from ZT apps" key: pick a task's title, due
   /// date, checklist or links for the keyboard to type. Only reached once
   /// the vault is unlocked.
@@ -256,6 +281,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(sharedListsProvider, (_, shared) => _announceAssignments(shared));
     ref.listen(taskManagerProvider, (_, _) => _onTasksChanged());
     // Keeps the phone's place alerts in step with the tasks.
     ref.watch(placeRemindersProvider);

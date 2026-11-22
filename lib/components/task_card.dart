@@ -8,6 +8,8 @@ import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/components/planner_fields.dart';
+import 'package:zero_trust_tasks/sharing/task_collaboration.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
 
 class TaskCard extends StatelessWidget {
   const TaskCard({
@@ -163,12 +165,14 @@ class TaskCard extends StatelessWidget {
                       if (task.dueDate != null ||
                           task.category != null ||
                           task.recurrence != null ||
+                          task.assigneeId != null ||
                           hasSubTasks) ...[
                         const SizedBox(height: 12.0),
                         Wrap(
                           spacing: 8.0,
                           runSpacing: 8.0,
                           children: [
+                            if (task.assigneeId != null) AssigneeChip(task: task),
                             if (task.dueDate != null)
                               Container(
                                 padding: const EdgeInsets.symmetric(

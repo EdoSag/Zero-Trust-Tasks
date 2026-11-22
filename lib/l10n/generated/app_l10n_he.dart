@@ -1647,4 +1647,43 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get getZtTime => 'להורדה';
+
+  @override
+  String get assignedTo => 'משויכת אל';
+
+  @override
+  String get nobody => 'אף אחד';
+
+  @override
+  String get you => 'את/ה';
+
+  @override
+  String get comments => 'תגובות';
+
+  @override
+  String get noCommentsYet => 'אין עדיין תגובות. כל מי שברשימה רואה אותן.';
+
+  @override
+  String get addAComment => 'הוספת תגובה';
+
+  @override
+  String get deleteComment => 'מחיקת תגובה';
+
+  @override
+  String get send => 'שליחה';
+
+  @override
+  String assignedToYouTitle(String name) {
+    return '$name שייך/ה אליך משימה';
+  }
+
+  @override
+  String get assignedToYouBody => 'אפשר לפתוח את ZT Tasks כדי לראות אותה.';
+
+  @override
+  String get sharedListsChannel => 'רשימות משותפות';
+
+  @override
+  String get sharedListsChannelDescription =>
+      'כשמישהו משייך אליך משימה ברשימה משותפת';
 }

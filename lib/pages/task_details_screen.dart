@@ -15,6 +15,8 @@ import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/pages/focus_timer_page.dart';
+import 'package:zero_trust_tasks/globals/task_manager.dart' show SharedTask;
+import 'package:zero_trust_tasks/sharing/task_collaboration.dart';
 import 'package:zero_trust_tasks/suite/zt_time.dart';
 import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zt_places/zt_places.dart';
@@ -453,10 +455,15 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
                       currentTask.copyWith(noteIds: notes, contactIds: contacts),
                     ),
                   ),
+                  if (currentTask.isShared) AssigneeTile(task: currentTask),
                 ],
               ),
             ),
           ),
+          if (currentTask.isShared) ...[
+            const SizedBox(height: 24.0),
+            TaskCommentsSection(task: currentTask),
+          ],
           if (currentTask.subTasks.isNotEmpty) ...[
             const SizedBox(height: 24.0),
             Text(

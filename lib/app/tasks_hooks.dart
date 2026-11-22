@@ -10,8 +10,10 @@ import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/pages/pick_for_keyboard_page.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/platform/keyboard_pick.dart';
 import 'package:zero_trust_tasks/platform/links.dart';
 import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zt_places/zt_places.dart';
@@ -55,6 +57,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       _places = ref.read(ztPlaceRemindersProvider).events.listen(_onPlaceEvent);
       WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlaces());
       WidgetsBinding.instance.addPostFrameCallback((_) => _takeLinks());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _takeKeyboardPick());
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _onTasksChanged());
   }
@@ -199,6 +202,17 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
         defaultListId: settings.widgetListId,
       ));
     });
+  }
+
+  /// ZT Keyboard's "Insert from ZT apps" key: pick a task's title, due
+  /// date, checklist or links for the keyboard to type. Only reached once
+  /// the vault is unlocked.
+  Future<void> _takeKeyboardPick() async {
+    if (!await KeyboardPick.requested() || !mounted) return;
+    final picked = await Navigator.of(
+      context,
+    ).push<String>(MaterialPageRoute(builder: (_) => const PickForKeyboardPage()));
+    await KeyboardPick.finish(picked);
   }
 
   void _openWidgetLaunch() {

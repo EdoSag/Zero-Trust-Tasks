@@ -1479,4 +1479,38 @@ class AppL10nHe extends AppL10n {
   @override
   String get listAutoPlanHint =>
       'כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי';
+
+  @override
+  String get insertIntoKeyboard => 'הוספה למקלדת ZT';
+
+  @override
+  String get insertPickTaskHint => 'יש להקיש על משימה ואז על מה להקליד.';
+
+  @override
+  String get insertSearchTasks => 'חיפוש משימות';
+
+  @override
+  String get insertNoOpenTasks =>
+      'אין משימות פתוחות. אפשר לחפש כדי למצוא משימות שהושלמו.';
+
+  @override
+  String get insertNoTasksFound => 'לא נמצאו משימות';
+
+  @override
+  String get insertUntitledTask => 'משימה ללא כותרת';
+
+  @override
+  String get insertTaskTitle => 'כותרת';
+
+  @override
+  String get insertTaskDue => 'תאריך יעד';
+
+  @override
+  String get insertTaskTitleAndDue => 'כותרת ותאריך יעד';
+
+  @override
+  String get insertTaskChecklist => 'רשימת תיוג';
+
+  @override
+  String get insertTaskLink => 'קישור';
 }

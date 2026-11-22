@@ -13,6 +13,7 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zt_sharing_ui/zt_sharing_ui.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
 
 import 'support/fake_account_backend.dart';
 
@@ -211,6 +212,41 @@ void main() {
       // Stored without the device-side list id.
       final stored = await a.spaceStores.values.single.get(eggs.id);
       expect(stored!.json!.containsKey('listId'), isFalse);
+    });
+
+    test('Alice assigns Milk to Bob and both comment; Bob is told once', () async {
+      await shareWithBob();
+      final milk = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      await a.manager.updateTask(milk.assignedTo(bob, by: alice));
+      await a.lists.addComment(milk, 'The 2% one');
+      await a.sync();
+      await b.sync();
+
+      final bobsMilk = b.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      expect(bobsMilk.assigneeId, bob);
+      expect(bobsMilk.assignedBy, alice);
+      final fresh = newAssignments(b.state.tasks, myUserId: bob, seen: {}, now: DateTime.now());
+      expect(fresh.single.id, milk.id);
+      // Announced once; Alice herself is never told about her own.
+      expect(newAssignments(b.state.tasks, myUserId: bob, seen: {assignmentKey(fresh.single)}, now: DateTime.now()), isEmpty);
+      expect(newAssignments(a.state.tasks, myUserId: alice, seen: {}, now: DateTime.now()), isEmpty);
+
+      await b.lists.addComment(bobsMilk, 'Got it');
+      await b.sync();
+      await a.sync();
+      expect(a.state.comments[milk.id]!.map((c) => (c.text, c.by)), [('The 2% one', alice), ('Got it', bob)]);
+      // Comments aren't tasks.
+      expect(a.manager.tasks.where((t) => t.title == 'Milk'), hasLength(1));
+      expect(a.state.tasks, hasLength(2));
+
+      // Only your own comments can be deleted; deleting the task takes its comments.
+      await a.lists.deleteComment(milk, a.state.comments[milk.id]!.last);
+      expect(a.state.comments[milk.id], hasLength(2));
+      await a.lists.deleteComment(milk, a.state.comments[milk.id]!.first);
+      expect(a.state.comments[milk.id]!.single.text, 'Got it');
+      await a.manager.permanentlyDeleteTask(milk.id);
+      await a.sync();
+      expect(a.state.comments[milk.id], isNull);
     });
 
     test('only owners rename the list', () async {

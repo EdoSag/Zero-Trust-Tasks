@@ -1651,4 +1651,44 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get getZtTime => 'Get it';
+
+  @override
+  String get assignedTo => 'Assigned to';
+
+  @override
+  String get nobody => 'Nobody';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get comments => 'Comments';
+
+  @override
+  String get noCommentsYet =>
+      'No comments yet. Everyone in this list sees them.';
+
+  @override
+  String get addAComment => 'Add a comment';
+
+  @override
+  String get deleteComment => 'Delete comment';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String assignedToYouTitle(String name) {
+    return '$name assigned you a task';
+  }
+
+  @override
+  String get assignedToYouBody => 'Open ZT Tasks to see it.';
+
+  @override
+  String get sharedListsChannel => 'Shared lists';
+
+  @override
+  String get sharedListsChannelDescription =>
+      'When someone assigns you a task in a shared list';
 }

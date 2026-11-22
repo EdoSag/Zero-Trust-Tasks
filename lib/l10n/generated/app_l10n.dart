@@ -2682,6 +2682,78 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Get it'**
   String get getZtTime;
+
+  /// No description provided for @assignedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to'**
+  String get assignedTo;
+
+  /// No description provided for @nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get nobody;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get comments;
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet. Everyone in this list sees them.'**
+  String get noCommentsYet;
+
+  /// No description provided for @addAComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment'**
+  String get addAComment;
+
+  /// No description provided for @deleteComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get deleteComment;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @assignedToYouTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} assigned you a task'**
+  String assignedToYouTitle(String name);
+
+  /// No description provided for @assignedToYouBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open ZT Tasks to see it.'**
+  String get assignedToYouBody;
+
+  /// No description provided for @sharedListsChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared lists'**
+  String get sharedListsChannel;
+
+  /// No description provided for @sharedListsChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone assigns you a task in a shared list'**
+  String get sharedListsChannelDescription;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -1150,5 +1150,24 @@
   "logInZtTime": "Log in ZT Time",
   "focusLoggedInTime": "Logged in ZT Time",
   "ztTimeNotInstalled": "ZT Time isn't installed on this phone.",
-  "getZtTime": "Get it"
+  "getZtTime": "Get it",
+  "assignedTo": "Assigned to",
+  "nobody": "Nobody",
+  "you": "You",
+  "comments": "Comments",
+  "noCommentsYet": "No comments yet. Everyone in this list sees them.",
+  "addAComment": "Add a comment",
+  "deleteComment": "Delete comment",
+  "send": "Send",
+  "assignedToYouTitle": "{name} assigned you a task",
+  "@assignedToYouTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assignedToYouBody": "Open ZT Tasks to see it.",
+  "sharedListsChannel": "Shared lists",
+  "sharedListsChannelDescription": "When someone assigns you a task in a shared list"
 }

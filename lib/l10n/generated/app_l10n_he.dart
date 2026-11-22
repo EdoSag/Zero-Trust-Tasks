@@ -1549,4 +1549,37 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get importNoTasksInFile => 'לא נמצאו משימות בקובץ.';
+
+  @override
+  String get switchToBoard => 'לוח';
+
+  @override
+  String get boardToDo => 'לביצוע';
+
+  @override
+  String get boardInProgress => 'בתהליך';
+
+  @override
+  String get boardByStatus => 'מצב';
+
+  @override
+  String get boardByDue => 'תאריך יעד';
+
+  @override
+  String get boardByPriority => 'עדיפות';
+
+  @override
+  String get boardByList => 'רשימה';
+
+  @override
+  String get boardDropHere => 'יש ללחוץ לחיצה ארוכה על משימה ולגרור אותה לכאן';
+
+  @override
+  String get taskView => 'תצוגה';
+
+  @override
+  String get viewList => 'רשימה';
+
+  @override
+  String get viewCalendar => 'לוח שנה';
 }

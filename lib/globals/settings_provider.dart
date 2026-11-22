@@ -30,6 +30,14 @@ class SettingsProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// The board's columns: `status`, `due`, `priority` or `list`.
+  String get boardGrouping => _prefs.getString(PreferenceKeys.boardGrouping) ?? 'status';
+
+  Future<void> setBoardGrouping(String value) async {
+    await _prefs.setString(PreferenceKeys.boardGrouping, value);
+    notifyListeners();
+  }
+
   /// Whether the home-screen widget shows task titles (stored unencrypted
   /// by the launcher). Off: counts only.
   bool get widgetShowTasks => _prefs.getBool(PreferenceKeys.widgetShowTasks) ?? false;

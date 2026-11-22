@@ -1103,5 +1103,16 @@
     }
   },
   "importNotRecognised": "This file isn't a Todoist, Microsoft To Do or TickTick export.",
-  "importNoTasksInFile": "No tasks found in this file."
+  "importNoTasksInFile": "No tasks found in this file.",
+  "switchToBoard": "Board",
+  "boardToDo": "To do",
+  "boardInProgress": "In progress",
+  "boardByStatus": "Status",
+  "boardByDue": "Due date",
+  "boardByPriority": "Priority",
+  "boardByList": "List",
+  "boardDropHere": "Hold a task and drag it here",
+  "taskView": "View",
+  "viewList": "List",
+  "viewCalendar": "Calendar"
 }

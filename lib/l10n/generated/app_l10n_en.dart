@@ -1553,4 +1553,37 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get importNoTasksInFile => 'No tasks found in this file.';
+
+  @override
+  String get switchToBoard => 'Board';
+
+  @override
+  String get boardToDo => 'To do';
+
+  @override
+  String get boardInProgress => 'In progress';
+
+  @override
+  String get boardByStatus => 'Status';
+
+  @override
+  String get boardByDue => 'Due date';
+
+  @override
+  String get boardByPriority => 'Priority';
+
+  @override
+  String get boardByList => 'List';
+
+  @override
+  String get boardDropHere => 'Hold a task and drag it here';
+
+  @override
+  String get taskView => 'View';
+
+  @override
+  String get viewList => 'List';
+
+  @override
+  String get viewCalendar => 'Calendar';
 }

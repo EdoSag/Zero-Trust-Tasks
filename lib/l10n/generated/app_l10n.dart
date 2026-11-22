@@ -2526,6 +2526,72 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'No tasks found in this file.'**
   String get importNoTasksInFile;
+
+  /// No description provided for @switchToBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get switchToBoard;
+
+  /// No description provided for @boardToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'To do'**
+  String get boardToDo;
+
+  /// No description provided for @boardInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get boardInProgress;
+
+  /// No description provided for @boardByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get boardByStatus;
+
+  /// No description provided for @boardByDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get boardByDue;
+
+  /// No description provided for @boardByPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get boardByPriority;
+
+  /// No description provided for @boardByList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get boardByList;
+
+  /// No description provided for @boardDropHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a task and drag it here'**
+  String get boardDropHere;
+
+  /// No description provided for @taskView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get taskView;
+
+  /// No description provided for @viewList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get viewList;
+
+  /// No description provided for @viewCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get viewCalendar;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

@@ -13,6 +13,7 @@ import 'package:zero_trust_tasks/components/task_list_dialogs.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/models/task_sort_option.dart';
 import 'package:zero_trust_tasks/components/task_search_bar.dart';
+import 'package:zero_trust_tasks/components/task_board_view.dart';
 import 'package:zero_trust_tasks/components/task_calendar_view.dart';
 import 'package:zero_trust_tasks/components/task_section_list.dart';
 import 'package:zero_trust_tasks/core/services/task_filter_service.dart';
@@ -47,6 +48,7 @@ class _TasksListPageState extends State<TasksListPage> {
   late bool _sectioned;
   late bool _persistFilter;
   bool _calendarView = false;
+  bool _boardView = false;
   bool _selectionMode = false;
   Set<String> _selectedTaskIds = {};
   SmartFilter? _activeSmartFilter;
@@ -368,6 +370,13 @@ class _TasksListPageState extends State<TasksListPage> {
             );
           } else if (_calendarView) {
             body = TaskCalendarView(tasks: sorted);
+          } else if (_boardView) {
+            final grouping = BoardGrouping.values.asNameMap()[context.settings.boardGrouping] ?? BoardGrouping.status;
+            body = TaskBoardView(
+              tasks: sorted,
+              grouping: grouping,
+              onGroupingChanged: (g) => setState(() => context.settings.setBoardGrouping(g.name)),
+            );
           } else {
             // Drag to reorder: one list, "My order", no search or sections.
             final canReorder = _scope.isList &&
@@ -452,7 +461,7 @@ class _TasksListPageState extends State<TasksListPage> {
                         tooltip: context.l10n.saveCurrentFilter,
                         onPressed: _showSaveFilterDialog,
                       ),
-                      if (!_calendarView)
+                      if (!_calendarView && !_boardView)
                         IconButton(
                           icon: Icon(
                             _sectioned ? Icons.view_agenda : Icons.view_list,
@@ -462,22 +471,40 @@ class _TasksListPageState extends State<TasksListPage> {
                               : context.l10n.switchToSectionedList,
                           onPressed: _toggleSectioned,
                         ),
-                      IconButton(
+                      PopupMenuButton<String>(
                         icon: Icon(
                           _calendarView
-                              ? Icons.list
-                              : Icons.calendar_month_outlined,
+                              ? Icons.calendar_month_outlined
+                              : _boardView
+                              ? Icons.view_kanban_outlined
+                              : Icons.list,
                         ),
-                        tooltip: _calendarView
-                            ? context.l10n.switchToList
-                            : context.l10n.switchToCalendar,
-                        onPressed: () => setState(() {
-                          _calendarView = !_calendarView;
-                          if (_calendarView) {
+                        tooltip: context.l10n.taskView,
+                        onSelected: (view) => setState(() {
+                          _calendarView = view == 'calendar';
+                          _boardView = view == 'board';
+                          if (view != 'list') {
                             _selectionMode = false;
                             _selectedTaskIds = {};
                           }
                         }),
+                        itemBuilder: (context) => [
+                          CheckedPopupMenuItem(
+                            value: 'list',
+                            checked: !_calendarView && !_boardView,
+                            child: Text(context.l10n.viewList),
+                          ),
+                          CheckedPopupMenuItem(
+                            value: 'board',
+                            checked: _boardView,
+                            child: Text(context.l10n.switchToBoard),
+                          ),
+                          CheckedPopupMenuItem(
+                            value: 'calendar',
+                            checked: _calendarView,
+                            child: Text(context.l10n.viewCalendar),
+                          ),
+                        ],
                       ),
                     ],
                   ),
@@ -522,6 +549,8 @@ class _TasksListPageState extends State<TasksListPage> {
                     key: ValueKey(
                       _calendarView
                           ? 'calendar'
+                          : _boardView
+                          ? 'board'
                           : _selectionMode
                           ? 'select'
                           : _sectioned

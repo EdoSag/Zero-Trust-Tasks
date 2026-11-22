@@ -404,5 +404,16 @@
   "importStaysOnPhone": "הקובץ נקרא בטלפון הזה. שום דבר לא נשלח אל {app}; המשימות מוצפנות כאן.",
   "importedFromApp": "{count, plural, =1{יובאה משימה אחת מ-{app}} other{יובאו {count} משימות מ-{app}}}",
   "importNotRecognised": "הקובץ הזה אינו ייצוא של Todoist,‏ Microsoft To Do או TickTick.",
-  "importNoTasksInFile": "לא נמצאו משימות בקובץ."
+  "importNoTasksInFile": "לא נמצאו משימות בקובץ.",
+  "switchToBoard": "לוח",
+  "boardToDo": "לביצוע",
+  "boardInProgress": "בתהליך",
+  "boardByStatus": "מצב",
+  "boardByDue": "תאריך יעד",
+  "boardByPriority": "עדיפות",
+  "boardByList": "רשימה",
+  "boardDropHere": "יש ללחוץ לחיצה ארוכה על משימה ולגרור אותה לכאן",
+  "taskView": "תצוגה",
+  "viewList": "רשימה",
+  "viewCalendar": "לוח שנה"
 }

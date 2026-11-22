@@ -1517,4 +1517,40 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get insertTaskLink => 'Link';
+
+  @override
+  String get importFromOtherApps =>
+      'Import from Todoist, Microsoft To Do or TickTick';
+
+  @override
+  String get importFromOtherAppsHint =>
+      'A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)';
+
+  @override
+  String importFromApp(String app) {
+    return 'Import from $app';
+  }
+
+  @override
+  String importStaysOnPhone(String app) {
+    return 'The file is read on this phone. Nothing is sent to $app; your tasks are encrypted here.';
+  }
+
+  @override
+  String importedFromApp(int count, String app) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Imported $count tasks from $app',
+      one: 'Imported 1 task from $app',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNotRecognised =>
+      'This file isn\'t a Todoist, Microsoft To Do or TickTick export.';
+
+  @override
+  String get importNoTasksInFile => 'No tasks found in this file.';
 }

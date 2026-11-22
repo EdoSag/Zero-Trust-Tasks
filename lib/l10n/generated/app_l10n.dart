@@ -2484,6 +2484,48 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Link'**
   String get insertTaskLink;
+
+  /// No description provided for @importFromOtherApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Todoist, Microsoft To Do or TickTick'**
+  String get importFromOtherApps;
+
+  /// No description provided for @importFromOtherAppsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)'**
+  String get importFromOtherAppsHint;
+
+  /// No description provided for @importFromApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from {app}'**
+  String importFromApp(String app);
+
+  /// No description provided for @importStaysOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'The file is read on this phone. Nothing is sent to {app}; your tasks are encrypted here.'**
+  String importStaysOnPhone(String app);
+
+  /// No description provided for @importedFromApp.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Imported 1 task from {app}} other{Imported {count} tasks from {app}}}'**
+  String importedFromApp(int count, String app);
+
+  /// No description provided for @importNotRecognised.
+  ///
+  /// In en, this message translates to:
+  /// **'This file isn\'t a Todoist, Microsoft To Do or TickTick export.'**
+  String get importNotRecognised;
+
+  /// No description provided for @importNoTasksInFile.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks found in this file.'**
+  String get importNoTasksInFile;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

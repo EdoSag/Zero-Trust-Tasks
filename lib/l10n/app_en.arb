@@ -1072,5 +1072,36 @@
   "insertTaskDue": "Due date",
   "insertTaskTitleAndDue": "Title and due date",
   "insertTaskChecklist": "Checklist",
-  "insertTaskLink": "Link"
+  "insertTaskLink": "Link",
+  "importFromOtherApps": "Import from Todoist, Microsoft To Do or TickTick",
+  "importFromOtherAppsHint": "A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)",
+  "importFromApp": "Import from {app}",
+  "@importFromApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importStaysOnPhone": "The file is read on this phone. Nothing is sent to {app}; your tasks are encrypted here.",
+  "@importStaysOnPhone": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importedFromApp": "{count, plural, =1{Imported 1 task from {app}} other{Imported {count} tasks from {app}}}",
+  "@importedFromApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importNotRecognised": "This file isn't a Todoist, Microsoft To Do or TickTick export.",
+  "importNoTasksInFile": "No tasks found in this file."
 }

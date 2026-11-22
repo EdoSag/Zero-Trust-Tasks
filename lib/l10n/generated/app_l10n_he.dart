@@ -1513,4 +1513,40 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get insertTaskLink => 'קישור';
+
+  @override
+  String get importFromOtherApps =>
+      'ייבוא מ-Todoist, מ-Microsoft To Do או מ-TickTick';
+
+  @override
+  String get importFromOtherAppsHint =>
+      'קובץ CSV או גיבוי ‎.zip של Todoist, ייצוא של Microsoft To Do ‏(‎.json) או גיבוי של TickTick ‏(‎.csv)';
+
+  @override
+  String importFromApp(String app) {
+    return 'ייבוא מ-$app';
+  }
+
+  @override
+  String importStaysOnPhone(String app) {
+    return 'הקובץ נקרא בטלפון הזה. שום דבר לא נשלח אל $app; המשימות מוצפנות כאן.';
+  }
+
+  @override
+  String importedFromApp(int count, String app) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'יובאו $count משימות מ-$app',
+      one: 'יובאה משימה אחת מ-$app',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNotRecognised =>
+      'הקובץ הזה אינו ייצוא של Todoist,‏ Microsoft To Do או TickTick.';
+
+  @override
+  String get importNoTasksInFile => 'לא נמצאו משימות בקובץ.';
 }

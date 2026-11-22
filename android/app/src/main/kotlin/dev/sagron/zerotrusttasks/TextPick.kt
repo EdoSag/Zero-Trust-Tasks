@@ -17,6 +17,11 @@ object TextPick {
     const val ACTION = "bz.zerotrust.action.PICK_TEXT"
     const val EXTRA_TEXT = "bz.zerotrust.extra.TEXT"
 
+    /** ZT Time asks for the task itself too (see docs: zt-time-links). */
+    const val EXTRA_WANT_ITEM = "bz.zerotrust.extra.WANT_ITEM"
+    const val EXTRA_ITEM_ID = "bz.zerotrust.extra.ITEM_ID"
+    const val EXTRA_TITLE = "bz.zerotrust.extra.TITLE"
+
     fun isPick(intent: Intent?): Boolean = intent?.action == ACTION
 
     /**
@@ -34,11 +39,22 @@ object TextPick {
         }
     }
 
-    fun answer(activity: Activity, text: String?) {
+    fun wantsItem(intent: Intent?): Boolean = intent?.getBooleanExtra(EXTRA_WANT_ITEM, false) == true
+
+    /**
+     * Answers with [text]; when the asker set WANT_ITEM, also the task's [itemId] and
+     * [title], so ZT Time can link its entry back to the task.
+     */
+    fun answer(activity: Activity, text: String?, itemId: String? = null, title: String? = null) {
         if (text.isNullOrEmpty()) {
             activity.setResult(Activity.RESULT_CANCELED)
         } else {
-            activity.setResult(Activity.RESULT_OK, Intent().putExtra(EXTRA_TEXT, text))
+            val data = Intent().putExtra(EXTRA_TEXT, text)
+            if (wantsItem(activity.intent) && !itemId.isNullOrEmpty()) {
+                data.putExtra(EXTRA_ITEM_ID, itemId)
+                if (!title.isNullOrEmpty()) data.putExtra(EXTRA_TITLE, title)
+            }
+            activity.setResult(Activity.RESULT_OK, data)
         }
         activity.finish()
     }

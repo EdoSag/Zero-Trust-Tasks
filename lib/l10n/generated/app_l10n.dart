@@ -2592,6 +2592,96 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Calendar'**
   String get viewCalendar;
+
+  /// No description provided for @focusTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus timer'**
+  String get focusTimer;
+
+  /// No description provided for @trackTimeInZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Track time in ZT Time'**
+  String get trackTimeInZtTime;
+
+  /// No description provided for @focusedSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{Focused on this task: 1 minute} other{Focused on this task: {minutes} minutes}}'**
+  String focusedSoFar(int minutes);
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String minutesShort(int minutes);
+
+  /// No description provided for @focusStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focusing'**
+  String get focusStart;
+
+  /// No description provided for @focusPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get focusPause;
+
+  /// No description provided for @focusResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get focusResume;
+
+  /// No description provided for @focusStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get focusStop;
+
+  /// No description provided for @focusAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus again'**
+  String get focusAgain;
+
+  /// No description provided for @focusKeepOpenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.'**
+  String get focusKeepOpenHint;
+
+  /// No description provided for @focusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =0{Less than a minute, so nothing was added.} =1{1 minute of focus added to the task.} other{{minutes} minutes of focus added to the task.}}'**
+  String focusDone(int minutes);
+
+  /// No description provided for @logInZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in ZT Time'**
+  String get logInZtTime;
+
+  /// No description provided for @focusLoggedInTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged in ZT Time'**
+  String get focusLoggedInTime;
+
+  /// No description provided for @ztTimeNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'ZT Time isn\'t installed on this phone.'**
+  String get ztTimeNotInstalled;
+
+  /// No description provided for @getZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Get it'**
+  String get getZtTime;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

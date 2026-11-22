@@ -25,12 +25,26 @@ class KeyboardPick {
     }
   }
 
+  /// Whether the asker (ZT Time) wants the task itself, not only a text:
+  /// then a tap on a task answers at once, with its id and title.
+  static Future<bool> wantsItem() async {
+    if (!_android) return false;
+    try {
+      return await _channel.invokeMethod<bool>('wantsItem') ?? false;
+    } on MissingPluginException {
+      return false;
+    } on PlatformException {
+      return false;
+    }
+  }
+
   /// Answers the keyboard with the picked [text] (null: nothing) and closes
-  /// the pick screen.
-  static Future<void> finish(String? text) async {
+  /// the pick screen. [itemId] and [title] go along only when the asker
+  /// wanted the item.
+  static Future<void> finish(String? text, {String? itemId, String? title}) async {
     if (!_android) return;
     try {
-      await _channel.invokeMethod<void>('finish', {'text': text});
+      await _channel.invokeMethod<void>('finish', {'text': text, 'itemId': itemId, 'title': title});
     } on MissingPluginException {
       // Not running on the Android app (tests).
     } on PlatformException {

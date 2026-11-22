@@ -1586,4 +1586,69 @@ class AppL10nEn extends AppL10n {
 
   @override
   String get viewCalendar => 'Calendar';
+
+  @override
+  String get focusTimer => 'Focus timer';
+
+  @override
+  String get trackTimeInZtTime => 'Track time in ZT Time';
+
+  @override
+  String focusedSoFar(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Focused on this task: $minutes minutes',
+      one: 'Focused on this task: 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get focusStart => 'Start focusing';
+
+  @override
+  String get focusPause => 'Pause';
+
+  @override
+  String get focusResume => 'Resume';
+
+  @override
+  String get focusStop => 'Stop';
+
+  @override
+  String get focusAgain => 'Focus again';
+
+  @override
+  String get focusKeepOpenHint =>
+      'Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.';
+
+  @override
+  String focusDone(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes of focus added to the task.',
+      one: '1 minute of focus added to the task.',
+      zero: 'Less than a minute, so nothing was added.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logInZtTime => 'Log in ZT Time';
+
+  @override
+  String get focusLoggedInTime => 'Logged in ZT Time';
+
+  @override
+  String get ztTimeNotInstalled => 'ZT Time isn\'t installed on this phone.';
+
+  @override
+  String get getZtTime => 'Get it';
 }

@@ -62,6 +62,13 @@
                 <action android:name="bz.zerotrust.action.PICK_TEXT"/>
                 <category android:name="android.intent.category.DEFAULT"/>
             </intent-filter>
+            <!-- ZT Time (and other Zero-Trust apps) open a linked task:
+                 bz.zerotrust.extra.ITEM_ID names it. Only opens the app on that
+                 task after the usual unlock; nothing is answered. -->
+            <intent-filter>
+                <action android:name="bz.zerotrust.action.OPEN_ITEM"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
             <!-- Text shared from other apps (ZT Browser's "Read later in ZT
                  Tasks", or any share sheet) opens the task editor filled in. -->
             <intent-filter>
@@ -144,5 +151,7 @@
         <package android:name="dev.sagron.zerotrustnotes"/>
         <package android:name="dev.sagron.zerotrustcontacts"/>
         <package android:name="dev.sagron.zerotrustcalendar"/>
+        <!-- Focus timer and "Track time" hand the task to ZT Time. -->
+        <package android:name="dev.sagron.zerotrusttime"/>
     </queries>
 </manifest>

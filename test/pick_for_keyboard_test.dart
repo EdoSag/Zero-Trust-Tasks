@@ -67,6 +67,7 @@ void main() {
       await manager.addTask(t);
     }
     String? picked = 'unset';
+    String? pickedId;
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
@@ -80,9 +81,11 @@ void main() {
             builder: (context) => Scaffold(
               body: TextButton(
                 onPressed: () async {
-                  picked = await Navigator.of(
+                  final r = await Navigator.of(
                     context,
-                  ).push<String>(MaterialPageRoute(builder: (_) => const PickForKeyboardPage()));
+                  ).push<PickedText>(MaterialPageRoute(builder: (_) => const PickForKeyboardPage()));
+                  picked = r?.text;
+                  pickedId = r?.task.id;
                 },
                 child: const Text('open'),
               ),
@@ -107,6 +110,7 @@ void main() {
     await tester.tap(find.text('https://dentist.example'));
     await tester.pumpAndSettle();
     expect(picked, 'https://dentist.example');
+    expect(pickedId, dentist.id);
 
     // A search, then a task with a title and a description: a sheet asks which.
     await tester.tap(find.text('open'));

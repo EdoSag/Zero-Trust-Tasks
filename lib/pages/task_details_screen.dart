@@ -14,10 +14,12 @@ import 'package:zero_trust_tasks/core/services/task_urgency_service.dart';
 import 'package:zero_trust_tasks/core/utils/snackbar_helper.dart';
 import 'package:zero_trust_tasks/models/task_template.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/pages/focus_timer_page.dart';
+import 'package:zero_trust_tasks/suite/zt_time.dart';
 import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zt_places/zt_places.dart';
 
-enum _TaskAction { moveToList, makeSubtask, duplicate, saveAsTemplate, archive, delete }
+enum _TaskAction { focus, trackTime, moveToList, makeSubtask, duplicate, saveAsTemplate, archive, delete }
 
 class TaskDetailsScreen extends ConsumerStatefulWidget {
   const TaskDetailsScreen({required this.task, super.key});
@@ -68,6 +70,12 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
           PopupMenuButton<_TaskAction>(
             onSelected: (action) {
               switch (action) {
+                case _TaskAction.focus:
+                  Navigator.of(context).push(
+                    MaterialPageRoute<void>(builder: (_) => FocusTimerPage(task: currentTask)),
+                  );
+                case _TaskAction.trackTime:
+                  _trackTime(context, currentTask);
                 case _TaskAction.moveToList:
                   _moveToList(context, currentTask);
                 case _TaskAction.makeSubtask:
@@ -83,6 +91,22 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
               }
             },
             itemBuilder: (_) => [
+              PopupMenuItem(
+                value: _TaskAction.focus,
+                child: ListTile(
+                  leading: const Icon(Icons.center_focus_strong_outlined),
+                  title: Text(context.l10n.focusTimer),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
+              PopupMenuItem(
+                value: _TaskAction.trackTime,
+                child: ListTile(
+                  leading: const Icon(Icons.timer_outlined),
+                  title: Text(context.l10n.trackTimeInZtTime),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ),
               PopupMenuItem(
                 value: _TaskAction.moveToList,
                 child: ListTile(
@@ -491,6 +515,23 @@ class _TaskDetailsScreenState extends ConsumerState<TaskDetailsScreen> {
         ],
       ),
     );
+  }
+
+  /// "Track time in ZT Time": Time offers to start a timer linked to the
+  /// task.
+  Future<void> _trackTime(BuildContext context, Task task) async {
+    final l10n = context.l10n;
+    final messenger = ScaffoldMessenger.of(context);
+    final answer = await ZtTime.track(task);
+    if (answer == TimeHandOver.missing) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.ztTimeNotInstalled),
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(label: l10n.getZtTime, onPressed: ZtTime.openDownloadPage),
+        ),
+      );
+    }
   }
 
   Future<void> _moveToList(BuildContext context, Task task) async {

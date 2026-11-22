@@ -209,10 +209,12 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   /// the vault is unlocked.
   Future<void> _takeKeyboardPick() async {
     if (!await KeyboardPick.requested() || !mounted) return;
+    final wantItem = await KeyboardPick.wantsItem();
+    if (!mounted) return;
     final picked = await Navigator.of(
       context,
-    ).push<String>(MaterialPageRoute(builder: (_) => const PickForKeyboardPage()));
-    await KeyboardPick.finish(picked);
+    ).push<PickedText>(MaterialPageRoute(builder: (_) => PickForKeyboardPage(wantItem: wantItem)));
+    await KeyboardPick.finish(picked?.text, itemId: picked?.task.id, title: picked?.task.title);
   }
 
   void _openWidgetLaunch() {

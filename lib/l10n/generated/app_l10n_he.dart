@@ -1582,4 +1582,69 @@ class AppL10nHe extends AppL10n {
 
   @override
   String get viewCalendar => 'לוח שנה';
+
+  @override
+  String get focusTimer => 'טיימר ריכוז';
+
+  @override
+  String get trackTimeInZtTime => 'מדידת זמן ב-ZT Time';
+
+  @override
+  String focusedSoFar(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'זמן ריכוז במשימה: $minutes דקות',
+      one: 'זמן ריכוז במשימה: דקה אחת',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes דק׳';
+  }
+
+  @override
+  String get focusStart => 'התחלת ריכוז';
+
+  @override
+  String get focusPause => 'השהיה';
+
+  @override
+  String get focusResume => 'המשך';
+
+  @override
+  String get focusStop => 'עצירה';
+
+  @override
+  String get focusAgain => 'ריכוז נוסף';
+
+  @override
+  String get focusKeepOpenHint =>
+      'יש להשאיר את ZT Tasks פתוחה בזמן הריכוז. הדקות נוספות למשימה בעצירה.';
+
+  @override
+  String focusDone(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes דקות ריכוז נוספו למשימה.',
+      one: 'דקת ריכוז אחת נוספה למשימה.',
+      zero: 'פחות מדקה, ולכן לא נוסף דבר.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logInZtTime => 'רישום ב-ZT Time';
+
+  @override
+  String get focusLoggedInTime => 'נרשם ב-ZT Time';
+
+  @override
+  String get ztTimeNotInstalled => 'ZT Time לא מותקנת בטלפון הזה.';
+
+  @override
+  String get getZtTime => 'להורדה';
 }

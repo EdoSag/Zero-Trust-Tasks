@@ -415,5 +415,20 @@
   "boardDropHere": "יש ללחוץ לחיצה ארוכה על משימה ולגרור אותה לכאן",
   "taskView": "תצוגה",
   "viewList": "רשימה",
-  "viewCalendar": "לוח שנה"
+  "viewCalendar": "לוח שנה",
+  "focusTimer": "טיימר ריכוז",
+  "trackTimeInZtTime": "מדידת זמן ב-ZT Time",
+  "focusedSoFar": "{minutes, plural, =1{זמן ריכוז במשימה: דקה אחת} other{זמן ריכוז במשימה: {minutes} דקות}}",
+  "minutesShort": "{minutes} דק׳",
+  "focusStart": "התחלת ריכוז",
+  "focusPause": "השהיה",
+  "focusResume": "המשך",
+  "focusStop": "עצירה",
+  "focusAgain": "ריכוז נוסף",
+  "focusKeepOpenHint": "יש להשאיר את ZT Tasks פתוחה בזמן הריכוז. הדקות נוספות למשימה בעצירה.",
+  "focusDone": "{minutes, plural, =0{פחות מדקה, ולכן לא נוסף דבר.} =1{דקת ריכוז אחת נוספה למשימה.} other{{minutes} דקות ריכוז נוספו למשימה.}}",
+  "logInZtTime": "רישום ב-ZT Time",
+  "focusLoggedInTime": "נרשם ב-ZT Time",
+  "ztTimeNotInstalled": "ZT Time לא מותקנת בטלפון הזה.",
+  "getZtTime": "להורדה"
 }

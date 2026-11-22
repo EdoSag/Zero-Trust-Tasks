@@ -65,12 +65,20 @@ List<(IconData, String, String)> pickValues(Task task, AppL10n l10n) {
   ];
 }
 
+/// What the pick page answers: the text, and the task it came from.
+typedef PickedText = ({String text, Task task});
+
 /// Opened by ZT Keyboard's "Insert from ZT apps" key, once the vault is
 /// unlocked: the user taps a task and then what to type of it. Pops with
 /// that text, or with nothing when the user goes back. Only the tapped text
 /// leaves the app.
+///
+/// With [wantItem] (ZT Time asks for a task to link a time entry to), a
+/// tap on a task answers at once with its title.
 class PickForKeyboardPage extends ConsumerStatefulWidget {
-  const PickForKeyboardPage({super.key});
+  const PickForKeyboardPage({super.key, this.wantItem = false});
+
+  final bool wantItem;
 
   @override
   ConsumerState<PickForKeyboardPage> createState() => _PickForKeyboardPageState();
@@ -79,12 +87,13 @@ class PickForKeyboardPage extends ConsumerStatefulWidget {
 class _PickForKeyboardPageState extends ConsumerState<PickForKeyboardPage> {
   String _query = '';
 
-  void _send(String text) => Navigator.of(context).pop(text);
+  void _send(String text, Task task) => Navigator.of(context).pop<PickedText>((text: text, task: task));
 
   Future<void> _open(Task task) async {
+    if (widget.wantItem && task.title.trim().isNotEmpty) return _send(task.title.trim(), task);
     final values = pickValues(task, context.l10n);
     if (values.isEmpty) return;
-    if (values.length == 1) return _send(values.single.$3);
+    if (values.length == 1) return _send(values.single.$3, task);
     final picked = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -107,7 +116,7 @@ class _PickForKeyboardPageState extends ConsumerState<PickForKeyboardPage> {
         ),
       ),
     );
-    if (picked != null && mounted) _send(picked);
+    if (picked != null && mounted) _send(picked, task);
   }
 
   @override

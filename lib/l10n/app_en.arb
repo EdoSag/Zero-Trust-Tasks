@@ -1114,5 +1114,41 @@
   "boardDropHere": "Hold a task and drag it here",
   "taskView": "View",
   "viewList": "List",
-  "viewCalendar": "Calendar"
+  "viewCalendar": "Calendar",
+  "focusTimer": "Focus timer",
+  "trackTimeInZtTime": "Track time in ZT Time",
+  "focusedSoFar": "{minutes, plural, =1{Focused on this task: 1 minute} other{Focused on this task: {minutes} minutes}}",
+  "@focusedSoFar": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} min",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusStart": "Start focusing",
+  "focusPause": "Pause",
+  "focusResume": "Resume",
+  "focusStop": "Stop",
+  "focusAgain": "Focus again",
+  "focusKeepOpenHint": "Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.",
+  "focusDone": "{minutes, plural, =0{Less than a minute, so nothing was added.} =1{1 minute of focus added to the task.} other{{minutes} minutes of focus added to the task.}}",
+  "@focusDone": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "logInZtTime": "Log in ZT Time",
+  "focusLoggedInTime": "Logged in ZT Time",
+  "ztTimeNotInstalled": "ZT Time isn't installed on this phone.",
+  "getZtTime": "Get it"
 }

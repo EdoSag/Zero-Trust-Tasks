@@ -1484,4 +1484,37 @@ class AppL10nEn extends AppL10n {
   @override
   String get listAutoPlanHint =>
       'Every task added to this list gets Auto-schedule';
+
+  @override
+  String get insertIntoKeyboard => 'Insert into ZT Keyboard';
+
+  @override
+  String get insertPickTaskHint => 'Tap a task, then what to type.';
+
+  @override
+  String get insertSearchTasks => 'Search tasks';
+
+  @override
+  String get insertNoOpenTasks => 'No open tasks. Search to find done ones.';
+
+  @override
+  String get insertNoTasksFound => 'No tasks found';
+
+  @override
+  String get insertUntitledTask => 'Untitled task';
+
+  @override
+  String get insertTaskTitle => 'Title';
+
+  @override
+  String get insertTaskDue => 'Due date';
+
+  @override
+  String get insertTaskTitleAndDue => 'Title and due date';
+
+  @override
+  String get insertTaskChecklist => 'Checklist';
+
+  @override
+  String get insertTaskLink => 'Link';
 }

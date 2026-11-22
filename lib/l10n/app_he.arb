@@ -386,5 +386,16 @@
   "planSwitchedOff": "כבוי",
   "openZtCalendar": "פתיחת ZT Calendar",
   "listAutoPlan": "לתכנן משימות חדשות ב-ZT Calendar",
-  "listAutoPlanHint": "כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי"
+  "listAutoPlanHint": "כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי",
+  "insertIntoKeyboard": "הוספה למקלדת ZT",
+  "insertPickTaskHint": "יש להקיש על משימה ואז על מה להקליד.",
+  "insertSearchTasks": "חיפוש משימות",
+  "insertNoOpenTasks": "אין משימות פתוחות. אפשר לחפש כדי למצוא משימות שהושלמו.",
+  "insertNoTasksFound": "לא נמצאו משימות",
+  "insertUntitledTask": "משימה ללא כותרת",
+  "insertTaskTitle": "כותרת",
+  "insertTaskDue": "תאריך יעד",
+  "insertTaskTitleAndDue": "כותרת ותאריך יעד",
+  "insertTaskChecklist": "רשימת תיוג",
+  "insertTaskLink": "קישור"
 }

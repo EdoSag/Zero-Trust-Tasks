@@ -19,6 +19,9 @@ import io.flutter.plugin.common.MethodChannel
  * `zt_tasks/share` hands text shared to ZT Tasks (ZT Browser's "Read later
  * in ZT Tasks", or Android's share sheet) to the app, which opens the task
  * editor filled in. Only text: nothing is saved until the person taps Save.
+ *
+ * `zt_tasks/text_pick` answers ZT Keyboard's "Insert from ZT apps" key (see
+ * [TextPick]): the keyboard opens Tasks, the user unlocks and taps what to type.
  */
 class MainActivity : FlutterFragmentActivity() {
     private var links: MethodChannel? = null
@@ -26,14 +29,24 @@ class MainActivity : FlutterFragmentActivity() {
     private var shareChannel: MethodChannel? = null
     private var pendingShare: Map<String, String?>? = null
 
+    /** ZT Keyboard is waiting for the user to pick a text here (see [TextPick]). */
+    private var pickingText = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Not again when the activity is recreated (rotation).
         if (savedInstanceState == null) pendingShare = shared(intent)
+        if (TextPick.isPick(intent)) {
+            // Only another Zero-Trust app may ask; anyone else gets nothing.
+            if (TextPick.callerAllowed(this)) pickingText = true else TextPick.answer(this, null)
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // A pick request is only honoured when it opens its own screen (onCreate), where
+        // Android tells who is asking.
+        if (TextPick.isPick(intent)) return
         setIntent(intent)
         val share = shared(intent)
         if (share != null) {
@@ -89,6 +102,23 @@ class MainActivity : FlutterFragmentActivity() {
                 }
             }
         }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zt_tasks/text_pick")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    // configureFlutterEngine runs inside super.onCreate, before pickingText
+                    // is set, so the question is answered from the intent and the caller check.
+                    "isPick" -> result.success(TextPick.isPick(intent) && TextPick.callerAllowed(this))
+                    "finish" -> {
+                        // Answers only the screen the keyboard itself opened.
+                        if (pickingText) {
+                            pickingText = false
+                            TextPick.answer(this, call.argument<String>("text"))
+                        }
+                        result.success(null)
+                    }
+                    else -> result.notImplemented()
+                }
+            }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "zt_tasks/apps")
             .setMethodCallHandler { call, result ->
                 when (call.method) {

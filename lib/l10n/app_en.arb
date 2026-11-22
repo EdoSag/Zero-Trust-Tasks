@@ -1061,5 +1061,16 @@
   "planSwitchedOff": "Off",
   "openZtCalendar": "Open ZT Calendar",
   "listAutoPlan": "Plan new tasks in ZT Calendar",
-  "listAutoPlanHint": "Every task added to this list gets Auto-schedule"
+  "listAutoPlanHint": "Every task added to this list gets Auto-schedule",
+  "insertIntoKeyboard": "Insert into ZT Keyboard",
+  "insertPickTaskHint": "Tap a task, then what to type.",
+  "insertSearchTasks": "Search tasks",
+  "insertNoOpenTasks": "No open tasks. Search to find done ones.",
+  "insertNoTasksFound": "No tasks found",
+  "insertUntitledTask": "Untitled task",
+  "insertTaskTitle": "Title",
+  "insertTaskDue": "Due date",
+  "insertTaskTitleAndDue": "Title and due date",
+  "insertTaskChecklist": "Checklist",
+  "insertTaskLink": "Link"
 }

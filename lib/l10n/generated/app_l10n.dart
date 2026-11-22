@@ -2418,6 +2418,72 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Every task added to this list gets Auto-schedule'**
   String get listAutoPlanHint;
+
+  /// No description provided for @insertIntoKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert into ZT Keyboard'**
+  String get insertIntoKeyboard;
+
+  /// No description provided for @insertPickTaskHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a task, then what to type.'**
+  String get insertPickTaskHint;
+
+  /// No description provided for @insertSearchTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get insertSearchTasks;
+
+  /// No description provided for @insertNoOpenTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No open tasks. Search to find done ones.'**
+  String get insertNoOpenTasks;
+
+  /// No description provided for @insertNoTasksFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks found'**
+  String get insertNoTasksFound;
+
+  /// No description provided for @insertUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get insertUntitledTask;
+
+  /// No description provided for @insertTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get insertTaskTitle;
+
+  /// No description provided for @insertTaskDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get insertTaskDue;
+
+  /// No description provided for @insertTaskTitleAndDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Title and due date'**
+  String get insertTaskTitleAndDue;
+
+  /// No description provided for @insertTaskChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get insertTaskChecklist;
+
+  /// No description provided for @insertTaskLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get insertTaskLink;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

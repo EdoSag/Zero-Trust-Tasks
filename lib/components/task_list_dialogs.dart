@@ -403,11 +403,14 @@ class _AutoPlanSwitchState extends State<_AutoPlanSwitch> {
         value: _list.autoPlan,
         onChanged: (on) async {
           final messenger = ScaffoldMessenger.of(context);
+          final taskLists = context.taskLists;
           final before = _list;
-          final updated = _list.withAutoPlan(on);
+          // From the list as stored now, so a change the sheet's other
+          // switch just saved is kept.
+          final updated = _current(taskLists.lists, _list).withAutoPlan(on);
           setState(() => _list = updated);
           try {
-            await context.taskLists.save(updated);
+            await taskLists.save(updated);
           } on Object catch (e) {
             if (mounted) setState(() => _list = before);
             messenger.showSnackBar(SnackBar(content: Text('$e')));
@@ -475,7 +478,8 @@ class _FamilyCircleSwitchState extends ConsumerState<_FamilyCircleSwitch> {
                 if (id == null || !mounted) return;
               }
               final before = _list;
-              final updated = _list.withFamilyCircle(v ? id : null);
+              // From the list as stored now (see _AutoPlanSwitch).
+              final updated = _current(taskLists.lists, _list).withFamilyCircle(v ? id : null);
               setState(() => _list = updated);
               try {
                 await taskLists.save(updated);
@@ -487,3 +491,7 @@ class _FamilyCircleSwitchState extends ConsumerState<_FamilyCircleSwitch> {
     );
   }
 }
+
+/// [list] as [lists] hold it now, or [list] itself when it isn't there.
+TaskList _current(List<TaskList> lists, TaskList list) =>
+    lists.where((l) => l.id == list.id).firstOrNull ?? list;

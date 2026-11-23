@@ -2418,6 +2418,378 @@ abstract class AppL10n {
   /// In en, this message translates to:
   /// **'Every task added to this list gets Auto-schedule'**
   String get listAutoPlanHint;
+
+  /// No description provided for @listFamilyCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in ZT Family'**
+  String get listFamilyCircle;
+
+  /// No description provided for @listFamilyCircleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in the family hub of {circle}. Everyone in that circle sees this list\'s tasks.'**
+  String listFamilyCircleOn(String circle);
+
+  /// No description provided for @listFamilyCircleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this list in your ZT Family circle\'s hub'**
+  String get listFamilyCircleOff;
+
+  /// No description provided for @listFamilyCircleNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join a circle in ZT Family first'**
+  String get listFamilyCircleNone;
+
+  /// No description provided for @listFamilyCirclePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Which circle?'**
+  String get listFamilyCirclePick;
+
+  /// No description provided for @listFamilyCircleUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Family circle'**
+  String get listFamilyCircleUnnamed;
+
+  /// No description provided for @insertIntoKeyboard.
+  ///
+  /// In en, this message translates to:
+  /// **'Insert into ZT Keyboard'**
+  String get insertIntoKeyboard;
+
+  /// No description provided for @insertPickTaskHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a task, then what to type.'**
+  String get insertPickTaskHint;
+
+  /// No description provided for @insertSearchTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'Search tasks'**
+  String get insertSearchTasks;
+
+  /// No description provided for @insertNoOpenTasks.
+  ///
+  /// In en, this message translates to:
+  /// **'No open tasks. Search to find done ones.'**
+  String get insertNoOpenTasks;
+
+  /// No description provided for @insertNoTasksFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks found'**
+  String get insertNoTasksFound;
+
+  /// No description provided for @insertUntitledTask.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled task'**
+  String get insertUntitledTask;
+
+  /// No description provided for @insertTaskTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Title'**
+  String get insertTaskTitle;
+
+  /// No description provided for @insertTaskDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get insertTaskDue;
+
+  /// No description provided for @insertTaskTitleAndDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Title and due date'**
+  String get insertTaskTitleAndDue;
+
+  /// No description provided for @insertTaskChecklist.
+  ///
+  /// In en, this message translates to:
+  /// **'Checklist'**
+  String get insertTaskChecklist;
+
+  /// No description provided for @insertTaskLink.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get insertTaskLink;
+
+  /// No description provided for @importFromOtherApps.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from Todoist, Microsoft To Do or TickTick'**
+  String get importFromOtherApps;
+
+  /// No description provided for @importFromOtherAppsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)'**
+  String get importFromOtherAppsHint;
+
+  /// No description provided for @importFromApp.
+  ///
+  /// In en, this message translates to:
+  /// **'Import from {app}'**
+  String importFromApp(String app);
+
+  /// No description provided for @importStaysOnPhone.
+  ///
+  /// In en, this message translates to:
+  /// **'The file is read on this phone. Nothing is sent to {app}; your tasks are encrypted here.'**
+  String importStaysOnPhone(String app);
+
+  /// No description provided for @importedFromApp.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Imported 1 task from {app}} other{Imported {count} tasks from {app}}}'**
+  String importedFromApp(int count, String app);
+
+  /// No description provided for @importNotRecognised.
+  ///
+  /// In en, this message translates to:
+  /// **'This file isn\'t a Todoist, Microsoft To Do or TickTick export.'**
+  String get importNotRecognised;
+
+  /// No description provided for @importNoTasksInFile.
+  ///
+  /// In en, this message translates to:
+  /// **'No tasks found in this file.'**
+  String get importNoTasksInFile;
+
+  /// No description provided for @switchToBoard.
+  ///
+  /// In en, this message translates to:
+  /// **'Board'**
+  String get switchToBoard;
+
+  /// No description provided for @boardToDo.
+  ///
+  /// In en, this message translates to:
+  /// **'To do'**
+  String get boardToDo;
+
+  /// No description provided for @boardInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'In progress'**
+  String get boardInProgress;
+
+  /// No description provided for @boardByStatus.
+  ///
+  /// In en, this message translates to:
+  /// **'Status'**
+  String get boardByStatus;
+
+  /// No description provided for @boardByDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Due date'**
+  String get boardByDue;
+
+  /// No description provided for @boardByPriority.
+  ///
+  /// In en, this message translates to:
+  /// **'Priority'**
+  String get boardByPriority;
+
+  /// No description provided for @boardByList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get boardByList;
+
+  /// No description provided for @boardDropHere.
+  ///
+  /// In en, this message translates to:
+  /// **'Hold a task and drag it here'**
+  String get boardDropHere;
+
+  /// No description provided for @taskView.
+  ///
+  /// In en, this message translates to:
+  /// **'View'**
+  String get taskView;
+
+  /// No description provided for @viewList.
+  ///
+  /// In en, this message translates to:
+  /// **'List'**
+  String get viewList;
+
+  /// No description provided for @viewCalendar.
+  ///
+  /// In en, this message translates to:
+  /// **'Calendar'**
+  String get viewCalendar;
+
+  /// No description provided for @focusTimer.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus timer'**
+  String get focusTimer;
+
+  /// No description provided for @trackTimeInZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Track time in ZT Time'**
+  String get trackTimeInZtTime;
+
+  /// No description provided for @focusedSoFar.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =1{Focused on this task: 1 minute} other{Focused on this task: {minutes} minutes}}'**
+  String focusedSoFar(int minutes);
+
+  /// No description provided for @minutesShort.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String minutesShort(int minutes);
+
+  /// No description provided for @focusStart.
+  ///
+  /// In en, this message translates to:
+  /// **'Start focusing'**
+  String get focusStart;
+
+  /// No description provided for @focusPause.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause'**
+  String get focusPause;
+
+  /// No description provided for @focusResume.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume'**
+  String get focusResume;
+
+  /// No description provided for @focusStop.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop'**
+  String get focusStop;
+
+  /// No description provided for @focusAgain.
+  ///
+  /// In en, this message translates to:
+  /// **'Focus again'**
+  String get focusAgain;
+
+  /// No description provided for @focusKeepOpenHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.'**
+  String get focusKeepOpenHint;
+
+  /// No description provided for @focusDone.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes, plural, =0{Less than a minute, so nothing was added.} =1{1 minute of focus added to the task.} other{{minutes} minutes of focus added to the task.}}'**
+  String focusDone(int minutes);
+
+  /// No description provided for @logInZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in ZT Time'**
+  String get logInZtTime;
+
+  /// No description provided for @focusLoggedInTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Logged in ZT Time'**
+  String get focusLoggedInTime;
+
+  /// No description provided for @ztTimeNotInstalled.
+  ///
+  /// In en, this message translates to:
+  /// **'ZT Time isn\'t installed on this phone.'**
+  String get ztTimeNotInstalled;
+
+  /// No description provided for @getZtTime.
+  ///
+  /// In en, this message translates to:
+  /// **'Get it'**
+  String get getZtTime;
+
+  /// No description provided for @assignedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Assigned to'**
+  String get assignedTo;
+
+  /// No description provided for @nobody.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get nobody;
+
+  /// No description provided for @you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get you;
+
+  /// No description provided for @comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get comments;
+
+  /// No description provided for @noCommentsYet.
+  ///
+  /// In en, this message translates to:
+  /// **'No comments yet. Everyone in this list sees them.'**
+  String get noCommentsYet;
+
+  /// No description provided for @addAComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a comment'**
+  String get addAComment;
+
+  /// No description provided for @deleteComment.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete comment'**
+  String get deleteComment;
+
+  /// No description provided for @send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get send;
+
+  /// No description provided for @assignedToYouTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} assigned you a task'**
+  String assignedToYouTitle(String name);
+
+  /// No description provided for @assignedToYouBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Open ZT Tasks to see it.'**
+  String get assignedToYouBody;
+
+  /// No description provided for @sharedListsChannel.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared lists'**
+  String get sharedListsChannel;
+
+  /// No description provided for @sharedListsChannelDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone assigns you a task in a shared list'**
+  String get sharedListsChannelDescription;
 }
 
 class _AppL10nDelegate extends LocalizationsDelegate<AppL10n> {

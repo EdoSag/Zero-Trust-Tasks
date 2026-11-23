@@ -1484,4 +1484,233 @@ class AppL10nEn extends AppL10n {
   @override
   String get listAutoPlanHint =>
       'Every task added to this list gets Auto-schedule';
+
+  @override
+  String get listFamilyCircle => 'Show in ZT Family';
+
+  @override
+  String listFamilyCircleOn(String circle) {
+    return 'Shown in the family hub of $circle. Everyone in that circle sees this list\'s tasks.';
+  }
+
+  @override
+  String get listFamilyCircleOff =>
+      'Show this list in your ZT Family circle\'s hub';
+
+  @override
+  String get listFamilyCircleNone =>
+      'Create or join a circle in ZT Family first';
+
+  @override
+  String get listFamilyCirclePick => 'Which circle?';
+
+  @override
+  String get listFamilyCircleUnnamed => 'Family circle';
+
+  @override
+  String get insertIntoKeyboard => 'Insert into ZT Keyboard';
+
+  @override
+  String get insertPickTaskHint => 'Tap a task, then what to type.';
+
+  @override
+  String get insertSearchTasks => 'Search tasks';
+
+  @override
+  String get insertNoOpenTasks => 'No open tasks. Search to find done ones.';
+
+  @override
+  String get insertNoTasksFound => 'No tasks found';
+
+  @override
+  String get insertUntitledTask => 'Untitled task';
+
+  @override
+  String get insertTaskTitle => 'Title';
+
+  @override
+  String get insertTaskDue => 'Due date';
+
+  @override
+  String get insertTaskTitleAndDue => 'Title and due date';
+
+  @override
+  String get insertTaskChecklist => 'Checklist';
+
+  @override
+  String get insertTaskLink => 'Link';
+
+  @override
+  String get importFromOtherApps =>
+      'Import from Todoist, Microsoft To Do or TickTick';
+
+  @override
+  String get importFromOtherAppsHint =>
+      'A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)';
+
+  @override
+  String importFromApp(String app) {
+    return 'Import from $app';
+  }
+
+  @override
+  String importStaysOnPhone(String app) {
+    return 'The file is read on this phone. Nothing is sent to $app; your tasks are encrypted here.';
+  }
+
+  @override
+  String importedFromApp(int count, String app) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Imported $count tasks from $app',
+      one: 'Imported 1 task from $app',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNotRecognised =>
+      'This file isn\'t a Todoist, Microsoft To Do or TickTick export.';
+
+  @override
+  String get importNoTasksInFile => 'No tasks found in this file.';
+
+  @override
+  String get switchToBoard => 'Board';
+
+  @override
+  String get boardToDo => 'To do';
+
+  @override
+  String get boardInProgress => 'In progress';
+
+  @override
+  String get boardByStatus => 'Status';
+
+  @override
+  String get boardByDue => 'Due date';
+
+  @override
+  String get boardByPriority => 'Priority';
+
+  @override
+  String get boardByList => 'List';
+
+  @override
+  String get boardDropHere => 'Hold a task and drag it here';
+
+  @override
+  String get taskView => 'View';
+
+  @override
+  String get viewList => 'List';
+
+  @override
+  String get viewCalendar => 'Calendar';
+
+  @override
+  String get focusTimer => 'Focus timer';
+
+  @override
+  String get trackTimeInZtTime => 'Track time in ZT Time';
+
+  @override
+  String focusedSoFar(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'Focused on this task: $minutes minutes',
+      one: 'Focused on this task: 1 minute',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
+  String get focusStart => 'Start focusing';
+
+  @override
+  String get focusPause => 'Pause';
+
+  @override
+  String get focusResume => 'Resume';
+
+  @override
+  String get focusStop => 'Stop';
+
+  @override
+  String get focusAgain => 'Focus again';
+
+  @override
+  String get focusKeepOpenHint =>
+      'Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.';
+
+  @override
+  String focusDone(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes minutes of focus added to the task.',
+      one: '1 minute of focus added to the task.',
+      zero: 'Less than a minute, so nothing was added.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logInZtTime => 'Log in ZT Time';
+
+  @override
+  String get focusLoggedInTime => 'Logged in ZT Time';
+
+  @override
+  String get ztTimeNotInstalled => 'ZT Time isn\'t installed on this phone.';
+
+  @override
+  String get getZtTime => 'Get it';
+
+  @override
+  String get assignedTo => 'Assigned to';
+
+  @override
+  String get nobody => 'Nobody';
+
+  @override
+  String get you => 'You';
+
+  @override
+  String get comments => 'Comments';
+
+  @override
+  String get noCommentsYet =>
+      'No comments yet. Everyone in this list sees them.';
+
+  @override
+  String get addAComment => 'Add a comment';
+
+  @override
+  String get deleteComment => 'Delete comment';
+
+  @override
+  String get send => 'Send';
+
+  @override
+  String assignedToYouTitle(String name) {
+    return '$name assigned you a task';
+  }
+
+  @override
+  String get assignedToYouBody => 'Open ZT Tasks to see it.';
+
+  @override
+  String get sharedListsChannel => 'Shared lists';
+
+  @override
+  String get sharedListsChannelDescription =>
+      'When someone assigns you a task in a shared list';
 }

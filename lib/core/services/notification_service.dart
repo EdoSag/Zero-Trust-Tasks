@@ -225,6 +225,29 @@ class NotificationService {
     );
   }
 
+  /// "Dana assigned you a task" for a task of a shared list. With task
+  /// details off, the title stays out of the notification.
+  Future<void> showAssigned(Task task, String byName) async {
+    if (!_initialized) await init();
+    final title = currentL10n.assignedToYouTitle(byName);
+    final body = showTaskDetailsInNotifications ? task.title : currentL10n.assignedToYouBody;
+    await _plugin.show(
+      'assigned:${task.id}'.hashCode,
+      title,
+      body,
+      NotificationDetails(
+        android: AndroidNotificationDetails(
+          'shared_lists',
+          currentL10n.sharedListsChannel,
+          channelDescription: currentL10n.sharedListsChannelDescription,
+          importance: Importance.defaultImportance,
+        ),
+        iOS: const DarwinNotificationDetails(),
+      ),
+      payload: _ReminderPayload(task.id, title, body).encode(),
+    );
+  }
+
   Future<void> cancelReminder(String taskId) async {
     if (!_initialized) await init();
     await _plugin.cancel(taskId.hashCode);

@@ -64,7 +64,7 @@ class ZeroTrustTasksApp extends ConsumerWidget {
         locale: ref.watch(ztLanguageProvider),
         supportedLocales: ZtLanguages.supported,
         localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
-        home: home,
+        home: ZtSignInHandoffScope(child: home),
         // Any touch on any screen, pushed routes and dialogs included,
         // counts as activity for auto-lock.
         builder: (context, child) => Listener(

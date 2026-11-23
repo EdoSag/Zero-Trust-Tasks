@@ -20,6 +20,7 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/models/task_plan.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
+import 'package:zero_trust_tasks/suite/family_circle.dart';
 import 'package:zero_trust_tasks/suite/planned_times.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 
@@ -275,6 +276,7 @@ void main() {
             taskListProvider.overrideWith((ref) => lists),
             remindersEnabledProvider.overrideWithValue(false),
             plannedBlocksProvider.overrideWith((ref) => planned.stream),
+            familyCirclesProvider.overrideWith((ref) async => [(id: 'circle-1', name: 'Cohen family')]),
           ],
           child: MaterialApp(
             locale: locale,
@@ -462,6 +464,39 @@ void main() {
       await tester.tap(find.text(l.save));
       await tester.pumpAndSettle();
       expect(saved.last.name, 'Office');
+      expect(saved.last.autoPlan, isTrue);
+    });
+
+    testWidgets('both switches of one sheet keep each other\'s change', (tester) async {
+      final saved = <TaskList>[];
+      lists.attach(save: (l) async => saved.add(l), delete: (_) async {});
+      final work = TaskList.create(name: 'Work');
+      await lists.save(work);
+      saved.clear();
+      await tester.pumpWidget(host(Scaffold(
+        body: Builder(
+          builder: (context) => TextButton(
+            onPressed: () => TaskListDialogs.showOptions(context, work),
+            child: const Text('options'),
+          ),
+        ),
+      )));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('options'));
+      await tester.pumpAndSettle();
+      final family = find.byKey(const ValueKey('list-family-circle'));
+      expect(find.text('Shown in Cohen family'), findsNothing);
+      await tester.tap(family);
+      await tester.pumpAndSettle();
+      expect(saved.last.familyCircle, 'circle-1');
+      await tester.tap(find.byKey(const ValueKey('list-auto-plan')));
+      await tester.pumpAndSettle();
+      expect(saved.last.autoPlan, isTrue);
+      expect(saved.last.familyCircle, 'circle-1');
+      // And back: switching the circle off keeps Auto-plan.
+      await tester.tap(family);
+      await tester.pumpAndSettle();
+      expect(saved.last.familyCircle, isNull);
       expect(saved.last.autoPlan, isTrue);
     });
 

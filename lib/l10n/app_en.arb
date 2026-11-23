@@ -1061,5 +1061,120 @@
   "planSwitchedOff": "Off",
   "openZtCalendar": "Open ZT Calendar",
   "listAutoPlan": "Plan new tasks in ZT Calendar",
-  "listAutoPlanHint": "Every task added to this list gets Auto-schedule"
+  "listAutoPlanHint": "Every task added to this list gets Auto-schedule",
+  "listFamilyCircle": "Show in ZT Family",
+  "listFamilyCircleOn": "Shown in the family hub of {circle}. Everyone in that circle sees this list's tasks.",
+  "@listFamilyCircleOn": {"placeholders": {"circle": {"type": "String"}}},
+  "listFamilyCircleOff": "Show this list in your ZT Family circle's hub",
+  "listFamilyCircleNone": "Create or join a circle in ZT Family first",
+  "listFamilyCirclePick": "Which circle?",
+  "listFamilyCircleUnnamed": "Family circle",
+  "insertIntoKeyboard": "Insert into ZT Keyboard",
+  "insertPickTaskHint": "Tap a task, then what to type.",
+  "insertSearchTasks": "Search tasks",
+  "insertNoOpenTasks": "No open tasks. Search to find done ones.",
+  "insertNoTasksFound": "No tasks found",
+  "insertUntitledTask": "Untitled task",
+  "insertTaskTitle": "Title",
+  "insertTaskDue": "Due date",
+  "insertTaskTitleAndDue": "Title and due date",
+  "insertTaskChecklist": "Checklist",
+  "insertTaskLink": "Link",
+  "importFromOtherApps": "Import from Todoist, Microsoft To Do or TickTick",
+  "importFromOtherAppsHint": "A Todoist CSV or backup .zip, a Microsoft To Do export (.json) or a TickTick backup (.csv)",
+  "importFromApp": "Import from {app}",
+  "@importFromApp": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importStaysOnPhone": "The file is read on this phone. Nothing is sent to {app}; your tasks are encrypted here.",
+  "@importStaysOnPhone": {
+    "placeholders": {
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importedFromApp": "{count, plural, =1{Imported 1 task from {app}} other{Imported {count} tasks from {app}}}",
+  "@importedFromApp": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "app": {
+        "type": "String"
+      }
+    }
+  },
+  "importNotRecognised": "This file isn't a Todoist, Microsoft To Do or TickTick export.",
+  "importNoTasksInFile": "No tasks found in this file.",
+  "switchToBoard": "Board",
+  "boardToDo": "To do",
+  "boardInProgress": "In progress",
+  "boardByStatus": "Status",
+  "boardByDue": "Due date",
+  "boardByPriority": "Priority",
+  "boardByList": "List",
+  "boardDropHere": "Hold a task and drag it here",
+  "taskView": "View",
+  "viewList": "List",
+  "viewCalendar": "Calendar",
+  "focusTimer": "Focus timer",
+  "trackTimeInZtTime": "Track time in ZT Time",
+  "focusedSoFar": "{minutes, plural, =1{Focused on this task: 1 minute} other{Focused on this task: {minutes} minutes}}",
+  "@focusedSoFar": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "minutesShort": "{minutes} min",
+  "@minutesShort": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "focusStart": "Start focusing",
+  "focusPause": "Pause",
+  "focusResume": "Resume",
+  "focusStop": "Stop",
+  "focusAgain": "Focus again",
+  "focusKeepOpenHint": "Keep ZT Tasks open while you focus. The minutes are added to the task when you stop.",
+  "focusDone": "{minutes, plural, =0{Less than a minute, so nothing was added.} =1{1 minute of focus added to the task.} other{{minutes} minutes of focus added to the task.}}",
+  "@focusDone": {
+    "placeholders": {
+      "minutes": {
+        "type": "int"
+      }
+    }
+  },
+  "logInZtTime": "Log in ZT Time",
+  "focusLoggedInTime": "Logged in ZT Time",
+  "ztTimeNotInstalled": "ZT Time isn't installed on this phone.",
+  "getZtTime": "Get it",
+  "assignedTo": "Assigned to",
+  "nobody": "Nobody",
+  "you": "You",
+  "comments": "Comments",
+  "noCommentsYet": "No comments yet. Everyone in this list sees them.",
+  "addAComment": "Add a comment",
+  "deleteComment": "Delete comment",
+  "send": "Send",
+  "assignedToYouTitle": "{name} assigned you a task",
+  "@assignedToYouTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "assignedToYouBody": "Open ZT Tasks to see it.",
+  "sharedListsChannel": "Shared lists",
+  "sharedListsChannelDescription": "When someone assigns you a task in a shared list"
 }

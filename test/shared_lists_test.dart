@@ -13,6 +13,7 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zt_sharing_ui/zt_sharing_ui.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
 
 import 'support/fake_account_backend.dart';
 
@@ -125,6 +126,8 @@ class MemoryShared implements SharedTaskStore {
   Future<void> saveTask(Task t) async => saved[t.id] = t;
   @override
   Future<void> deleteTask(Task t) async => deleted.add('${t.spaceId}/${t.id}');
+  @override
+  Future<void> moveOut(Task from, Task to) async => deleted.add('${from.spaceId}/${from.id}');
 }
 
 class MemoryWriter implements TaskWriter {
@@ -211,6 +214,57 @@ void main() {
       // Stored without the device-side list id.
       final stored = await a.spaceStores.values.single.get(eggs.id);
       expect(stored!.json!.containsKey('listId'), isFalse);
+    });
+
+    test('Alice assigns Milk to Bob and both comment; Bob is told once', () async {
+      await shareWithBob();
+      final milk = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      await a.manager.updateTask(milk.assignedTo(bob, by: alice));
+      await a.lists.addComment(milk, 'The 2% one');
+      await a.sync();
+      await b.sync();
+
+      final bobsMilk = b.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      expect(bobsMilk.assigneeId, bob);
+      expect(bobsMilk.assignedBy, alice);
+      final fresh = newAssignments(b.state.tasks, myUserId: bob, seen: {}, now: DateTime.now());
+      expect(fresh.single.id, milk.id);
+      // Announced once; Alice herself is never told about her own.
+      expect(newAssignments(b.state.tasks, myUserId: bob, seen: {assignmentKey(fresh.single)}, now: DateTime.now()), isEmpty);
+      expect(newAssignments(a.state.tasks, myUserId: alice, seen: {}, now: DateTime.now()), isEmpty);
+
+      await b.lists.addComment(bobsMilk, 'Got it');
+      await b.sync();
+      await a.sync();
+      expect(a.state.comments[milk.id]!.map((c) => (c.text, c.by)), [('The 2% one', alice), ('Got it', bob)]);
+      // Comments aren't tasks.
+      expect(a.manager.tasks.where((t) => t.title == 'Milk'), hasLength(1));
+      expect(a.state.tasks, hasLength(2));
+
+      // Only your own comments can be deleted; deleting the task takes its comments.
+      await a.lists.deleteComment(milk, a.state.comments[milk.id]!.last);
+      expect(a.state.comments[milk.id], hasLength(2));
+      await a.lists.deleteComment(milk, a.state.comments[milk.id]!.first);
+      expect(a.state.comments[milk.id]!.single.text, 'Got it');
+      await a.manager.permanentlyDeleteTask(milk.id);
+      await a.sync();
+      expect(a.state.comments[milk.id], isNull);
+    });
+
+    test('moving a task to another shared list keeps its comments', () async {
+      await shareWithBob();
+      final other = await a.lists.create(TaskList.create(name: 'Hardware', color: 0xFF1E88E5), myName: 'Alice', tasks: const []);
+      final milk = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      await a.lists.addComment(milk, 'The 2% one');
+      await a.manager.moveToList({milk.id}, TaskList.sharedId(other));
+      await a.sync();
+      final moved = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      expect(moved.spaceId, other);
+      expect(a.state.comments[milk.id]!.single.text, 'The 2% one');
+      // Gone from the first list, with nothing left behind there.
+      final first = a.state.lists.firstWhere((l) => l.name == 'Groceries').shared!.spaceId;
+      final left = await (await a.spaces.open(first)).store.all();
+      expect(left.where((i) => !i.deleted && i.itemId.contains(milk.id)), isEmpty);
     });
 
     test('only owners rename the list', () async {

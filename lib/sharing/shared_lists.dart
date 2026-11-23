@@ -7,6 +7,7 @@ import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/models/task.dart';
 import 'package:zero_trust_tasks/models/task_list.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
 import 'package:zt_sharing_ui/zt_sharing_ui.dart';
 
 /// Shared lists (T12): a list shared with other Zero-Trust users lives in
@@ -31,10 +32,19 @@ const String legacySharingNameItemId = 'tasks.sharing_name';
 /// Tasks of all shared lists and the lists themselves, read from this
 /// phone's copy of each space (so they show offline too).
 class SharedListsState {
-  const SharedListsState({this.lists = const [], this.tasks = const [], this.ready = false, this.available = false});
+  const SharedListsState({
+    this.lists = const [],
+    this.tasks = const [],
+    this.comments = const {},
+    this.ready = false,
+    this.available = false,
+  });
 
   final List<TaskList> lists;
   final List<Task> tasks;
+
+  /// Comments by task id, oldest first.
+  final Map<String, List<TaskComment>> comments;
 
   /// Read at least once since the vault opened.
   final bool ready;
@@ -121,6 +131,7 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
     final entries = ref.read(ztSpacesProvider);
     final lists = <TaskList>[];
     final tasks = <Task>[];
+    final comments = <String, List<TaskComment>>{};
     for (final spaceId in spaceIds) {
       final SharedSpace space;
       try {
@@ -137,6 +148,11 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
         if (item.deleted) continue;
         if (item.itemId == listItemId) {
           meta = taskListsCollection.decode(item);
+          continue;
+        }
+        final comment = taskCommentsCollection.decode(item);
+        if (comment != null) {
+          if (comment.taskId.isNotEmpty) comments.putIfAbsent(comment.taskId, () => []).add(comment);
           continue;
         }
         final task = tasksCollection.decode(item);
@@ -165,7 +181,10 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
       await _watching.remove(gone)?.cancel();
     }
     if (_disposed) return;
-    state = SharedListsState(lists: lists, tasks: tasks, ready: true, available: true);
+    for (final list in comments.values) {
+      list.sort((a, b) => a.at.compareTo(b.at));
+    }
+    state = SharedListsState(lists: lists, tasks: tasks, comments: comments, ready: true, available: true);
   }
 
   void _watch(SharedSpace space) {
@@ -202,6 +221,56 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
     final spaceId = task.spaceId;
     if (spaceId == null) return;
     await _require().delete(spaceId, task.id);
+    // Its comments go with it.
+    for (final c in state.comments[task.id] ?? const <TaskComment>[]) {
+      await _require().delete(spaceId, c.id);
+    }
+    await reload();
+  }
+
+  @override
+  Future<void> moveOut(Task from, Task to) async {
+    final fromSpace = from.spaceId;
+    if (fromSpace == null) return;
+    final toSpace = to.spaceId;
+    final comments = state.comments[from.id] ?? const <TaskComment>[];
+    // Into another shared list: the comments are copied there first (same
+    // ids, authors and times). Into the account's own lists they can't go
+    // along, since only shared tasks have comments.
+    if (toSpace != null && toSpace != fromSpace) {
+      for (final c in comments) {
+        await _require().save(toSpace, c.id, taskCommentsCollection.encode(c));
+      }
+    }
+    await _require().delete(fromSpace, from.id);
+    for (final c in comments) {
+      await _require().delete(fromSpace, c.id);
+    }
+    await reload();
+  }
+
+  /// The user id this account has in shared lists.
+  String get myUserId => _spaces?.myUserId ?? '';
+
+  /// Adds a comment to a task of a shared list.
+  Future<void> addComment(Task task, String text) async {
+    final spaceId = task.spaceId;
+    final body = text.trim();
+    if (spaceId == null || body.isEmpty) return;
+    final comment = TaskComment.create(
+      taskId: task.id,
+      text: body.length > TaskComment.maxLength ? body.substring(0, TaskComment.maxLength) : body,
+      by: myUserId,
+    );
+    await _require().save(spaceId, comment.id, taskCommentsCollection.encode(comment));
+    await reload();
+  }
+
+  /// Deletes one of this account's own comments.
+  Future<void> deleteComment(Task task, TaskComment comment) async {
+    final spaceId = task.spaceId;
+    if (spaceId == null || comment.by != myUserId) return;
+    await _require().delete(spaceId, comment.id);
     await reload();
   }
 

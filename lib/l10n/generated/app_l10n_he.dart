@@ -1479,4 +1479,233 @@ class AppL10nHe extends AppL10n {
   @override
   String get listAutoPlanHint =>
       'כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי';
+
+  @override
+  String get listFamilyCircle => 'הצגה ב-ZT Family';
+
+  @override
+  String listFamilyCircleOn(String circle) {
+    return 'מוצגת במרכז המשפחתי של $circle. כל מי שבמעגל רואה את המשימות ברשימה הזו.';
+  }
+
+  @override
+  String get listFamilyCircleOff =>
+      'הצגת הרשימה במרכז המשפחתי של המעגל שלכם ב-ZT Family';
+
+  @override
+  String get listFamilyCircleNone =>
+      'קודם צריך ליצור מעגל ב-ZT Family או להצטרף לאחד';
+
+  @override
+  String get listFamilyCirclePick => 'באיזה מעגל?';
+
+  @override
+  String get listFamilyCircleUnnamed => 'המעגל המשפחתי';
+
+  @override
+  String get insertIntoKeyboard => 'הוספה למקלדת ZT';
+
+  @override
+  String get insertPickTaskHint => 'יש להקיש על משימה ואז על מה להקליד.';
+
+  @override
+  String get insertSearchTasks => 'חיפוש משימות';
+
+  @override
+  String get insertNoOpenTasks =>
+      'אין משימות פתוחות. אפשר לחפש כדי למצוא משימות שהושלמו.';
+
+  @override
+  String get insertNoTasksFound => 'לא נמצאו משימות';
+
+  @override
+  String get insertUntitledTask => 'משימה ללא כותרת';
+
+  @override
+  String get insertTaskTitle => 'כותרת';
+
+  @override
+  String get insertTaskDue => 'תאריך יעד';
+
+  @override
+  String get insertTaskTitleAndDue => 'כותרת ותאריך יעד';
+
+  @override
+  String get insertTaskChecklist => 'רשימת תיוג';
+
+  @override
+  String get insertTaskLink => 'קישור';
+
+  @override
+  String get importFromOtherApps =>
+      'ייבוא מ-Todoist, מ-Microsoft To Do או מ-TickTick';
+
+  @override
+  String get importFromOtherAppsHint =>
+      'קובץ CSV או גיבוי ‎.zip של Todoist, ייצוא של Microsoft To Do ‏(‎.json) או גיבוי של TickTick ‏(‎.csv)';
+
+  @override
+  String importFromApp(String app) {
+    return 'ייבוא מ-$app';
+  }
+
+  @override
+  String importStaysOnPhone(String app) {
+    return 'הקובץ נקרא בטלפון הזה. שום דבר לא נשלח אל $app; המשימות מוצפנות כאן.';
+  }
+
+  @override
+  String importedFromApp(int count, String app) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'יובאו $count משימות מ-$app',
+      one: 'יובאה משימה אחת מ-$app',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get importNotRecognised =>
+      'הקובץ הזה אינו ייצוא של Todoist,‏ Microsoft To Do או TickTick.';
+
+  @override
+  String get importNoTasksInFile => 'לא נמצאו משימות בקובץ.';
+
+  @override
+  String get switchToBoard => 'לוח';
+
+  @override
+  String get boardToDo => 'לביצוע';
+
+  @override
+  String get boardInProgress => 'בתהליך';
+
+  @override
+  String get boardByStatus => 'מצב';
+
+  @override
+  String get boardByDue => 'תאריך יעד';
+
+  @override
+  String get boardByPriority => 'עדיפות';
+
+  @override
+  String get boardByList => 'רשימה';
+
+  @override
+  String get boardDropHere => 'יש ללחוץ לחיצה ארוכה על משימה ולגרור אותה לכאן';
+
+  @override
+  String get taskView => 'תצוגה';
+
+  @override
+  String get viewList => 'רשימה';
+
+  @override
+  String get viewCalendar => 'לוח שנה';
+
+  @override
+  String get focusTimer => 'טיימר ריכוז';
+
+  @override
+  String get trackTimeInZtTime => 'מדידת זמן ב-ZT Time';
+
+  @override
+  String focusedSoFar(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: 'זמן ריכוז במשימה: $minutes דקות',
+      one: 'זמן ריכוז במשימה: דקה אחת',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String minutesShort(int minutes) {
+    return '$minutes דק׳';
+  }
+
+  @override
+  String get focusStart => 'התחלת ריכוז';
+
+  @override
+  String get focusPause => 'השהיה';
+
+  @override
+  String get focusResume => 'המשך';
+
+  @override
+  String get focusStop => 'עצירה';
+
+  @override
+  String get focusAgain => 'ריכוז נוסף';
+
+  @override
+  String get focusKeepOpenHint =>
+      'יש להשאיר את ZT Tasks פתוחה בזמן הריכוז. הדקות נוספות למשימה בעצירה.';
+
+  @override
+  String focusDone(int minutes) {
+    String _temp0 = intl.Intl.pluralLogic(
+      minutes,
+      locale: localeName,
+      other: '$minutes דקות ריכוז נוספו למשימה.',
+      one: 'דקת ריכוז אחת נוספה למשימה.',
+      zero: 'פחות מדקה, ולכן לא נוסף דבר.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get logInZtTime => 'רישום ב-ZT Time';
+
+  @override
+  String get focusLoggedInTime => 'נרשם ב-ZT Time';
+
+  @override
+  String get ztTimeNotInstalled => 'ZT Time לא מותקנת בטלפון הזה.';
+
+  @override
+  String get getZtTime => 'להורדה';
+
+  @override
+  String get assignedTo => 'משויכת אל';
+
+  @override
+  String get nobody => 'אף אחד';
+
+  @override
+  String get you => 'את/ה';
+
+  @override
+  String get comments => 'תגובות';
+
+  @override
+  String get noCommentsYet => 'אין עדיין תגובות. כל מי שברשימה רואה אותן.';
+
+  @override
+  String get addAComment => 'הוספת תגובה';
+
+  @override
+  String get deleteComment => 'מחיקת תגובה';
+
+  @override
+  String get send => 'שליחה';
+
+  @override
+  String assignedToYouTitle(String name) {
+    return '$name שייך/ה אליך משימה';
+  }
+
+  @override
+  String get assignedToYouBody => 'אפשר לפתוח את ZT Tasks כדי לראות אותה.';
+
+  @override
+  String get sharedListsChannel => 'רשימות משותפות';
+
+  @override
+  String get sharedListsChannelDescription =>
+      'כשמישהו משייך אליך משימה ברשימה משותפת';
 }

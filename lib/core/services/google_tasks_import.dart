@@ -47,7 +47,12 @@ class GoogleTasksImporter {
     final lists = <TaskList>[];
     final tasks = <Task>[];
     var skipped = 0;
-    final byName = {for (final l in existingLists) l.name.trim().toLowerCase(): l};
+    // Shared lists are never matched by name, so an import can't publish
+    // tasks to the people a list is shared with.
+    final byName = {
+      for (final l in existingLists)
+        if (!l.isShared) l.name.trim().toLowerCase(): l,
+    };
     var position = existingLists.isEmpty ? 0.0 : existingLists.last.position;
 
     final rawLists = json['items'];

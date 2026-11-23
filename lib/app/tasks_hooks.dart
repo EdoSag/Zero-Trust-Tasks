@@ -10,12 +10,18 @@ import 'package:zero_trust_tasks/core/services/pending_actions_store.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/components/quick_add_sheet.dart';
 import 'package:zero_trust_tasks/pages/add_task_screen.dart';
+import 'package:zero_trust_tasks/pages/pick_for_keyboard_page.dart';
 import 'package:zero_trust_tasks/pages/task_details_screen.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zero_trust_tasks/platform/keyboard_pick.dart';
 import 'package:zero_trust_tasks/platform/links.dart';
 import 'package:zero_trust_tasks/places/task_place_reminders.dart';
 import 'package:zt_places/zt_places.dart';
 import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
+import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'package:zero_trust_tasks/sharing/task_comments.dart';
+import 'package:zero_trust_tasks/suite/family_circle.dart';
+import 'package:zero_trust_core/zero_trust_core.dart' show ztFamilySpacesProvider;
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
 final platformHooksEnabledProvider = Provider<bool>((ref) => true);
@@ -37,6 +43,8 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   StreamSubscription<void>? _links;
   StreamSubscription<ZtPlaceEvent>? _places;
   Timer? _widgetDebounce;
+  Timer? _circleDebounce;
+  Timer? _circleHourly;
   bool _applying = false;
   bool _loaded = false;
 
@@ -55,6 +63,7 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       _places = ref.read(ztPlaceRemindersProvider).events.listen(_onPlaceEvent);
       WidgetsBinding.instance.addPostFrameCallback((_) => _collectPlaces());
       WidgetsBinding.instance.addPostFrameCallback((_) => _takeLinks());
+      WidgetsBinding.instance.addPostFrameCallback((_) => _takeKeyboardPick());
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _onTasksChanged());
   }
@@ -80,6 +89,8 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     _links?.cancel();
     _places?.cancel();
     _widgetDebounce?.cancel();
+    _circleDebounce?.cancel();
+    _circleHourly?.cancel();
     super.dispose();
   }
 
@@ -168,6 +179,34 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     }
   }
 
+  /// Keeps lists shown in a ZT Family circle up to date there (see
+  /// [FamilyCircleLists]): after changes, and hourly so done tasks leave the
+  /// hub after a week.
+  void _syncCircles() {
+    if (!_platform || !mounted) return;
+    _circleHourly ??= Timer.periodic(const Duration(hours: 1), (_) => _syncCircles());
+    _circleDebounce?.cancel();
+    _circleDebounce = Timer(const Duration(seconds: 2), () async {
+      if (!mounted) return;
+      final state = ref.read(ztFamilySpacesProvider);
+      final manager = ref.read(taskManagerProvider);
+      final lists = ref.read(taskListProvider);
+      if (!state.ready || state.entries.isEmpty || manager.isLoading || !lists.isLoaded) return;
+      try {
+        await FamilyCircleLists.sync(
+          ref.read(ztFamilySpacesProvider.notifier),
+          state,
+          lists: lists.lists,
+          tasks: manager.tasks,
+          inList: (list, task) => lists.contains(list, task.listId),
+          now: DateTime.now(),
+        );
+      } on Object catch (e) {
+        debugPrint('Family circle not updated: $e');
+      }
+    });
+  }
+
   void _scheduleWidgetWrite() {
     if (!_platform || !HomeWidgetService.isSupported) return;
     _widgetDebounce?.cancel();
@@ -199,6 +238,42 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
         defaultListId: settings.widgetListId,
       ));
     });
+  }
+
+  /// Tasks of shared lists someone else just assigned to this account: a
+  /// notification each, once.
+  Future<void> _announceAssignments(SharedListsState shared) async {
+    if (!_platform || !shared.ready) return;
+    final me = ref.read(sharedListsProvider.notifier).myUserId;
+    if (me.isEmpty) return;
+    final prefs = ref.read(sharedPreferencesProvider);
+    final seen = (prefs.getStringList(_assignedSeenKey) ?? const <String>[]).toSet();
+    final fresh = newAssignments(shared.tasks, myUserId: me, seen: seen, now: DateTime.now());
+    if (fresh.isEmpty) return;
+    final names = <String, String>{
+      for (final l in shared.lists)
+        for (final m in l.shared?.members ?? const []) m.userId: m.name,
+    };
+    for (final t in fresh) {
+      await NotificationService.instance.showAssigned(t, names[t.assignedBy] ?? '?');
+    }
+    final kept = [...seen, ...fresh.map(assignmentKey)];
+    await prefs.setStringList(_assignedSeenKey, kept.length > 300 ? kept.sublist(kept.length - 300) : kept);
+  }
+
+  static const _assignedSeenKey = 'assigned_tasks_announced';
+
+  /// ZT Keyboard's "Insert from ZT apps" key: pick a task's title, due
+  /// date, checklist or links for the keyboard to type. Only reached once
+  /// the vault is unlocked.
+  Future<void> _takeKeyboardPick() async {
+    if (!await KeyboardPick.requested() || !mounted) return;
+    final wantItem = await KeyboardPick.wantsItem();
+    if (!mounted) return;
+    final picked = await Navigator.of(
+      context,
+    ).push<PickedText>(MaterialPageRoute(builder: (_) => PickForKeyboardPage(wantItem: wantItem)));
+    await KeyboardPick.finish(picked?.text, itemId: picked?.task.id, title: picked?.task.title);
   }
 
   void _openWidgetLaunch() {
@@ -240,10 +315,18 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
 
   @override
   Widget build(BuildContext context) {
-    ref.listen(taskManagerProvider, (_, _) => _onTasksChanged());
+    ref.listen(sharedListsProvider, (_, shared) => _announceAssignments(shared));
+    ref.listen(taskManagerProvider, (_, _) {
+      _onTasksChanged();
+      _syncCircles();
+    });
+    if (_platform) ref.listen(ztFamilySpacesProvider, (_, _) => _syncCircles());
     // Keeps the phone's place alerts in step with the tasks.
     ref.watch(placeRemindersProvider);
-    ref.listen(taskListProvider, (_, _) => _scheduleWidgetWrite());
+    ref.listen(taskListProvider, (_, _) {
+      _scheduleWidgetWrite();
+      _syncCircles();
+    });
     ref.listen(settingsProvider, (_, _) => _scheduleWidgetWrite());
     ref.listen(widgetLaunchProvider, (_, uri) {
       if (uri != null) WidgetsBinding.instance.addPostFrameCallback((_) => _openWidgetLaunch());

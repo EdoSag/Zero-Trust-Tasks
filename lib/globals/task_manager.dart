@@ -507,8 +507,9 @@ class TaskManager extends ChangeNotifier {
   /// * a new task is added;
   /// * the same fingerprint: the source didn't change, the local copy (with
   ///   any edits, ticks or focus time) stays as it is;
-  /// * a different one: the source changed, its fields replace the imported
-  ///   ones; what only Tasks has (list, notes, links, focus time) stays;
+  /// * a different one: the source changed, its fields (reminder included)
+  ///   replace the imported ones; what only Tasks has (list, notes, links,
+  ///   focus time) stays;
   /// * a task deleted here, or one imported before fingerprints existed,
   ///   is left alone.
   ///
@@ -517,7 +518,11 @@ class TaskManager extends ChangeNotifier {
     final r = _fromApp(incoming, DateTime.now());
     if (r.write.isNotEmpty) await _put(r.write);
     for (final t in r.write) {
-      if (t.deletedAt == null && !t.isCompleted) _remind(t);
+      if (t.deletedAt == null && !t.isCompleted) {
+        _remind(t);
+      } else {
+        _cancelReminder(t.id);
+      }
     }
     return r.write.length;
   }
@@ -545,6 +550,7 @@ class TaskManager extends ChangeNotifier {
         'dueDate': t.dueDate?.toIso8601String(),
         'isCompleted': t.isCompleted,
         'completedAt': t.completedAt?.toIso8601String(),
+        'reminderAt': t.reminderAt?.toIso8601String(),
         'tags': t.tags,
         'subTasks': t.subTasks.map((s) => s.toJson()).toList(),
         OtherAppsImporter.importedAsKey: source,

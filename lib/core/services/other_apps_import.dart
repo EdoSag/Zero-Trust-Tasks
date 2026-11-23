@@ -159,6 +159,7 @@ class OtherAppsImporter {
       t.dueDate?.toIso8601String(),
       t.isCompleted,
       t.completedAt?.toIso8601String(),
+      t.reminderAt?.toIso8601String(),
       t.tags,
       [for (final s in t.subTasks) [s.title, s.isCompleted]],
     ]);

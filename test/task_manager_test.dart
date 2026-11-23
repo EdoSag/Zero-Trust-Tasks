@@ -185,6 +185,26 @@ void main() {
       expect(await manager.importFromApp([newer]), 0);
     });
 
+    test('a moved or removed reminder in the source comes along', () async {
+      await start([]);
+      Task withReminder(DateTime? at) {
+        final t = Task(
+          id: 'import-2',
+          title: 'Call',
+          reminderAt: at,
+          createdAt: DateTime(2026, 11, 1),
+          updatedAt: DateTime(2026, 11, 1),
+        );
+        return t.copyWith(extra: {OtherAppsImporter.importedAsKey: OtherAppsImporter.fingerprint(t)});
+      }
+
+      await manager.importFromApp([withReminder(DateTime(2026, 12, 1, 9))]);
+      expect(await manager.importFromApp([withReminder(DateTime(2026, 12, 2, 9))]), 1);
+      expect(manager.tasks.single.reminderAt, DateTime(2026, 12, 2, 9));
+      expect(await manager.importFromApp([withReminder(null)]), 1);
+      expect(manager.tasks.single.reminderAt, isNull);
+    });
+
     test('tasks deleted here, or imported before fingerprints, are left alone', () async {
       final old = Task(id: 'import-1', title: 'Plan', createdAt: DateTime(2026, 11, 1), updatedAt: DateTime(2026, 11, 1));
       await start([old]);

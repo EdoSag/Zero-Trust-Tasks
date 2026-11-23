@@ -20,6 +20,8 @@ import 'package:zt_places/zt_places.dart';
 import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
 import 'package:zero_trust_tasks/sharing/task_comments.dart';
+import 'package:zero_trust_tasks/suite/family_circle.dart';
+import 'package:zero_trust_core/zero_trust_core.dart' show ztFamilySpacesProvider;
 
 /// Whether [TasksHooks] talks to the platform (off in widget tests).
 final platformHooksEnabledProvider = Provider<bool>((ref) => true);
@@ -41,6 +43,8 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   StreamSubscription<void>? _links;
   StreamSubscription<ZtPlaceEvent>? _places;
   Timer? _widgetDebounce;
+  Timer? _circleDebounce;
+  Timer? _circleHourly;
   bool _applying = false;
   bool _loaded = false;
 
@@ -85,6 +89,8 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
     _links?.cancel();
     _places?.cancel();
     _widgetDebounce?.cancel();
+    _circleDebounce?.cancel();
+    _circleHourly?.cancel();
     super.dispose();
   }
 
@@ -171,6 +177,34 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
       if (!mounted) return;
       await joinSharedList(context, initialLink: link);
     }
+  }
+
+  /// Keeps lists shown in a ZT Family circle up to date there (see
+  /// [FamilyCircleLists]): after changes, and hourly so done tasks leave the
+  /// hub after a week.
+  void _syncCircles() {
+    if (!_platform || !mounted) return;
+    _circleHourly ??= Timer.periodic(const Duration(hours: 1), (_) => _syncCircles());
+    _circleDebounce?.cancel();
+    _circleDebounce = Timer(const Duration(seconds: 2), () async {
+      if (!mounted) return;
+      final state = ref.read(ztFamilySpacesProvider);
+      final manager = ref.read(taskManagerProvider);
+      final lists = ref.read(taskListProvider);
+      if (!state.ready || state.entries.isEmpty || manager.isLoading || !lists.isLoaded) return;
+      try {
+        await FamilyCircleLists.sync(
+          ref.read(ztFamilySpacesProvider.notifier),
+          state,
+          lists: lists.lists,
+          tasks: manager.tasks,
+          inList: (list, task) => lists.contains(list, task.listId),
+          now: DateTime.now(),
+        );
+      } on Object catch (e) {
+        debugPrint('Family circle not updated: $e');
+      }
+    });
   }
 
   void _scheduleWidgetWrite() {
@@ -282,10 +316,17 @@ class _TasksHooksState extends ConsumerState<TasksHooks> with WidgetsBindingObse
   @override
   Widget build(BuildContext context) {
     ref.listen(sharedListsProvider, (_, shared) => _announceAssignments(shared));
-    ref.listen(taskManagerProvider, (_, _) => _onTasksChanged());
+    ref.listen(taskManagerProvider, (_, _) {
+      _onTasksChanged();
+      _syncCircles();
+    });
+    if (_platform) ref.listen(ztFamilySpacesProvider, (_, _) => _syncCircles());
     // Keeps the phone's place alerts in step with the tasks.
     ref.watch(placeRemindersProvider);
-    ref.listen(taskListProvider, (_, _) => _scheduleWidgetWrite());
+    ref.listen(taskListProvider, (_, _) {
+      _scheduleWidgetWrite();
+      _syncCircles();
+    });
     ref.listen(settingsProvider, (_, _) => _scheduleWidgetWrite());
     ref.listen(widgetLaunchProvider, (_, uri) {
       if (uri != null) WidgetsBinding.instance.addPostFrameCallback((_) => _openWidgetLaunch());

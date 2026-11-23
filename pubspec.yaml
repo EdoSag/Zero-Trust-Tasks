@@ -1,7 +1,7 @@
 name: zero_trust_tasks
 description: End-to-end encrypted tasks and reminders, part of the Zero-Trust apps.
 publish_to: none
-version: 0.10.0+23
+version: 0.11.0+24
 environment:
   sdk: ^3.8.0
 
@@ -21,25 +21,25 @@ dependencies:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zero_trust_core
-      # Core Dev with the shared spaces trust chain fix (Core PR #35) and
-      # invite links per app (Core PR #37). Every app that shares must be on
-      # this commit or later: older ones cannot read the new member records.
-      # Switch to the release tag once one is pushed.
-      ref: 08eccf33e5989c0efceba67d351159b979ae0740
+      # Core Dev with the family circle as every app's family space (S-10,
+      # Core PR #81) and the release checks updated for Z21 (Core PR #85),
+      # the same pin ZT Family uses. Switch to the release tag once one is
+      # pushed.
+      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
   # Location reminders (T11), watched by the phone itself: no Google Play
   # services, the location never leaves the phone.
   zt_places:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_places
-      ref: 08eccf33e5989c0efceba67d351159b979ae0740
+      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
   # The shared sharing screens (people, invite, join, compare codes), the
   # same in every Zero-Trust app.
   zt_sharing_ui:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_sharing_ui
-      ref: 08eccf33e5989c0efceba67d351159b979ae0740
+      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0
@@ -67,11 +67,13 @@ dependencies:
 dev_dependencies:
   # Release checks every Zero-Trust app runs in CI (keys, sync, sign-in, app
   # setup, database). Independent of zero_trust_core, so it may be newer.
+  # Must include Core PR #85: older checks still expect the raw-password
+  # sign-in for pre-core accounts that Z21 retired.
   zt_release_checks:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_release_checks
-      ref: b43fcd045722bc364ef2eaa739db181f9dac144f
+      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0

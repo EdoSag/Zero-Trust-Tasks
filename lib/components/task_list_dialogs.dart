@@ -6,6 +6,7 @@ import 'package:zero_trust_tasks/models/task_list.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
 import 'package:zero_trust_tasks/sharing/shared_list_pages.dart';
 import 'package:zero_trust_tasks/sharing/shared_lists.dart';
+import 'package:zero_trust_tasks/suite/family_circle.dart';
 
 /// Dialogs shared by the Tasks tab, task details and the editor for
 /// creating, picking and managing task lists.
@@ -113,51 +114,57 @@ class TaskListDialogs {
     return showModalBottomSheet<void>(
       context: context,
       showDragHandle: true,
+      // Scrolls on short screens, where the options no longer fit the
+      // default sheet height.
+      isScrollControlled: true,
       builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
-              child: Text(list.name, style: Theme.of(sheetContext).textTheme.titleMedium),
-            ),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined),
-              title: Text(context.l10n.renameOrChangeColour),
-              onTap: () async {
-                Navigator.pop(sheetContext);
-                await edit(context, existing: list);
-              },
-            ),
-            _AutoPlanSwitch(list: list),
-            if (canShare && !list.isDefault)
-              Consumer(
-                builder: (_, ref, _) => ListTile(
-                  leading: const Icon(Icons.group_add_outlined),
-                  title: Text(context.l10n.shareList),
-                  onTap: () async {
-                    Navigator.pop(sheetContext);
-                    await shareList(context, ref, list);
-                  },
-                ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(list.name, style: Theme.of(sheetContext).textTheme.titleMedium),
               ),
-            if (!list.isDefault)
               ListTile(
-                leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
-                title: Text(context.l10n.deleteList, style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
+                leading: const Icon(Icons.edit_outlined),
+                title: Text(context.l10n.renameOrChangeColour),
                 onTap: () async {
                   Navigator.pop(sheetContext);
-                  await _delete(context, list);
-                  onDeleted?.call();
+                  await edit(context, existing: list);
                 },
-              )
-            else
-              ListTile(
-                leading: Icon(Icons.info_outline),
-                title: Text(context.l10n.theDefaultListCantBe),
-                enabled: false,
               ),
-          ],
+              _AutoPlanSwitch(list: list),
+              _FamilyCircleSwitch(list: list),
+              if (canShare && !list.isDefault)
+                Consumer(
+                  builder: (_, ref, _) => ListTile(
+                    leading: const Icon(Icons.group_add_outlined),
+                    title: Text(context.l10n.shareList),
+                    onTap: () async {
+                      Navigator.pop(sheetContext);
+                      await shareList(context, ref, list);
+                    },
+                  ),
+                ),
+              if (!list.isDefault)
+                ListTile(
+                  leading: Icon(Icons.delete_outline, color: Theme.of(sheetContext).colorScheme.error),
+                  title: Text(context.l10n.deleteList, style: TextStyle(color: Theme.of(sheetContext).colorScheme.error)),
+                  onTap: () async {
+                    Navigator.pop(sheetContext);
+                    await _delete(context, list);
+                    onDeleted?.call();
+                  },
+                )
+              else
+                ListTile(
+                  leading: Icon(Icons.info_outline),
+                  title: Text(context.l10n.theDefaultListCantBe),
+                  enabled: false,
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -407,4 +414,76 @@ class _AutoPlanSwitchState extends State<_AutoPlanSwitch> {
           }
         },
       );
+}
+
+
+/// "Show in ZT Family": the list and its tasks in a ZT Family circle's hub
+/// (S-10, L-2). The list's owner switches it.
+class _FamilyCircleSwitch extends ConsumerStatefulWidget {
+  const _FamilyCircleSwitch({required this.list});
+  final TaskList list;
+
+  @override
+  ConsumerState<_FamilyCircleSwitch> createState() => _FamilyCircleSwitchState();
+}
+
+class _FamilyCircleSwitchState extends ConsumerState<_FamilyCircleSwitch> {
+  late TaskList _list = widget.list;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final circles = ref.watch(familyCirclesProvider).value ?? const <FamilyCircle>[];
+    final chosen = _list.familyCircle;
+    String nameOf(String id) =>
+        circles.where((c) => c.id == id && c.name.isNotEmpty).firstOrNull?.name ?? l10n.listFamilyCircleUnnamed;
+    final on = chosen != null;
+    return SwitchListTile(
+      key: const ValueKey('list-family-circle'),
+      secondary: const Icon(Icons.diversity_3_outlined),
+      title: Text(l10n.listFamilyCircle),
+      subtitle: Text(
+        on
+            ? l10n.listFamilyCircleOn(nameOf(chosen))
+            : circles.isEmpty
+            ? l10n.listFamilyCircleNone
+            : l10n.listFamilyCircleOff,
+      ),
+      value: on,
+      onChanged: !on && circles.isEmpty
+          ? null
+          : (v) async {
+              final messenger = ScaffoldMessenger.of(context);
+              final taskLists = context.taskLists;
+              String? id;
+              if (v) {
+                id = circles.length == 1
+                    ? circles.single.id
+                    : await showDialog<String>(
+                        context: context,
+                        builder: (ctx) => SimpleDialog(
+                          title: Text(l10n.listFamilyCirclePick),
+                          children: [
+                            for (final c in circles)
+                              SimpleDialogOption(
+                                onPressed: () => Navigator.of(ctx).pop(c.id),
+                                child: Text(c.name.isEmpty ? l10n.listFamilyCircleUnnamed : c.name),
+                              ),
+                          ],
+                        ),
+                      );
+                if (id == null || !mounted) return;
+              }
+              final before = _list;
+              final updated = _list.withFamilyCircle(v ? id : null);
+              setState(() => _list = updated);
+              try {
+                await taskLists.save(updated);
+              } on Object catch (e) {
+                if (mounted) setState(() => _list = before);
+                messenger.showSnackBar(SnackBar(content: Text('$e')));
+              }
+            },
+    );
+  }
 }

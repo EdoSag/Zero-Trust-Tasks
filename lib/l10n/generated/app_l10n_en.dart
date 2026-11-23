@@ -1486,6 +1486,28 @@ class AppL10nEn extends AppL10n {
       'Every task added to this list gets Auto-schedule';
 
   @override
+  String get listFamilyCircle => 'Show in ZT Family';
+
+  @override
+  String listFamilyCircleOn(String circle) {
+    return 'Shown in the family hub of $circle. Everyone in that circle sees this list\'s tasks.';
+  }
+
+  @override
+  String get listFamilyCircleOff =>
+      'Show this list in your ZT Family circle\'s hub';
+
+  @override
+  String get listFamilyCircleNone =>
+      'Create or join a circle in ZT Family first';
+
+  @override
+  String get listFamilyCirclePick => 'Which circle?';
+
+  @override
+  String get listFamilyCircleUnnamed => 'Family circle';
+
+  @override
   String get insertIntoKeyboard => 'Insert into ZT Keyboard';
 
   @override

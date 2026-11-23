@@ -1481,6 +1481,28 @@ class AppL10nHe extends AppL10n {
       'כל משימה שנוספת לרשימה הזו מקבלת תזמון אוטומטי';
 
   @override
+  String get listFamilyCircle => 'הצגה ב-ZT Family';
+
+  @override
+  String listFamilyCircleOn(String circle) {
+    return 'מוצגת במרכז המשפחתי של $circle. כל מי שבמעגל רואה את המשימות ברשימה הזו.';
+  }
+
+  @override
+  String get listFamilyCircleOff =>
+      'הצגת הרשימה במרכז המשפחתי של המעגל שלכם ב-ZT Family';
+
+  @override
+  String get listFamilyCircleNone =>
+      'קודם צריך ליצור מעגל ב-ZT Family או להצטרף לאחד';
+
+  @override
+  String get listFamilyCirclePick => 'באיזה מעגל?';
+
+  @override
+  String get listFamilyCircleUnnamed => 'המעגל המשפחתי';
+
+  @override
   String get insertIntoKeyboard => 'הוספה למקלדת ZT';
 
   @override

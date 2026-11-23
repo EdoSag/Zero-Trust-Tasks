@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -160,11 +161,32 @@ void main() {
     await settle(tester);
   }
 
-  /// A user of the pre-core Tasks app: raw-password Supabase login, a
-  /// `profiles.salt`, and tasks encrypted with the old peppered key.
+  /// A user of the pre-core Tasks app, as their first core sign-in left the
+  /// account (every pre-core account was upgraded before Core retired the
+  /// raw-password sign-in, Z21): the old unpeppered PBKDF2 key is the data
+  /// key (`legacy_dek`) and the auth password is the derived secret. Their
+  /// tasks are still encrypted with the old peppered key, on the phone or
+  /// in the old cloud table. Returns that peppered key.
   Future<List<int>> givenPreCoreAccount() async {
-    backend.authPasswords[email] = password;
-    backend.profiles[email] = ProfileRecord(legacySalt: legacySalt);
+    final keys = await KeyHierarchy.migrateLegacyAccount(
+      password: password,
+      legacySalt: legacySalt,
+      salt: await Kdf.saltForEmail(email),
+      legacyParams: fast,
+      params: fast,
+    );
+    backend.authPasswords[email] = keys.authSecret;
+    backend.profiles[email] = ProfileRecord(
+      legacySalt: legacySalt,
+      authUpgraded: true,
+      keys: StoredKeys(
+        kdfSalt: Uint8List.fromList(keys.stored.kdfSalt),
+        kdfParams: keys.stored.kdfParams.toJson(),
+        wrappedDek: keys.stored.wrappedDek,
+        recoveryWrappedDek: keys.stored.recoveryWrappedDek,
+        legacyDek: true,
+      ),
+    );
     final key = await LegacyTasksCrypto.deriveKey(
       password: password,
       pepper: pepper,
@@ -420,15 +442,14 @@ void main() {
 
     await start(tester);
     await signIn(tester);
-    await confirmRecoveryKey(tester);
     await openTasksTab(tester);
 
     expect(find.text('Buy milk'), findsOneWidget);
     expect(find.text('Call the bank'), findsOneWidget);
     expect(find.byType(MaterialBanner), findsNothing);
 
-    // The account was upgraded the way every app expects: its key is the
-    // pre-core one, so the other Zero-Trust apps keep reading their data.
+    // The account keeps its pre-core key, so the other Zero-Trust apps keep
+    // reading their data.
     final profile = backend.profiles[email]!;
     expect(profile.keys!.legacyDek, isTrue);
     expect(profile.authUpgraded, isTrue);
@@ -466,7 +487,6 @@ void main() {
 
     await start(tester);
     await signIn(tester);
-    await confirmRecoveryKey(tester);
     await openTasksTab(tester);
 
     expect(find.text('Renew passport'), findsNothing);

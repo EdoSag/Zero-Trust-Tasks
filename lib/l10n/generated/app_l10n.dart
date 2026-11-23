@@ -2419,6 +2419,42 @@ abstract class AppL10n {
   /// **'Every task added to this list gets Auto-schedule'**
   String get listAutoPlanHint;
 
+  /// No description provided for @listFamilyCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Show in ZT Family'**
+  String get listFamilyCircle;
+
+  /// No description provided for @listFamilyCircleOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in the family hub of {circle}. Everyone in that circle sees this list\'s tasks.'**
+  String listFamilyCircleOn(String circle);
+
+  /// No description provided for @listFamilyCircleOff.
+  ///
+  /// In en, this message translates to:
+  /// **'Show this list in your ZT Family circle\'s hub'**
+  String get listFamilyCircleOff;
+
+  /// No description provided for @listFamilyCircleNone.
+  ///
+  /// In en, this message translates to:
+  /// **'Create or join a circle in ZT Family first'**
+  String get listFamilyCircleNone;
+
+  /// No description provided for @listFamilyCirclePick.
+  ///
+  /// In en, this message translates to:
+  /// **'Which circle?'**
+  String get listFamilyCirclePick;
+
+  /// No description provided for @listFamilyCircleUnnamed.
+  ///
+  /// In en, this message translates to:
+  /// **'Family circle'**
+  String get listFamilyCircleUnnamed;
+
   /// No description provided for @insertIntoKeyboard.
   ///
   /// In en, this message translates to:

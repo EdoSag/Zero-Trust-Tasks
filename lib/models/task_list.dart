@@ -95,6 +95,20 @@ class TaskList {
       );
   bool get isShared => shared != null;
 
+  /// The ZT Family circle (its space id) whose family hub shows this list
+  /// (S-10, L-2; `familyCircle` on the list, kept like [autoPlan]). Null
+  /// when the list is shown nowhere else.
+  String? get familyCircle => extra['familyCircle'] as String?;
+
+  /// The same list shown in circle [circleId], or in none.
+  TaskList withFamilyCircle(String? circleId) => copyWith(
+        extra: {
+          for (final e in extra.entries)
+            if (e.key != 'familyCircle') e.key: e.value,
+          if (circleId != null) 'familyCircle': circleId,
+        },
+      );
+
   /// The list id of the shared list kept in space [spaceId].
   static String sharedId(String spaceId) => '$sharedPrefix$spaceId';
   static const sharedPrefix = 'space:';

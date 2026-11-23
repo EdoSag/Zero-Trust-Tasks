@@ -59,14 +59,10 @@ class FakeAccountBackend implements AccountBackend {
     authUpgraded: profiles[_user]?.authUpgraded ?? false,
   );
 
+  /// Mirrors `zt_needs_legacy_sign_in`, retired by Core (Z21): every
+  /// pre-core account was already upgraded, so it always answers false.
   @override
-  Future<bool> needsLegacySignIn(String email) async {
-    final p = profiles[email];
-    return p != null &&
-        p.legacySalt != null &&
-        !p.authUpgraded &&
-        (p.keys == null || p.keys!.legacyDek);
-  }
+  Future<bool> needsLegacySignIn(String email) async => false;
 
   @override
   Future<void> markAuthUpgraded() async {

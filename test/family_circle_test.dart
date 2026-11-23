@@ -56,55 +56,62 @@ void main() {
     expect(work.familyCircle, isNull);
   });
 
+  const me = 'user-a';
   test('a shown list and its open and recently done tasks, in the format the '
-      'family hub reads', () {
-    final items = FamilyCircleLists.itemsFor('circle-1', [groceries, work], tasks, inList, now);
-    expect(items.keys.toSet(), {'tasks/list/groceries', 'tasks/item/milk', 'tasks/item/eggs'});
+      'family hub reads, under my user id', () {
+    final items = FamilyCircleLists.itemsFor('circle-1', me, [groceries, work], tasks, inList, now);
+    expect(items.keys.toSet(), {'tasks/list/$me/groceries', 'tasks/item/$me/milk', 'tasks/item/$me/eggs'});
     for (final id in items.keys) {
       expect(ZtFamilySpace.appOf(id), 'tasks');
     }
-    final l = ZtFamilySummary.of(items['tasks/list/groceries'])!;
+    final l = ZtFamilySummary.of(items['tasks/list/$me/groceries'])!;
     expect((l.title, l.kind), ('Groceries', 'tasks.list'));
-    final milk = ZtFamilySummary.of(items['tasks/item/milk'])!;
-    expect((milk.title, milk.kind, milk.done, milk.list), ('Milk', 'tasks.item', false, 'tasks/list/groceries'));
+    final milk = ZtFamilySummary.of(items['tasks/item/$me/milk'])!;
+    expect((milk.title, milk.kind, milk.done, milk.list), ('Milk', 'tasks.item', false, 'tasks/list/$me/groceries'));
     expect(milk.due, DateTime(2026, 1, 11).toUtc());
-    expect(ZtFamilySummary.of(items['tasks/item/eggs'])!.done, isTrue);
+    expect(ZtFamilySummary.of(items['tasks/item/$me/eggs'])!.done, isTrue);
 
     // Another circle, or no circle: nothing.
-    expect(FamilyCircleLists.itemsFor('circle-2', [groceries, work], tasks, inList, now), isEmpty);
+    expect(FamilyCircleLists.itemsFor('circle-2', me, [groceries, work], tasks, inList, now), isEmpty);
   });
 
-  test('only changes are written; tasks that left my shown list go, other '
-      'people\'s lists and other apps\' items stay', () {
-    final want = FamilyCircleLists.itemsFor('circle-1', [groceries, work], tasks, inList, now);
+  test('only changes are written; my items that are no longer wanted go, '
+      'other people\'s (even their "default" list) and other apps\' stay', () {
+    final want = FamilyCircleLists.itemsFor('circle-1', me, [groceries, work], tasks, inList, now);
     LocalItem item(String id, Map<String, Object?>? json) => LocalItem(itemId: id, updatedAt: now, json: json);
-    final movedAway = ZtFamilySummary(title: 'Soap', kind: 'tasks.item', list: 'tasks/list/groceries')
-        .addTo({'kind': 'tasks.item'});
-    final someoneElses = ZtFamilySummary(title: 'Mop', kind: 'tasks.item', list: 'tasks/list/their-chores')
-        .addTo({'kind': 'tasks.item'});
     final r = FamilyCircleLists.diff(
       existing: [
-        item('tasks/list/groceries', want['tasks/list/groceries']),
-        item('tasks/item/milk', {...want['tasks/item/milk']!, 'title': 'Milk (old)'}),
-        item('tasks/item/soap', movedAway),
-        item('tasks/item/mop', someoneElses),
-        item('tasks/list/their-chores', {'kind': 'tasks.list'}),
+        item('tasks/list/$me/groceries', want['tasks/list/$me/groceries']),
+        item('tasks/item/$me/milk', {...want['tasks/item/$me/milk']!, 'title': 'Milk (old)'}),
+        // Moved out of the list, and a list I deleted.
+        item('tasks/item/$me/soap', {'kind': 'tasks.item'}),
+        item('tasks/list/$me/deleted', {'kind': 'tasks.list'}),
+        // Someone else's default list and task.
+        item('tasks/list/user-b/default', {'kind': 'tasks.list'}),
+        item('tasks/item/user-b/mop', {'kind': 'tasks.item'}),
         item('meds/dose/x.1', {'kind': 'meds.dose'}),
         item('family.circle', {'kind': 'family.circle'}),
       ],
       want: want,
-      mine: {'tasks/list/groceries', 'tasks/list/work', 'tasks/list/default'},
+      user: me,
     );
-    expect(r.save.keys.toSet(), {'tasks/item/milk', 'tasks/item/eggs'});
-    expect(r.delete, {'tasks/item/soap'});
+    expect(r.save.keys.toSet(), {'tasks/item/$me/milk', 'tasks/item/$me/eggs'});
+    expect(r.delete, {'tasks/item/$me/soap', 'tasks/list/$me/deleted'});
 
     // Switched off: the list and all its tasks go.
     final off = FamilyCircleLists.diff(
       existing: [for (final e in want.entries) item(e.key, e.value)],
       want: const {},
-      mine: {'tasks/list/groceries'},
+      user: me,
     );
     expect(off.delete, want.keys.toSet());
+    // Someone else with nothing shown removes nothing of mine.
+    final theirs = FamilyCircleLists.diff(
+      existing: [for (final e in want.entries) item(e.key, e.value)],
+      want: const {},
+      user: 'user-b',
+    );
+    expect(theirs.delete, isEmpty);
   });
 
   test('a circle member writes the list into the circle and it reads back '
@@ -136,8 +143,8 @@ void main() {
     final shown = list('groceries', 'Groceries', circle: circle.id);
     final changes = FamilyCircleLists.diff(
       existing: await dads.store.all(),
-      want: FamilyCircleLists.itemsFor(circle.id, [shown], tasks, inList, now),
-      mine: {'tasks/list/groceries'},
+      want: FamilyCircleLists.itemsFor(circle.id, dad, [shown], tasks, inList, now),
+      user: dad,
     );
     for (final e in changes.save.entries) {
       await dads.save(e.key, e.value);
@@ -148,7 +155,7 @@ void main() {
       for (final i in await circle.store.all())
         if (ZtFamilySpace.appOf(i.itemId) == 'tasks') i.itemId: ZtFamilySummary.of(i.json)!,
     };
-    expect(seen.keys.toSet(), {'tasks/list/groceries', 'tasks/item/milk', 'tasks/item/eggs'});
-    expect(seen['tasks/item/milk']!.list, 'tasks/list/groceries');
+    expect(seen.keys.toSet(), {'tasks/list/$dad/groceries', 'tasks/item/$dad/milk', 'tasks/item/$dad/eggs'});
+    expect(seen['tasks/item/$dad/milk']!.list, 'tasks/list/$dad/groceries');
   });
 }

@@ -62,11 +62,12 @@ writes to the other apps. The keys are zeroed when the vault locks.
 A list's options have **Show in family circle**. When it is on, the phone
 copies that list into the chosen ZT Family circle's family space
 (`lib/suite/family_circle.dart`): one `tasks.list` item for the list and a
-`tasks.item` item per task, keyed `tasks/<kind>/<id>`, each with the short
+`tasks.item` item per task, keyed `tasks/<kind>/<user id>/<id>` (list ids
+such as `default` are only unique per account), each with the short
 summary the Family hub reads (title, due date, done). Open tasks are copied,
 and done ones for 7 days. The copy is one-way and read-only: edits still
-happen in Tasks, and turning the switch off removes the list's items from
-the circle. Everyone in the circle can read the copied titles.
+happen in Tasks, and turning the switch off or deleting the list removes
+its items from the circle. Other members' items are never touched. Everyone in the circle can read the copied titles.
 
 ## Outside the vault
 

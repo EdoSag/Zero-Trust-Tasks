@@ -375,7 +375,12 @@ class _TasksListPageState extends State<TasksListPage> {
             body = TaskBoardView(
               tasks: sorted,
               grouping: grouping,
-              onGroupingChanged: (g) => setState(() => context.settings.setBoardGrouping(g.name)),
+              onGroupingChanged: (g) async {
+                // Saved first, then redrawn: this page doesn't listen to
+                // settings, and setState must not get the save's Future.
+                await context.settings.setBoardGrouping(g.name);
+                if (mounted) setState(() {});
+              },
             );
           } else {
             // Drag to reorder: one list, "My order", no search or sections.

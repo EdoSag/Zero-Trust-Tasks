@@ -101,8 +101,10 @@ void main() {
     expect(calls.last.method, 'track');
     expect(args['id'], task.id);
     expect(args['title'], 'Write the report');
-    expect(args['start'], DateTime(2026, 11, 22, 9).millisecondsSinceEpoch);
+    // The 15 focused minutes only: the 30-minute pause and the late last
+    // tick are left out, so ZT Time gets what the task got.
     expect(args['end'], now.millisecondsSinceEpoch);
+    expect(args['start'], now.subtract(const Duration(minutes: 15)).millisecondsSinceEpoch);
   });
 
   testWidgets('ZT Time asking for a task gets it with one tap', (tester) async {

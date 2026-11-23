@@ -228,6 +228,27 @@ class SharedListsController extends Notifier<SharedListsState> implements Shared
     await reload();
   }
 
+  @override
+  Future<void> moveOut(Task from, Task to) async {
+    final fromSpace = from.spaceId;
+    if (fromSpace == null) return;
+    final toSpace = to.spaceId;
+    final comments = state.comments[from.id] ?? const <TaskComment>[];
+    // Into another shared list: the comments are copied there first (same
+    // ids, authors and times). Into the account's own lists they can't go
+    // along, since only shared tasks have comments.
+    if (toSpace != null && toSpace != fromSpace) {
+      for (final c in comments) {
+        await _require().save(toSpace, c.id, taskCommentsCollection.encode(c));
+      }
+    }
+    await _require().delete(fromSpace, from.id);
+    for (final c in comments) {
+      await _require().delete(fromSpace, c.id);
+    }
+    await reload();
+  }
+
   /// The user id this account has in shared lists.
   String get myUserId => _spaces?.myUserId ?? '';
 

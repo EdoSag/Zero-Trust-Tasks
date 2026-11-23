@@ -163,7 +163,7 @@ class SettingsPage extends ConsumerWidget {
         ImportSource.tickTick => 'TickTick',
       };
       final manager = ref.read(taskManagerProvider);
-      final preview = manager.previewImport(parsed.tasks);
+      final preview = manager.previewImportFromApp(parsed.tasks);
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
@@ -188,7 +188,7 @@ class SettingsPage extends ConsumerWidget {
       for (final list in parsed.lists) {
         if (!existingIds.contains(list.id)) await lists.save(list);
       }
-      final written = await manager.importTasks(parsed.tasks);
+      final written = await manager.importFromApp(parsed.tasks);
       if (context.mounted) {
         _snack(context, written == 0 ? context.l10n.alreadyUpToDate : context.l10n.importedFromApp(written, app));
       }

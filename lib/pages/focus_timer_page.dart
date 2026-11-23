@@ -103,9 +103,12 @@ class _FocusTimerPageState extends ConsumerState<FocusTimerPage> {
   }
 
   Future<void> _logInTime() async {
-    final start = _startedAt;
     final end = _endedAt;
-    if (start == null || end == null) return;
+    if (_startedAt == null || end == null || _banked <= Duration.zero) return;
+    // The focused time only, as one stretch ending when the session ended:
+    // pauses (and a late last tick) are left out, so ZT Time gets the same
+    // minutes the task got.
+    final start = end.subtract(_banked);
     final l10n = context.l10n;
     final answer = await ZtTime.track(widget.task, start: start, end: end);
     if (!mounted) return;

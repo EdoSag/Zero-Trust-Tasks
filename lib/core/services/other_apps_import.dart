@@ -79,6 +79,13 @@ class OtherAppsImporter {
       ]..sort((a, b) => a.name.compareTo(b.name));
       final tasks = <Task>[];
       var skipped = 0;
+      // Two projects with the same name ("Work [123].csv", "Work [456].csv")
+      // share a list, but their tasks keep apart by the project's own id.
+      final nameCount = <String, int>{};
+      for (final f in csvs) {
+        final n = _baseName(f.name).toLowerCase();
+        nameCount[n] = (nameCount[n] ?? 0) + 1;
+      }
       for (final f in csvs) {
         final rows = _Csv.parse(_text(f.content));
         if (_isTickTick(rows)) {
@@ -86,7 +93,16 @@ class OtherAppsImporter {
           tasks.addAll(r.$1);
           skipped += r.$2;
         } else if (_isTodoist(rows)) {
-          final r = _todoist(rows, _baseName(f.name), lists, at);
+          final name = _baseName(f.name);
+          final r = _todoist(
+            rows,
+            name,
+            lists,
+            at,
+            // Unique names keep the key earlier versions used, so files
+            // imported before still match.
+            key: (nameCount[name.toLowerCase()] ?? 0) > 1 ? _baseName(f.name, keepId: true) : null,
+          );
           tasks.addAll(r.$1);
           skipped += r.$2;
         }
@@ -117,7 +133,43 @@ class OtherAppsImporter {
 
   OtherAppsImport _done(ImportSource source, _Lists lists, List<Task> tasks, int skipped) {
     if (tasks.isEmpty) throw const OtherAppsImportException(ImportProblem.empty);
-    return OtherAppsImport(source: source, lists: lists.created, tasks: tasks, skipped: skipped);
+    return OtherAppsImport(
+      source: source,
+      lists: lists.created,
+      tasks: [for (final t in tasks) t.copyWith(extra: {...t.extra, importedAsKey: fingerprint(t)})],
+      skipped: skipped,
+    );
+  }
+
+  /// The key in [Task.extra] that keeps [fingerprint] of the source's copy
+  /// a task was last imported from.
+  static const importedAsKey = 'importedAs';
+
+  /// What the source said about a task, in short: the fields an import
+  /// writes. Exports carry no reliable "last changed" time (Todoist none,
+  /// TickTick only the creation time), so a re-import compares this instead:
+  /// the same fingerprint means the source didn't change and local edits
+  /// stay; a different one means the source changed and its fields win.
+  static String fingerprint(Task t) {
+    final text = jsonEncode([
+      t.title,
+      t.description,
+      t.priority.name,
+      t.startDate?.toIso8601String(),
+      t.dueDate?.toIso8601String(),
+      t.isCompleted,
+      t.completedAt?.toIso8601String(),
+      t.reminderAt?.toIso8601String(),
+      t.tags,
+      [for (final s in t.subTasks) [s.title, s.isCompleted]],
+    ]);
+    // FNV-1a, 64 bit: short, stable across runs and devices.
+    var h = 0xcbf29ce484222325;
+    for (final b in utf8.encode(text)) {
+      h ^= b;
+      h = (h * 0x100000001b3) & 0xFFFFFFFFFFFFFFFF;
+    }
+    return h.toUnsigned(64).toRadixString(16).padLeft(16, '0');
   }
 
   static String _id(String kind, String key) => _uuid.v5(Namespace.url.value, 'import:$kind:$key');
@@ -128,10 +180,11 @@ class OtherAppsImporter {
     return text;
   }
 
-  static String _baseName(String path) {
+  static String _baseName(String path, {bool keepId = false}) {
     var name = path.split(RegExp(r'[/\\]')).last;
     final dot = name.lastIndexOf('.');
     if (dot > 0) name = name.substring(0, dot);
+    if (keepId) return name.trim();
     // Todoist's backup names files "Project name [123456].csv".
     return name.replaceAll(RegExp(r'\s*\[\d+\]$'), '').trim();
   }
@@ -144,14 +197,16 @@ class OtherAppsImporter {
     return head.contains('TYPE') && head.contains('CONTENT');
   }
 
-  (List<Task>, int) _todoist(List<List<String>> rows, String project, _Lists lists, DateTime now) {
+  (List<Task>, int) _todoist(List<List<String>> rows, String name, _Lists lists, DateTime now, {String? key}) {
+    // [name] picks the list; [project] keys the ids.
+    final project = key ?? name;
     final head = rows.first.map((c) => c.trim().toUpperCase()).toList();
     String cell(List<String> row, String name) {
       final i = head.indexOf(name);
       return i < 0 || i >= row.length ? '' : row[i].trim();
     }
 
-    final listId = lists.idFor(project.isEmpty ? null : project, 'todoist:$project');
+    final listId = lists.idFor(name.isEmpty ? null : name, 'todoist:$name');
     final tasks = <Task>[];
     var skipped = 0;
     String? section;
@@ -458,7 +513,13 @@ class OtherAppsImporter {
 /// Finds or creates the list each imported task goes to.
 class _Lists {
   _Lists(List<TaskList> existing, this.now)
-      : _byName = {for (final l in existing) l.name.trim().toLowerCase(): l},
+      // Shared lists are never matched by name: their tasks would go to
+      // everyone the list is shared with. A project with a shared list's
+      // name gets its own private list.
+      : _byName = {
+          for (final l in existing)
+            if (!l.isShared) l.name.trim().toLowerCase(): l,
+        },
         _position = existing.isEmpty ? 0.0 : existing.map((l) => l.position).reduce((a, b) => a > b ? a : b);
 
   final DateTime now;

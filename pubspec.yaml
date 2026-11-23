@@ -1,7 +1,7 @@
 name: zero_trust_tasks
 description: End-to-end encrypted tasks and reminders, part of the Zero-Trust apps.
 publish_to: none
-version: 0.11.1+25
+version: 0.11.2+26
 environment:
   sdk: ^3.8.0
 
@@ -22,24 +22,25 @@ dependencies:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zero_trust_core
       # Core Dev with the family circle as every app's family space (S-10,
-      # Core PR #81) and the release checks updated for Z21 (Core PR #85),
-      # the same pin ZT Family uses. Switch to the release tag once one is
-      # pushed.
-      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
+      # Core PR #81), the release checks updated for Z21 (Core PR #85) and
+      # the sync fix of Core PR #89: rows already on the device are skipped
+      # before any crypto, so a large import no longer freezes every later
+      # sync. Switch to the release tag once one is pushed.
+      ref: 60cf0969fc8d57b31921063e83339f3f5e0400e4
   # Location reminders (T11), watched by the phone itself: no Google Play
   # services, the location never leaves the phone.
   zt_places:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_places
-      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
+      ref: 60cf0969fc8d57b31921063e83339f3f5e0400e4
   # The shared sharing screens (people, invite, join, compare codes), the
   # same in every Zero-Trust app.
   zt_sharing_ui:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_sharing_ui
-      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
+      ref: 60cf0969fc8d57b31921063e83339f3f5e0400e4
   flutter_riverpod: ^3.5.0
   shared_preferences: ^2.5.3
   cryptography: ^2.7.0
@@ -73,7 +74,7 @@ dev_dependencies:
     git:
       url: https://github.com/EdoSag/Zero-Trust-Core.git
       path: packages/zt_release_checks
-      ref: ce4bbb443bac64b1735ca438ae873ad98285e6c1
+      ref: 60cf0969fc8d57b31921063e83339f3f5e0400e4
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0

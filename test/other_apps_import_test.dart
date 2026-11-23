@@ -61,6 +61,49 @@ void main() {
     });
   });
 
+  group('Review fixes', () {
+    test('two projects with the same name keep their tasks apart', () {
+      final archive = Archive()
+        ..addFile(ArchiveFile.bytes('Work [123].csv', bytes('TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,4,1\n')))
+        ..addFile(ArchiveFile.bytes('Work [456].csv', bytes('TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,2,1\n')));
+      final zip = Uint8List.fromList(ZipEncoder().encode(archive));
+      final r = importer.parse(zip, fileName: 'backup.zip', existingLists: [work], now: now);
+      expect(r.tasks.map((t) => t.id).toSet(), hasLength(2));
+      expect(r.tasks.every((t) => t.listId == 'work-id'), isTrue);
+      // A single project keeps the ids earlier versions gave it.
+      final one = importer.parse(bytes('TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,4,1\n'), fileName: 'Work [123].csv', existingLists: [work], now: now);
+      final again = Archive()..addFile(ArchiveFile.bytes('Work [123].csv', bytes('TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,4,1\n')));
+      final fromZip = importer.parse(Uint8List.fromList(ZipEncoder().encode(again)), existingLists: [work], now: now);
+      expect(fromZip.tasks.single.id, one.tasks.single.id);
+    });
+
+    test('a shared list with the same name is never matched', () {
+      final shared = TaskList(
+        id: TaskList.sharedId('space-1'),
+        name: 'Work',
+        createdAt: now,
+        updatedAt: now,
+        shared: const SharedListInfo(spaceId: 'space-1'),
+      );
+      final r = importer.parse(bytes('TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,4,1\n'), fileName: 'Work.csv', existingLists: [shared], now: now);
+      expect(r.lists.single.name, 'Work');
+      expect(r.lists.single.isShared, isFalse);
+      expect(r.tasks.single.listId, r.lists.single.id);
+    });
+
+    test('each task carries the fingerprint of what the source said', () {
+      const a = 'TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,4,1\n';
+      const b = 'TYPE,CONTENT,PRIORITY,INDENT\ntask,Plan,1,1\n';
+      final first = importer.parse(bytes(a), fileName: 'Home.csv', existingLists: [], now: now).tasks.single;
+      final later = importer.parse(bytes(a), fileName: 'Home.csv', existingLists: [], now: now.add(const Duration(days: 3))).tasks.single;
+      final changed = importer.parse(bytes(b), fileName: 'Home.csv', existingLists: [], now: now).tasks.single;
+      final key = OtherAppsImporter.importedAsKey;
+      expect(first.extra[key], isA<String>());
+      expect(later.extra[key], first.extra[key]);
+      expect(changed.extra[key], isNot(first.extra[key]));
+    });
+  });
+
   group('Microsoft To Do', () {
     final json = jsonEncode({
       'lists': [

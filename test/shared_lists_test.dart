@@ -126,6 +126,8 @@ class MemoryShared implements SharedTaskStore {
   Future<void> saveTask(Task t) async => saved[t.id] = t;
   @override
   Future<void> deleteTask(Task t) async => deleted.add('${t.spaceId}/${t.id}');
+  @override
+  Future<void> moveOut(Task from, Task to) async => deleted.add('${from.spaceId}/${from.id}');
 }
 
 class MemoryWriter implements TaskWriter {
@@ -247,6 +249,22 @@ void main() {
       await a.manager.permanentlyDeleteTask(milk.id);
       await a.sync();
       expect(a.state.comments[milk.id], isNull);
+    });
+
+    test('moving a task to another shared list keeps its comments', () async {
+      await shareWithBob();
+      final other = await a.lists.create(TaskList.create(name: 'Hardware', color: 0xFF1E88E5), myName: 'Alice', tasks: const []);
+      final milk = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      await a.lists.addComment(milk, 'The 2% one');
+      await a.manager.moveToList({milk.id}, TaskList.sharedId(other));
+      await a.sync();
+      final moved = a.manager.tasks.firstWhere((t) => t.title == 'Milk');
+      expect(moved.spaceId, other);
+      expect(a.state.comments[milk.id]!.single.text, 'The 2% one');
+      // Gone from the first list, with nothing left behind there.
+      final first = a.state.lists.firstWhere((l) => l.name == 'Groceries').shared!.spaceId;
+      final left = await (await a.spaces.open(first)).store.all();
+      expect(left.where((i) => !i.deleted && i.itemId.contains(milk.id)), isEmpty);
     });
 
     test('only owners rename the list', () async {

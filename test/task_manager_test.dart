@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/backup_file_helper.dart';
+import 'package:zero_trust_tasks/core/services/other_apps_import.dart';
 import 'package:zero_trust_tasks/globals/task_manager.dart';
 import 'package:zero_trust_tasks/legacy/legacy_tasks_crypto.dart';
 import 'package:zero_trust_tasks/models/task.dart';
@@ -136,6 +137,59 @@ void main() {
         legacyParams: fast,
       );
       expect(tasks.single.title, 'Old file');
+    });
+  });
+
+  group('importing from another app again', () {
+    Task imported(String title, {bool done = false}) {
+      final t = Task(
+        id: 'import-1',
+        title: title,
+        isCompleted: done,
+        createdAt: DateTime(2026, 11, 1),
+        updatedAt: DateTime(2026, 11, 1),
+      );
+      return t.copyWith(extra: {OtherAppsImporter.importedAsKey: OtherAppsImporter.fingerprint(t)});
+    }
+
+    Future<void> start(List<Task> tasks) async {
+      source.add(tasks);
+      await pumpEventQueue();
+    }
+
+    test('an unchanged file keeps local edits and ticks', () async {
+      await start([]);
+      expect(await manager.importFromApp([imported('Plan')]), 1);
+      final mine = manager.tasks.single;
+      await manager.updateTask(mine.copyWith(notes: 'my notes'));
+      await manager.toggleTaskComplete(mine.id);
+      expect(manager.previewImportFromApp([imported('Plan')]).toUpdate, 0);
+      expect(await manager.importFromApp([imported('Plan')]), 0);
+      expect(manager.tasks.single.isCompleted, isTrue);
+      expect(manager.tasks.single.notes, 'my notes');
+    });
+
+    test('a changed source updates the imported fields and keeps what only Tasks has', () async {
+      await start([]);
+      await manager.importFromApp([imported('Plan')]);
+      await manager.updateTask(manager.tasks.single.copyWith(notes: 'my notes'));
+      final newer = imported('Plan the trip', done: true);
+      expect(manager.previewImportFromApp([newer]).toUpdate, 1);
+      expect(await manager.importFromApp([newer]), 1);
+      final t = manager.tasks.single;
+      expect(t.title, 'Plan the trip');
+      expect(t.isCompleted, isTrue);
+      expect(t.notes, 'my notes');
+      expect(t.extra[OtherAppsImporter.importedAsKey], newer.extra[OtherAppsImporter.importedAsKey]);
+      // And importing that same file once more changes nothing.
+      expect(await manager.importFromApp([newer]), 0);
+    });
+
+    test('tasks deleted here, or imported before fingerprints, are left alone', () async {
+      final old = Task(id: 'import-1', title: 'Plan', createdAt: DateTime(2026, 11, 1), updatedAt: DateTime(2026, 11, 1));
+      await start([old]);
+      expect(await manager.importFromApp([imported('Plan the trip')]), 0);
+      expect(manager.tasks.single.title, 'Plan');
     });
   });
 }

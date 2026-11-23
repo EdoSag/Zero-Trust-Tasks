@@ -5,6 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:uuid/uuid.dart';
 import 'package:zero_trust_core/zero_trust_core.dart';
 import 'package:zero_trust_tasks/core/services/notification_service.dart';
+import 'package:zero_trust_tasks/core/services/other_apps_import.dart';
 import 'package:zero_trust_tasks/core/services/recurrence_service.dart';
 import 'package:zero_trust_tasks/data/task_collections.dart';
 import 'package:zero_trust_tasks/models/backup_preview.dart';
@@ -218,6 +219,17 @@ class TaskManager extends ChangeNotifier {
     return _Store(w.saveTask, w.deleteTask);
   }
 
+  /// Removes [old] from the store it was in once its moved copy is saved
+  /// elsewhere. Taken before the move, so a locked store fails first.
+  Future<void> Function(Task moved) _leaverFor(Task old) {
+    if (!old.isShared) {
+      final w = _requireWriter;
+      return (_) => w.delete(old.id);
+    }
+    final w = _sharedWriter ?? (throw StateError('Shared lists aren\'t open yet. Try again in a moment.'));
+    return (moved) => w.moveOut(old, moved);
+  }
+
   /// Shows [changed] at once, then saves them.
   Future<void> _put(List<Task> changed) async {
     final writers = [for (final task in changed) _writerFor(task)];
@@ -269,9 +281,9 @@ class TaskManager extends ChangeNotifier {
     final saved = updatedTask.copyWith(updatedAt: DateTime.now());
     // The editor moved it to a list in another store (own <-> shared, or
     // another shared list): the old copy goes, like with "Move to list".
-    final from = TaskList.spaceIdOf(old.listId) != TaskList.spaceIdOf(saved.listId) ? _writerFor(old) : null;
+    final leave = TaskList.spaceIdOf(old.listId) != TaskList.spaceIdOf(saved.listId) ? _leaverFor(old) : null;
     await _put([saved]);
-    await from?.delete(old);
+    await leave?.call(saved);
     _remind(saved);
   }
 
@@ -476,6 +488,72 @@ class TaskManager extends ChangeNotifier {
     return changed.length;
   }
 
+  /// What importing [incoming] from another app (Todoist, Microsoft To Do,
+  /// TickTick) would change, without changing anything.
+  BackupPreview previewImportFromApp(List<Task> incoming) {
+    final r = _fromApp(incoming, DateTime.now());
+    return BackupPreview(
+      backupTaskCount: incoming.length,
+      toAdd: r.added,
+      toUpdate: r.write.length - r.added,
+      toRemove: 0,
+    );
+  }
+
+  /// Imports [incoming] from another app. Exports carry no reliable "last
+  /// changed" time, so each task keeps the fingerprint of the source's copy
+  /// it came from ([OtherAppsImporter.importedAsKey]):
+  ///
+  /// * a new task is added;
+  /// * the same fingerprint: the source didn't change, the local copy (with
+  ///   any edits, ticks or focus time) stays as it is;
+  /// * a different one: the source changed, its fields replace the imported
+  ///   ones; what only Tasks has (list, notes, links, focus time) stays;
+  /// * a task deleted here, or one imported before fingerprints existed,
+  ///   is left alone.
+  ///
+  /// Returns how many were written.
+  Future<int> importFromApp(List<Task> incoming) async {
+    final r = _fromApp(incoming, DateTime.now());
+    if (r.write.isNotEmpty) await _put(r.write);
+    for (final t in r.write) {
+      if (t.deletedAt == null && !t.isCompleted) _remind(t);
+    }
+    return r.write.length;
+  }
+
+  ({List<Task> write, int added}) _fromApp(List<Task> incoming, DateTime now) {
+    final local = {for (final t in _tasks) t.id: t};
+    final write = <Task>[];
+    var added = 0;
+    for (final t in incoming) {
+      final mine = local[t.id];
+      if (mine == null) {
+        write.add(t);
+        added++;
+        continue;
+      }
+      final was = mine.extra[OtherAppsImporter.importedAsKey];
+      final source = t.extra[OtherAppsImporter.importedAsKey];
+      if (mine.deletedAt != null || was == null || was == source) continue;
+      write.add(Task.fromJson({
+        ...mine.toJson(),
+        'title': t.title,
+        'description': t.description,
+        'priority': t.priority.name,
+        'startDate': t.startDate?.toIso8601String(),
+        'dueDate': t.dueDate?.toIso8601String(),
+        'isCompleted': t.isCompleted,
+        'completedAt': t.completedAt?.toIso8601String(),
+        'tags': t.tags,
+        'subTasks': t.subTasks.map((s) => s.toJson()).toList(),
+        OtherAppsImporter.importedAsKey: source,
+        'updatedAt': now.toIso8601String(),
+      }));
+    }
+    return (write: write, added: added);
+  }
+
   Future<void> bulkComplete(Set<String> taskIds, {required bool complete}) async {
     final now = DateTime.now();
     await _put([
@@ -542,13 +620,13 @@ class TaskManager extends ChangeNotifier {
       if (TaskList.spaceIdOf(t.listId) != TaskList.spaceIdOf(target)) leaving.add(t);
     }
     if (moved.isEmpty) return;
-    final oldWriters = {for (final t in leaving) t.id: _writerFor(t)};
+    final leavers = {for (final t in leaving) t.id: _leaverFor(t)};
     await _put(moved);
-    for (final t in leaving) {
-      await oldWriters[t.id]!.delete(t);
+    for (final t in moved) {
+      await leavers[t.id]?.call(t);
     }
     for (final t in moved) {
-      if (oldWriters.containsKey(t.id) && t.deletedAt == null && !t.isCompleted) _remind(t);
+      if (leavers.containsKey(t.id) && t.deletedAt == null && !t.isCompleted) _remind(t);
     }
   }
 
@@ -702,6 +780,12 @@ abstract interface class SharedTaskStore {
 
   /// [task] as it was stored: its list id names the space it was in.
   Future<void> deleteTask(Task task);
+
+  /// [from] (as it was stored) moved out of its shared list; [to] is the
+  /// moved copy, already saved where it went. Its comments go along when
+  /// [to] is in another shared list, so moving doesn't erase the
+  /// discussion.
+  Future<void> moveOut(Task from, Task to);
 }
 
 class _Store {

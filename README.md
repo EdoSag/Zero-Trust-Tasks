@@ -180,12 +180,18 @@ The old pepper (`APP_INTERNAL_SALT`) is a constant in
 Flutter 3.47.9, the version CI pins (3.50 deprecates `material.dart` and
 fails analyze).
 
-```bash
-# .env (not committed; CI writes its own). Public client values only:
-# never a service-role key, because .env is bundled into the APK.
+First create a file named `.env` in the project folder. It is not committed
+(CI writes its own) and it is bundled into the APK, so it holds public client
+values only, never a service-role key:
+
+```
 SUPABASE_URL=https://<project>.supabase.co
 SUPABASE_ANON_KEY=<publishable key>
+```
 
+Then:
+
+```bash
 flutter pub get
 dart run zt_release_checks --app tasks   # shared release checks
 flutter analyze && flutter test

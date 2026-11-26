@@ -7,6 +7,8 @@ class QuickAdd {
     required this.title,
     this.due,
     this.hasTime = false,
+    this.hasDate = false,
+    this.reminderAt,
     this.recurrence,
     this.priority,
     this.tags = const [],
@@ -20,6 +22,14 @@ class QuickAdd {
   /// Due date; at midnight when [hasTime] is false.
   final DateTime? due;
   final bool hasTime;
+
+  /// Whether the text named a day ("tomorrow", "12/5"), and not only a
+  /// time or "in 2 hours".
+  final bool hasDate;
+
+  /// When to remind, where that is not the due time itself ("remind me an
+  /// hour before", read by ZT Assist).
+  final DateTime? reminderAt;
   final RecurrenceRule? recurrence;
   final TaskPriority? priority;
   final List<String> tags;
@@ -386,6 +396,7 @@ class QuickAddParser {
       title: title,
       due: due,
       hasTime: hasTime,
+      hasDate: date != null,
       recurrence: recurrence,
       priority: priority,
       tags: tags,

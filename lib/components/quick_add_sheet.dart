@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:zero_trust_tasks/core/services/quick_add_assist.dart';
 import 'package:zero_trust_tasks/core/services/quick_add_parser.dart';
 import 'package:zero_trust_tasks/globals/providers.dart';
 import 'package:zero_trust_tasks/models/recurrence_rule.dart';
@@ -10,11 +13,18 @@ import 'package:zero_trust_tasks/pages/add_task_screen.dart';
 import 'package:zero_trust_tasks/task_priority.dart';
 import 'package:zero_trust_tasks/task_priority_extension.dart';
 import 'package:zero_trust_tasks/l10n/l10n.dart';
+import 'package:zt_assist/zt_assist.dart';
 
 /// One line to add a task: "call mum tomorrow 6pm". Dates, times, repeats,
 /// `!priority` and `#tags` are read as you type (English and Hebrew) and
 /// shown as chips before saving. "More" opens the full editor with
 /// everything filled in.
+///
+/// With ZT Assist on the same phone, "Read with ZT Assist" has its model
+/// read the line too: free wording ("half past four in the afternoon",
+/// "remind me an hour before") and a cleaner title. The text goes to
+/// ZT Assist on the phone and nowhere else, and what it read is shown
+/// before the task is added.
 Future<void> showQuickAdd(BuildContext context, {String? listId, bool starred = false}) {
   return showModalBottomSheet<void>(
     context: context,
@@ -42,21 +52,125 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   bool _saving = false;
   late bool _starred = widget.starred;
 
+  /// Whether ZT Assist is on this phone: its button is offered only then.
+  bool _assistHere = false;
+
+  /// The request ZT Assist is answering, if any.
+  StreamSubscription<ZtAssistEvent>? _asking;
+
+  /// What ZT Assist read, and the text it read it from. Typing anything
+  /// else drops it.
+  ZtAssistQuickAdd? _assistRead;
+  String _assistText = '';
+
+  /// Why ZT Assist's reading did not arrive, in words.
+  String? _assistProblem;
+
+  @override
+  void initState() {
+    super.initState();
+    unawaited(_lookForAssist());
+  }
+
   @override
   void dispose() {
+    // Leaving stops the model.
+    unawaited(_asking?.cancel());
     _controller.dispose();
     super.dispose();
   }
 
-  QuickAdd get _parsed => _readDates
-      ? QuickAddParser.parse(_controller.text)
-      : QuickAdd(title: _controller.text.trim());
+  Future<void> _lookForAssist() async {
+    bool here;
+    try {
+      here = await ZtAssist.instance.isInstalled();
+    } on Object {
+      here = false;
+    }
+    if (mounted && here) setState(() => _assistHere = true);
+  }
+
+  bool get _assistReadIsCurrent => _assistRead != null && _assistText == _controller.text;
+
+  QuickAdd get _parsed {
+    if (!_readDates) return QuickAdd(title: _controller.text.trim());
+    final own = QuickAddParser.parse(_controller.text);
+    return _assistReadIsCurrent ? mergeAssistReading(own, _assistRead!, now: DateTime.now()) : own;
+  }
+
+  void _onTextChanged() {
+    if (_controller.text != _assistText || _asking != null) {
+      // What ZT Assist read, or is reading, is of another text now.
+      unawaited(_asking?.cancel());
+      _asking = null;
+      _assistRead = null;
+      _assistProblem = null;
+    }
+    setState(() {});
+  }
+
+  void _askAssist() {
+    final asked = _controller.text;
+    final line = asked.trim();
+    if (line.isEmpty || _asking != null) return;
+    final answer = StringBuffer();
+    setState(() {
+      _assistRead = null;
+      _assistProblem = null;
+      _asking = ZtAssist.instance
+          .ask(ZtAssistRequest(task: ZtAssistTask.quickAdd, text: line))
+          .listen(
+        (event) {
+          if (event is ZtAssistChunk) answer.write(event.text);
+        },
+        onError: (Object error) {
+          if (!mounted) return;
+          setState(() {
+            _asking = null;
+            _assistProblem = _assistProblemText(error);
+          });
+        },
+        onDone: () {
+          // Already ended by an error, or by leaving.
+          if (!mounted || _asking == null) return;
+          final read = ZtAssistQuickAdd.fromAnswer(answer.toString(), text: line, now: DateTime.now());
+          setState(() {
+            _asking = null;
+            if (read == null) {
+              _assistProblem = currentL10n.quickAddAssistNotUnderstood;
+            } else {
+              _assistRead = read;
+              _assistText = asked;
+            }
+          });
+        },
+      );
+    });
+  }
+
+  void _stopAssist() {
+    unawaited(_asking?.cancel());
+    setState(() => _asking = null);
+  }
+
+  static String _assistProblemText(Object error) {
+    final l = currentL10n;
+    if (error is! ZtAssistException) return l.assistFailed;
+    return switch (error.error) {
+      ZtAssistError.notInstalled => l.assistNotInstalled,
+      ZtAssistError.noModel => l.assistNoModel,
+      ZtAssistError.loadFailed => l.assistLoadFailed,
+      ZtAssistError.needsUpdate => l.assistNeedsUpdate,
+      ZtAssistError.stopped => l.assistStopped,
+      ZtAssistError.failed => l.assistFailed,
+    };
+  }
 
   Task _build(QuickAdd parsed) => _plan(parsed, Task.create(
         title: parsed.title,
         dueDate: parsed.due,
         // A time of day is a reminder; a bare date isn't.
-        reminderAt: parsed.hasTime ? parsed.due : null,
+        reminderAt: parsed.reminderAt ?? (parsed.hasTime ? parsed.due : null),
         recurrence: parsed.recurrence,
         priority: parsed.priority ?? TaskPriority.medium,
         tags: parsed.tags,
@@ -116,6 +230,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
             parsed.priority != null ||
             parsed.tags.isNotEmpty ||
             parsed.minutes != null);
+    final fromAssist = _readDates && _assistReadIsCurrent;
     return Padding(
       padding: EdgeInsets.fromLTRB(16, 0, 16, 12 + MediaQuery.viewInsetsOf(context).bottom),
       child: Column(
@@ -132,7 +247,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               hintText: context.l10n.callMumTomorrow6pm,
               border: OutlineInputBorder(),
             ),
-            onChanged: (_) => setState(() {}),
+            onChanged: (_) => _onTextChanged(),
             onSubmitted: (_) => _save(),
           ),
           const SizedBox(height: 8),
@@ -146,6 +261,13 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                   Chip(
                     avatar: Icon(parsed.hasTime ? Icons.alarm : Icons.event, size: 18),
                     label: Text(describeDue(parsed.due!, parsed.hasTime)),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                if (parsed.reminderAt != null)
+                  Chip(
+                    key: const ValueKey('quick-add-reminder'),
+                    avatar: const Icon(Icons.notifications_active_outlined, size: 18),
+                    label: Text(context.l10n.reminderAtIs(describeDue(parsed.reminderAt!, true))),
                     visualDensity: VisualDensity.compact,
                   ),
                 if (parsed.recurrence != null)
@@ -192,11 +314,12 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
               context.l10n.quickAddHelp,
               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
             ),
-          if (found && parsed.title != _controller.text.trim())
+          if ((found || fromAssist) && parsed.title != _controller.text.trim())
             Padding(
               padding: const EdgeInsets.only(top: 4),
               child: Text(context.l10n.titleIs(parsed.title), style: theme.textTheme.bodySmall),
             ),
+          if (_assistHere && _readDates && _controller.text.trim().isNotEmpty) _assistRow(theme, fromAssist),
           const SizedBox(height: 8),
           Row(
             children: [
@@ -224,6 +347,59 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           ),
         ],
       ),
+    );
+  }
+
+  /// ZT Assist's part of the sheet: the button that asks, the wait, and
+  /// the line that says the reading above is ZT Assist's.
+  Widget _assistRow(ThemeData theme, bool fromAssist) {
+    final small = theme.textTheme.bodySmall;
+    if (_asking != null) {
+      return Row(
+        key: const ValueKey('quick-add-assist-reading'),
+        children: [
+          const SizedBox.square(dimension: 16, child: CircularProgressIndicator(strokeWidth: 2)),
+          const SizedBox(width: 8),
+          Expanded(child: Text(context.l10n.quickAddAssistReading, style: small)),
+          TextButton(
+            key: const ValueKey('quick-add-assist-stop'),
+            onPressed: _stopAssist,
+            child: Text(context.l10n.assistStop),
+          ),
+        ],
+      );
+    }
+    if (fromAssist) {
+      return Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Row(
+          key: const ValueKey('quick-add-assist-read'),
+          children: [
+            Icon(Icons.auto_awesome_outlined, size: 16, color: theme.colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(context.l10n.quickAddAssistRead, style: small)),
+          ],
+        ),
+      );
+    }
+    final problem = _assistProblem;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        TextButton.icon(
+          key: const ValueKey('quick-add-assist'),
+          onPressed: _saving ? null : _askAssist,
+          icon: const Icon(Icons.auto_awesome_outlined, size: 18),
+          label: Text(context.l10n.quickAddAssist),
+        ),
+        if (problem != null)
+          Text(
+            problem,
+            key: const ValueKey('quick-add-assist-problem'),
+            style: small?.copyWith(color: theme.colorScheme.error),
+          ),
+      ],
     );
   }
 

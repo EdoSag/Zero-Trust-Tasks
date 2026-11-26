@@ -8,6 +8,7 @@ class QuickAdd {
     this.due,
     this.hasTime = false,
     this.hasDate = false,
+    this.repeatStartsToday = false,
     this.reminderAt,
     this.recurrence,
     this.priority,
@@ -26,6 +27,11 @@ class QuickAdd {
   /// Whether the text named a day ("tomorrow", "12/5"), and not only a
   /// time or "in 2 hours".
   final bool hasDate;
+
+  /// Whether the day comes from a repeat that falls on today ("every
+  /// thursday", typed on a Thursday). Such a task starts today, or a week
+  /// on when its time today has passed, so the day depends on the time.
+  final bool repeatStartsToday;
 
   /// When to remind, where that is not the due time itself ("remind me an
   /// hour before", read by ZT Assist).
@@ -397,6 +403,7 @@ class QuickAddParser {
       due: due,
       hasTime: hasTime,
       hasDate: date != null,
+      repeatStartsToday: repeatStartsToday,
       recurrence: recurrence,
       priority: priority,
       tags: tags,

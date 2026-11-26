@@ -41,7 +41,11 @@ void main() {
       // The phone test: the model got the title and dropped the time.
       final q = merged(
         'מחר ב-9 רופא שיניים, להזכיר שעה לפני',
-        ZtAssistQuickAdd(title: 'רופא שיניים', day: DateTime(2026, 11, 27), remindMinutesBefore: 60),
+        ZtAssistQuickAdd(
+          title: 'רופא שיניים',
+          day: DateTime(2026, 11, 27),
+          remindMinutesBefore: 60,
+        ),
       );
       expect(q.title, 'רופא שיניים');
       expect(q.due, DateTime(2026, 11, 27, 9));
@@ -72,7 +76,12 @@ void main() {
     test('a day and a time the app could not read come from ZT Assist', () {
       final q = merged(
         'פגישה עם רואה החשבון בחמישה בדצמבר בארבע וחצי',
-        ZtAssistQuickAdd(title: 'פגישה עם רואה החשבון', day: DateTime(2026, 12, 5), hour: 16, minute: 30),
+        ZtAssistQuickAdd(
+          title: 'פגישה עם רואה החשבון',
+          day: DateTime(2026, 12, 5),
+          hour: 16,
+          minute: 30,
+        ),
       );
       expect(q.title, 'פגישה עם רואה החשבון');
       expect(q.due, DateTime(2026, 12, 5, 16, 30));
@@ -80,9 +89,15 @@ void main() {
     });
 
     test('only a time: today, or tomorrow when it has passed', () {
-      final later = merged('Water the plants', const ZtAssistQuickAdd(title: 'Water the plants', hour: 18, minute: 0));
+      final later = merged(
+        'Water the plants',
+        const ZtAssistQuickAdd(title: 'Water the plants', hour: 18, minute: 0),
+      );
       expect(later.due, DateTime(2026, 11, 26, 18));
-      final passed = merged('Water the plants', const ZtAssistQuickAdd(title: 'Water the plants', hour: 8, minute: 0));
+      final passed = merged(
+        'Water the plants',
+        const ZtAssistQuickAdd(title: 'Water the plants', hour: 8, minute: 0),
+      );
       expect(passed.due, DateTime(2026, 11, 27, 8));
     });
 
@@ -104,7 +119,13 @@ void main() {
     });
 
     test('the length is ZT Assist\'s, else the app\'s', () {
-      expect(merged('Write report 2h', const ZtAssistQuickAdd(title: 'Write report', lengthMinutes: 90)).minutes, 90);
+      expect(
+        merged(
+          'Write report 2h',
+          const ZtAssistQuickAdd(title: 'Write report', lengthMinutes: 90),
+        ).minutes,
+        90,
+      );
       expect(merged('Write report 2h', const ZtAssistQuickAdd(title: 'Write report')).minutes, 120);
     });
 
@@ -117,6 +138,37 @@ void main() {
       expect(q.recurrence?.frequency, RecurrenceFrequency.monthly);
       expect(q.priority, TaskPriority.high);
       expect(q.tags, ['home']);
+    });
+
+    test('a repeat on today starts today when the merged time is still ahead', () {
+      // The app reads "at 9" as 09:00, which has passed on this Thursday
+      // afternoon, so its own reading starts next Thursday.
+      const text = 'Call mum every thursday at 9 in the evening';
+      final own = QuickAddParser.parse(text, now: now);
+      expect(own.repeatStartsToday, isTrue);
+      expect(own.due, DateTime(2026, 12, 3, 9));
+
+      // ZT Assist reads nine in the evening: tonight, not a week late.
+      final q = merged(
+        text,
+        ZtAssistQuickAdd(title: 'Call mum', day: DateTime(2026, 11, 26), hour: 21, minute: 0),
+      );
+      expect(q.due, DateTime(2026, 11, 26, 21));
+      expect(q.recurrence?.frequency, RecurrenceFrequency.weekly);
+
+      // A merged time that has passed still starts a week on.
+      final late = merged(
+        'Call mum every thursday',
+        const ZtAssistQuickAdd(title: 'Call mum', hour: 8, minute: 0),
+      );
+      expect(late.due, DateTime(2026, 12, 3, 8));
+
+      // A repeat on another weekday is not touched.
+      final friday = merged(
+        'Call mum every friday at 9 in the evening',
+        const ZtAssistQuickAdd(title: 'Call mum', hour: 21, minute: 0),
+      );
+      expect(friday.due, DateTime(2026, 11, 27, 21));
     });
 
     test('no title from ZT Assist keeps the app\'s', () {
@@ -158,21 +210,23 @@ void main() {
       tester.view.physicalSize = Size(width * 2, 1600);
       tester.view.devicePixelRatio = 2;
       addTearDown(tester.view.reset);
-      await tester.pumpWidget(ProviderScope(
-        overrides: [
-          taskManagerProvider.overrideWith((ref) => manager),
-          taskListProvider.overrideWith((ref) => lists),
-          remindersEnabledProvider.overrideWithValue(false),
-        ],
-        child: MaterialApp(
-          // The suite's real theme, as inside the app.
-          theme: ZtTheme.light(accent: Colors.teal),
-          locale: locale,
-          supportedLocales: const [Locale('en'), Locale('he')],
-          localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
-          home: const Scaffold(body: QuickAddSheet()),
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            taskManagerProvider.overrideWith((ref) => manager),
+            taskListProvider.overrideWith((ref) => lists),
+            remindersEnabledProvider.overrideWithValue(false),
+          ],
+          child: MaterialApp(
+            // The suite's real theme, as inside the app.
+            theme: ZtTheme.light(accent: Colors.teal),
+            locale: locale,
+            supportedLocales: const [Locale('en'), Locale('he')],
+            localizationsDelegates: const [AppL10n.delegate, ...ZtLanguages.delegates],
+            home: const Scaffold(body: QuickAddSheet()),
+          ),
         ),
-      ));
+      );
       await tester.pumpAndSettle();
     }
 
@@ -215,7 +269,8 @@ void main() {
       );
       ZtAssist.instance = assist;
       await pumpSheet(tester);
-      const text = 'Remind me that I have the dentist tomorrow at 9 in the evening, tell me an hour before';
+      const text =
+          'Remind me that I have the dentist tomorrow at 9 in the evening, tell me an hour before';
       await tester.enterText(find.byType(TextField), text);
       await tester.pump();
       await tester.tap(button);
@@ -266,7 +321,10 @@ void main() {
 
     testWidgets('while it reads there is a Stop, and Stop stops the model', (tester) async {
       final gate = Completer<void>();
-      final assist = FakeZtAssist(answer: (_) => ['{"title":"Dentist"}'], beforePiece: () => gate.future);
+      final assist = FakeZtAssist(
+        answer: (_) => ['{"title":"Dentist"}'],
+        beforePiece: () => gate.future,
+      );
       ZtAssist.instance = assist;
       await pumpSheet(tester);
       await tester.enterText(find.byType(TextField), 'Dentist tomorrow at 9');
@@ -295,7 +353,10 @@ void main() {
 
     testWidgets('typing while it reads stops the model', (tester) async {
       final gate = Completer<void>();
-      final assist = FakeZtAssist(answer: (_) => ['{"title":"Dentist"}'], beforePiece: () => gate.future);
+      final assist = FakeZtAssist(
+        answer: (_) => ['{"title":"Dentist"}'],
+        beforePiece: () => gate.future,
+      );
       ZtAssist.instance = assist;
       await pumpSheet(tester);
       await tester.enterText(find.byType(TextField), 'Dentist tomorrow at 9');
@@ -311,7 +372,9 @@ void main() {
       expect(read, findsNothing);
     });
 
-    testWidgets('an answer that cannot be used is said, and the usual reading stays', (tester) async {
+    testWidgets('an answer that cannot be used is said, and the usual reading stays', (
+      tester,
+    ) async {
       ZtAssist.instance = FakeZtAssist(answer: (_) => ['I am not sure what you mean.']);
       await pumpSheet(tester);
       await tester.enterText(find.byType(TextField), 'Dentist tomorrow at 9');
@@ -365,7 +428,10 @@ void main() {
 
     testWidgets('leaving while it reads stops the model', (tester) async {
       final gate = Completer<void>();
-      final assist = FakeZtAssist(answer: (_) => ['{"title":"Dentist"}'], beforePiece: () => gate.future);
+      final assist = FakeZtAssist(
+        answer: (_) => ['{"title":"Dentist"}'],
+        beforePiece: () => gate.future,
+      );
       ZtAssist.instance = assist;
       await pumpSheet(tester);
       await tester.enterText(find.byType(TextField), 'Dentist tomorrow at 9');

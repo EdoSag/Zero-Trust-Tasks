@@ -8,6 +8,8 @@ import 'package:zt_assist/zt_assist.dart';
 /// free wording ("half past four in the afternoon", "remind me an hour
 /// before") but is a small model that can slip. So:
 ///  * the day is the app's own where the text named one, else ZT Assist's;
+///    a repeat that falls on today starts today, or a week on when the
+///    time, whoever read it, has passed;
 ///  * the title, the time and the length are ZT Assist's where it has one,
 ///    else the app's own;
 ///  * the reminder comes from ZT Assist only;
@@ -21,7 +23,15 @@ QuickAdd mergeAssistReading(QuickAdd own, ZtAssistQuickAdd read, {required DateT
   var hasDate = own.hasDate;
 
   if (read.day != null || read.hasTime) {
-    var day = own.hasDate && ownDue != null ? DateTime(ownDue.year, ownDue.month, ownDue.day) : read.day;
+    final today = DateTime(now.year, now.month, now.day);
+    // The app moved a repeat that falls on today a week on where its own
+    // time had passed. The time may be another one now, so start over from
+    // today.
+    var day = own.repeatStartsToday
+        ? today
+        : own.hasDate && ownDue != null
+        ? DateTime(ownDue.year, ownDue.month, ownDue.day)
+        : read.day;
     final hour = read.hour ?? (own.hasTime ? ownDue!.hour : null);
     final minute = read.minute ?? (own.hasTime ? ownDue!.minute : null);
     hasDate = day != null;
@@ -37,6 +47,10 @@ QuickAdd mergeAssistReading(QuickAdd own, ZtAssistQuickAdd read, {required DateT
         day = today.isAfter(now) ? today : DateTime(now.year, now.month, now.day + 1);
       }
       due = DateTime(day.year, day.month, day.day, hour, minute);
+      // "every thursday at 9" typed on Thursday at 10 starts next Thursday.
+      if (own.repeatStartsToday && !due.isAfter(now)) {
+        due = DateTime(day.year, day.month, day.day + 7, hour, minute);
+      }
       hasTime = true;
     }
   }
@@ -52,6 +66,7 @@ QuickAdd mergeAssistReading(QuickAdd own, ZtAssistQuickAdd read, {required DateT
     due: due,
     hasTime: hasTime,
     hasDate: hasDate,
+    repeatStartsToday: own.repeatStartsToday,
     reminderAt: reminderAt,
     recurrence: own.recurrence,
     priority: own.priority,

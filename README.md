@@ -1,14 +1,86 @@
 # Zero-Trust Tasks
 
-End-to-end encrypted tasks and reminders. Part of the Zero-Trust apps: one
-account, one look, and the same security in Tasks, Notes, Fitness and
-Contacts. On the phone it is called **ZT Tasks**.
+End-to-end encrypted tasks and reminders: to-dos, errands and plans in
+simple lists, with reminders that arrive on time. On the phone it is called
+**ZT Tasks**; in stores and on release pages, **Zero-Trust Tasks**. Same
+account, settings and look as the other Zero-Trust apps, built on
+[Zero-Trust-Core](https://github.com/EdoSag/Zero-Trust-Core). Part of the
+[Zero-Trust suite](https://zerotrust.bz).
 
 Account, keys, vault lock (auto-lock, biometrics), sync, settings and theme
-come from [Zero-Trust-Core](https://github.com/EdoSag/Zero-Trust-Core)
-(pinned by tag in `pubspec.yaml`). This repo holds only what is Tasks':
-the task model and screens, reminders, templates, smart filters, insights
-and backup files.
+come from Zero-Trust-Core (pinned in `pubspec.yaml`). This repo holds only
+what is Tasks': the task model and screens, reminders, templates, smart
+filters, insights and backup files.
+
+## What it does
+
+- **Lists** with their own colours; move tasks between them. View a list as
+  a list, a board or a calendar.
+- **Subtasks:** drag a task onto another to indent it, and drag to reorder.
+  Star the important ones and see them in one Starred view.
+- **Quick add** in plain words, English and Hebrew ("call mum tomorrow
+  6pm"); see [Quick add](#quick-add).
+- **Reminders** with Complete and Snooze buttons on the notification, and
+  **place reminders** when you arrive at or leave a place (Core's
+  `zt_places`, watched by the phone itself, no Google Play services).
+- **Repeating tasks** and due dates, which also show in ZT Calendar.
+- **Priorities, tags, search and smart filters**, templates for tasks you
+  make often, and an Insights dashboard.
+- **Focus timer:** time a task while you work on it; the minutes are added
+  to the task, and can be logged to ZT Time.
+- **Shared lists** with family or friends who use Zero-Trust, end-to-end
+  encrypted (Core's shared spaces): invite by link or QR code, assign tasks
+  to people and comment on them.
+- **Linked with the other apps:** link a task to notes and contacts, let ZT
+  Calendar's Planner find time for it, show a list in a ZT Family circle,
+  count ticked tasks in ZT Quests, and pick a task's text from ZT Keyboard
+  ("Insert from ZT apps").
+- **Home screen widget** (Android): your list, tick off tasks and add new
+  ones.
+- **Import** from Google Tasks (Google Takeout), Todoist (CSV or backup
+  .zip), Microsoft To Do (.json) and TickTick (.csv).
+- **Backup file:** export every task to a password-protected file and
+  import it again, with a preview of what will change.
+
+## Privacy
+
+Like every Zero-Trust app, it is zero-knowledge: your data is encrypted on
+your device, with keys made from your password, before anything is sent.
+The server stores only ciphertext and your password itself is never
+sent, so neither we nor anyone who breaks into the server can read your
+data. The recovery key shown at sign-up is the only way back in if you
+forget the password. How the keys work:
+[Zero-Trust-Core](https://github.com/EdoSag/Zero-Trust-Core#key-hierarchy) and
+[zerotrust.bz/security](https://zerotrust.bz/security/).
+
+What works while the vault is locked, and what that leaves on the phone, is
+under [Outside the vault](#outside-the-vault).
+
+## One account, one core
+
+One Zero-Trust account opens every app in the suite. Sign-in, unlock
+(fingerprint or face, auto-lock), the recovery key, settings, the look,
+sync and languages come from
+[Zero-Trust-Core](https://github.com/EdoSag/Zero-Trust-Core), so they work
+the same in every app. Accounts made before the core still sign in and
+see their data.
+
+## Install
+
+Android: get the latest signed APK from this repository's
+[Releases](https://github.com/EdoSag/Zero-Trust-Tasks/releases/latest),
+or from [zerotrust.bz/install](https://zerotrust.bz/install/#tasks),
+which also shows each file's SHA-256, the signing fingerprint and an
+Obtainium link. GitHub Releases are the main way the apps are published.
+
+Builds from GitHub check for a newer release themselves (Settings > About,
+one anonymous request a day, can be turned off). Every Zero-Trust app is signed
+with the same key, and Android only installs an update signed with it.
+
+## Languages
+
+English and Hebrew, with right-to-left layout. Choose under
+Settings > Appearance > Language.
 
 ## How data is stored
 
@@ -103,24 +175,58 @@ core's legacy key (which has no prefix), so Tasks reads it itself
 The old pepper (`APP_INTERNAL_SALT`) is a constant in
 `lib/legacy/legacy_tasks_import.dart`, so it no longer has to live in `.env`.
 
-## Configuration
+## Build from source
 
-`.env` is not committed. Copy `.env.example` to `.env` for local builds. CI
-writes the same public Supabase values itself, or uses an `ENV_FILE` secret if
-one is set. Never put a service-role key or any other server secret in `.env`:
-it is bundled into the APK.
+Flutter 3.47.9, the version CI pins (3.50 deprecates `material.dart` and
+fails analyze).
 
-## Development
+First create a file named `.env` in the project folder. It is not committed
+(CI writes its own) and it is bundled into the APK, so it holds public client
+values only, never a service-role key:
+
+```
+SUPABASE_URL=https://<project>.supabase.co
+SUPABASE_ANON_KEY=<publishable key>
+```
+
+Then:
 
 ```bash
 flutter pub get
-flutter test
-flutter analyze
+dart run zt_release_checks --app tasks   # shared release checks
+flutter analyze && flutter test
+flutter run
 ```
+
+Never add `cryptography_flutter`: it breaks the core's key derivation and
+sign-in fails.
+
+`.env.example` has the same lines to copy. CI writes the public Supabase
+values itself, or uses an `ENV_FILE` secret if one is set.
 
 The tests run without Supabase: `test/app_test.dart` signs up, signs in a
 pre-core account (same phone and new phone), and checks the old tasks show
 up and sync.
+
+## Branches and releases
+
+Work happens on `Dev`: pull requests target `Dev`, never `main`, and get a
+test build. A release is one `Dev` → `main` pull request. Every push to
+`main` runs the suite's release checks, builds a signed APK and a Google Play bundle
+and publishes them as a GitHub Release named "Zero-Trust Tasks"
+(`.github/workflows/android-apk.yml`). The workflow needs the repository
+secrets `ANDROID_KEYSTORE_BASE64` and `ANDROID_KEYSTORE_PASSWORD`, the
+keystore shared by all Zero-Trust apps.
+
+## Support and security
+
+- Help centre: [zerotrust.bz/help](https://zerotrust.bz/help/). Questions and
+  account deletion: support@zerotrust.bz.
+- Security problems: please report them privately to cyber@zerotrust.bz. What
+  the encryption does and doesn't protect against is on
+  [zerotrust.bz/security](https://zerotrust.bz/security/).
+- [Privacy policy](https://zerotrust.bz/privacy/) and
+  [terms](https://zerotrust.bz/terms/).
 
 ## License
 

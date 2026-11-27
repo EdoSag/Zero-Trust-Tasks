@@ -1713,4 +1713,47 @@ class AppL10nEn extends AppL10n {
   @override
   String get sharedListsChannelDescription =>
       'When someone assigns you a task in a shared list';
+
+  @override
+  String get quickAddAssist => 'Read with ZT Assist';
+
+  @override
+  String get quickAddAssistReading =>
+      'ZT Assist is reading it on this phone. The first time takes a few seconds longer.';
+
+  @override
+  String get quickAddAssistRead => 'Read by ZT Assist. Check it before adding.';
+
+  @override
+  String get quickAddAssistNotUnderstood =>
+      'ZT Assist could not make this out. It is read the usual way.';
+
+  @override
+  String reminderAtIs(String when) {
+    return 'Reminder: $when';
+  }
+
+  @override
+  String get assistStop => 'Stop';
+
+  @override
+  String get assistNotInstalled => 'ZT Assist is not on this phone.';
+
+  @override
+  String get assistNoModel =>
+      'ZT Assist has no model yet. Open ZT Assist and download one.';
+
+  @override
+  String get assistLoadFailed =>
+      'ZT Assist could not load its model. The phone may be short of free memory: close other apps and try again.';
+
+  @override
+  String get assistNeedsUpdate =>
+      'ZT Assist needs an update before it can do this.';
+
+  @override
+  String get assistStopped => 'ZT Assist stopped in the middle. Try again.';
+
+  @override
+  String get assistFailed => 'ZT Assist could not answer. Try again.';
 }

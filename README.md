@@ -102,6 +102,19 @@ the device. A time of day also sets the reminder. A length ("2h", "45 min",
 "שעה וחצי") is kept for ZT Calendar's Planner. "Keep as typed" turns the
 reading off; "More options" opens the full editor.
 
+With [ZT Assist](https://github.com/EdoSag/Zero-Trust-Assist) on the same
+phone, the sheet also offers **Read with ZT Assist**. ZT Assist's AI model,
+which runs on the phone, then reads the line too: free wording ("at half
+past four in the afternoon", "remind me an hour before") and a shorter
+title. The line goes from this app to ZT Assist on the phone and nowhere
+else. The two readings are put together in `quick_add_assist.dart`: the day
+is this app's own where it found one (code counts days exactly), the
+title, the time and the length are ZT Assist's where it has one, and the
+reminder comes from ZT Assist. The Core package `zt_assist` checks the
+model's answer first (a day that does not exist, a time the line gives no
+reason for). What was read is shown before the task is added, and typing
+again drops it. The button is hidden when ZT Assist is not installed.
+
 ## ZT Calendar's Planner
 
 ZT Calendar can plan time for tasks in its calendar. The task editor has
